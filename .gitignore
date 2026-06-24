@@ -1,0 +1,14 @@
+node_modules
+dist
+*.local
+.DS_Store
+
+# server-side profile store
+.data
+
+# design-handoff zip (the extracted folder is committed instead)
+*.zip
+
+# user-uploaded music — keep the folder, ignore its contents
+public/media/*
+!public/media/.gitkeep

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #05030a; }
+  @keyframes scan { 0% { background-position: 0 0; } 100% { background-position: 0 4px; } }
+  @keyframes neonflicker {
+    0%, 100% { opacity: 1; }
+    92% { opacity: 1; }
+    93% { opacity: 0.35; }
+    94% { opacity: 1; }
+    96% { opacity: 0.7; }
+    97% { opacity: 1; }
+  }
+</style>
+</helmet>
+<div style="position: relative; width: 100%; height: 100%; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(120% 100% at 50% 0%, #140a22 0%, #05030a 70%);">
+  <div style="position: relative; width: min(96vw, 1280px); aspect-ratio: 16 / 9; box-shadow: 0 30px 90px -20px rgba(120,40,160,0.45), 0 0 0 1px rgba(160,110,200,0.12); border-radius: 6px; overflow: hidden;">
+    <canvas ref="{{ canvasRef }}" style="position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; display: block;"></canvas>
+    <div style="position: absolute; top: 19%; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: 'Press Start 2P', monospace; text-align: center; white-space: nowrap; animation: neonflicker 5s infinite; z-index: 2;">
+      <div style="font-size: clamp(5px, 0.8vw, 9px); letter-spacing: 3px; color: #9beaff; text-shadow: 0 0 4px #22d3ee, 0 0 10px #0891b2;">● LIVE TONIGHT ●</div>
+      <div style="font-size: clamp(9px, 1.9vw, 22px); letter-spacing: 3px; color: #ffe3fa; text-shadow: 0 0 5px #ff4fd8, 0 0 14px #c026d3, 0 0 26px #7c1fa8;">DJ NOVA</div>
+    </div>
+    <div style="position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.32) 0px, rgba(0,0,0,0.32) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 3px); mix-blend-mode: multiply; opacity: 0.55;"></div>
+    <div style="position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 120px 30px rgba(5,3,12,0.9);"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.canvasRef = React.createRef();
+    this.raf = 0;
+  }
+
+  componentDidMount() {
+    const canvas = this.canvasRef.current;
+    if (!canvas) return;
+    this.g = canvas.getContext("2d");
+    this.glowCanvas = document.createElement("canvas");
+    this.glow = this.glowCanvas.getContext("2d");
+    this.ravers = [];
+    this.beam = 0;
+    this.t0 = performance.now();
+    this.setup(canvas);
+    const ro = new ResizeObserver(() => this.setup(canvas));
+    ro.observe(canvas);
+    this.ro = ro;
+    const loop = () => {
+      this.render((performance.now() - this.t0) / 1000);
+      this.raf = requestAnimationFrame(loop);
+    };
+    this.raf = requestAnimationFrame(loop);
+  }
+
+  componentWillUnmount() {
+    cancelAnimationFrame(this.raf);
+    if (this.ro) this.ro.disconnect();
+  }
+
+  renderVals() {
+    return { canvasRef: this.canvasRef };
+  }
+
+  setup(canvas) {
+    const PIXEL_H = 200;
+    const cw = canvas.clientWidth || 1280;
+    const ch = canvas.clientHeight || 720;
+    this.h = PIXEL_H;
+    this.w = Math.max(240, Math.round(PIXEL_H * (cw / ch)));
+    canvas.width = this.w;
+    canvas.height = this.h;
+    this.glowCanvas.width = this.w;
+    this.glowCanvas.height = this.h;
+    this.g.imageSmoothingEnabled = false;
+    this.glow.imageSmoothingEnabled = false;
+  }
+
+  // autonomous "music": a slow bassline + periodic kick envelope
+  pulse(t) {
+    const bpm = 120;
+    const beat = (t * bpm) / 60;
+    const phase = beat - Math.floor(beat);
+    // kick: sharp attack at each beat, exponential decay
+    const kick = Math.exp(-phase * 7);
+    // slow energy swell over a 16s arc so it breathes
+    const energy = 0.45 + 0.35 * (0.5 + 0.5 * Math.sin(t * 0.18));
+    return { kick, energy, beatPos: beat };
+  }
+
+  px(x, y, w, h, color, g) {
+    g = g || this.g;
+    g.fillStyle = color;
+    g.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+  }
+
+  block(x, y, w, h, base, hi, outline) {
+    this.px(x - 1, y - 1, w + 2, h + 2, outline);
+    this.px(x, y, w, h, base);
+    this.px(x, y, w, Math.max(1, h * 0.34), hi);
+  }
+
+  render(t) {
+    if (!this.g) return;
+    const { kick, energy } = this.pulse(t);
+    this.beam += 0.008 + energy * 0.03;
+    const W = this.w, H = this.h, u = H / 100;
+    const hue = 288; // purple/magenta core
+    const k = kick;
+    const live = 0.22 + energy * 0.7;
+
+    const C = {
+      stage: `hsl(${hue},42%,10%)`,
+      stageHi: `hsl(${hue},52%,15%)`,
+      edge: `hsl(${hue},92%,${54 + k * 16}%)`,
+      base: `hsl(${hue},48%,46%)`,
+      hi: `hsl(${hue},58%,66%)`,
+      shade: `hsl(${hue},58%,22%)`,
+      light: `hsl(${(hue + 35) % 360},95%,64%)`,
+      crowd: `hsl(${hue},30%,9%)`,
+      crowdRim: `hsl(${(hue + 22) % 360},80%,60%)`,
+    };
+
+    const stageTopY = Math.round(H * 0.56);
+    const stageH = Math.round(14 * u);
+    const x0 = Math.round(W * 0.10);
+    const x1 = Math.round(W * 0.90);
+    const trussY = Math.round(6 * u);
+
+    this.glow.clearRect(0, 0, W, H);
+    this.background(hue, energy);
+    this.beams(x0, x1, trussY, stageTopY, hue, live, k);
+    this.truss(x0, x1, trussY, u, hue, k);
+    this.backWall(x0, x1, trussY, stageTopY, u, hue, live);
+    this.visualizer(W, stageTopY, u, t, energy, k);
+    this.stageDeck(x0, x1, stageTopY, stageH, u, C, live);
+    this.drawDJ((x0 + x1) / 2, stageTopY, u, t, C, live, k);
+    this.floorGlow(stageTopY + stageH, hue, k, energy);
+    this.crowd(Math.round(H * 0.95), u, t, C, k, energy);
+
+    // bloom
+    this.g.save();
+    this.g.globalCompositeOperation = "lighter";
+    this.g.globalAlpha = 0.92;
+    this.g.filter = "blur(2px)";
+    this.g.drawImage(this.glowCanvas, 0, 0);
+    this.g.filter = "none";
+    this.g.restore();
+  }
+
+  // soft EQ spectrum on the back wall — dips in the center so it FRAMES the DJ
+  visualizer(W, baseY, u, t, energy, k) {
+    const n = 34;
+    const x0 = W * 0.22, x1 = W * 0.78;
+    const bw = (x1 - x0) / n;
+    const maxH = 22 * u;
+    for (let i = 0; i < n; i++) {
+      const fx = x0 + i * bw;
+      const d = Math.abs(i - (n - 1) / 2) / ((n - 1) / 2); // 0 center .. 1 edges
+      // valley in the middle (tall at the sides) so the DJ stands clear
+      const center = 1 - d;            // 1 at center, 0 at edges
+      const frame = 0.30 + 0.70 * d;   // short center, tall edges
+      const wob = 0.55 + 0.45 * Math.sin(t * (2 + i * 0.18) + i * 0.7);
+      const h = Math.max(1, maxH * frame * (0.3 + (0.4 + 0.6 * energy) * wob));
+      const hue = 296 - d * 40; // center magenta → violet edges
+      // keep it soft & well behind the DJ: dimmer glow, very faint on main
+      this.px(fx, baseY - h, bw - 1, h, `hsla(${hue},78%,56%,0.20)`, this.glow);
+      this.px(fx, baseY - h, bw - 1, h, `hsla(${hue},60%,42%,0.09)`);
+      // bright tip
+      this.px(fx, baseY - h, bw - 1, Math.max(1, 1.2 * u), `hsla(${(hue + 26) % 360},90%,72%,0.7)`, this.glow);
+    }
+  }
+
+  background(hue, energy) {
+    const g = this.g;
+    const grd = g.createLinearGradient(0, 0, 0, this.h);
+    grd.addColorStop(0, `hsl(${hue},55%,${6 + energy * 5}%)`);
+    grd.addColorStop(0.55, "#0a0616");
+    grd.addColorStop(1, "#04030a");
+    g.fillStyle = grd;
+    g.fillRect(0, 0, this.w, this.h);
+  }
+
+  backWall(x0, x1, trussY, stageY, u, hue, live) {
+    // faint speaker stacks flanking the stage
+    const stackW = 7 * u, stackH = (stageY - trussY) * 0.62;
+    for (const sx of [x0 + 1 * u, x1 - 8 * u]) {
+      this.px(sx, stageY - stackH, stackW, stackH, "#0c0918");
+      this.px(sx, stageY - stackH, stackW, 1, `hsl(${hue},40%,22%)`);
+      const cones = 3;
+      for (let i = 0; i < cones; i++) {
+        const cy = stageY - stackH + (i + 0.6) * (stackH / cones);
+        this.px(sx + stackW / 2 - 1.6 * u, cy - 1.6 * u, 3.2 * u, 3.2 * u, "#070510");
+        this.px(sx + stackW / 2 - 0.6 * u, cy - 0.6 * u, 1.2 * u, 1.2 * u, `hsl(${hue},50%,30%)`);
+      }
+    }
+  }
+
+  truss(x0, x1, y, u, hue, k) {
+    this.px(x0 - 4 * u, y, x1 - x0 + 8 * u, 2.2 * u, "#15111e");
+    // cross-bracing
+    for (let bx = x0 - 4 * u; bx < x1 + 4 * u; bx += 4 * u) {
+      this.px(bx, y, 1, 2.2 * u, "#241c34");
+    }
+    const hues = [288, 320, 188, 40, 268]; // magenta, pink, cyan, amber, violet
+    const n = hues.length;
+    for (let i = 0; i < n; i++) {
+      const fx = x0 + ((i + 0.5) / n) * (x1 - x0);
+      const c = `hsl(${hues[i]},92%,${48 + k * 36}%)`;
+      this.px(fx - 1.5 * u, y + 2.2 * u, 3 * u, 2.6 * u, c);
+      this.px(fx - 1.5 * u, y + 2.2 * u, 3 * u, 2.6 * u, c, this.glow);
+    }
+  }
+
+  beams(x0, x1, trussY, stageY, hue, live, k) {
+    const hues = [288, 320, 188, 40, 268];
+    const n = hues.length;
+    const alpha = 0.05 + live * 0.1 + k * 0.14;
+    for (let i = 0; i < n; i++) {
+      const ox = x0 + ((i + 0.5) / n) * (x1 - x0);
+      const sweep = Math.sin(this.beam + i * 1.25) * (x1 - x0) * 0.22;
+      const tx = ox + sweep;
+      const spread = this.w * 0.05 * (0.6 + k);
+      const grd = this.glow.createLinearGradient(ox, trussY, tx, stageY);
+      grd.addColorStop(0, `hsla(${hues[i]},95%,66%,${alpha})`);
+      grd.addColorStop(1, `hsla(${hues[i]},95%,66%,0)`);
+      this.glow.fillStyle = grd;
+      this.glow.beginPath();
+      this.glow.moveTo(ox, trussY + 4);
+      this.glow.lineTo(tx - spread, stageY);
+      this.glow.lineTo(tx + spread, stageY);
+      this.glow.closePath();
+      this.glow.fill();
+    }
+    // treble shimmer flecks
+    const flecks = Math.floor(live * 22);
+    for (let i = 0; i < flecks; i++) {
+      const fx = (Math.sin(i * 12.9898 + this.beam) * 0.5 + 0.5) * this.w;
+      const fy = trussY + (Math.cos(i * 78.233 + this.beam) * 0.5 + 0.5) * (stageY - trussY);
+      this.px(fx, fy, 1, 1, `hsl(${(hue + 60) % 360},90%,84%)`, this.glow);
+    }
+  }
+
+  stageDeck(x0, x1, topY, h, u, C, live) {
+    this.px(x0, topY, x1 - x0, h, C.stage);
+    this.px(x0, topY, x1 - x0, 1.6 * u, C.stageHi);
+    this.px(x0, topY - u, x1 - x0, u, C.edge);
+    this.px(x0, topY - u, x1 - x0, u, C.edge, this.glow);
+    // LED strip along the lip — chasing + pulsing
+    const leds = Math.floor((x1 - x0) / (3.4 * u));
+    for (let i = 0; i < leds; i++) {
+      const lx = x0 + (i + 0.5) * (3.4 * u);
+      const chase = (Math.sin(i * 0.6 + this.beam * 3) * 0.5 + 0.5) * (0.4 + live * 0.6);
+      const c = `hsl(${(288 + (i % 3) * 30 - 30 + 360) % 360},90%,${44 + chase * 34}%)`;
+      this.px(lx - u, topY + h - 3 * u, 2 * u, 2 * u, c);
+      if (chase > 0.5) this.px(lx - u, topY + h - 3 * u, 2 * u, 2 * u, c, this.glow);
+    }
+  }
+
+  person(cx, feetY, u, scale, C, bob) {
+    const s = u * scale;
+    const y = feetY - bob;
+    const headR = 2.4 * s;
+    this.px(cx - 2 * s, y - 4.5 * s, 1.6 * s, 4.5 * s, C.shade);
+    this.px(cx + 0.4 * s, y - 4.5 * s, 1.6 * s, 4.5 * s, C.shade);
+    this.block(cx - 2.6 * s, y - 11 * s, 5.2 * s, 6.5 * s, C.base, C.hi, C.shade);
+    this.block(cx - headR, y - 11 * s - headR * 2, headR * 2, headR * 2, C.base, C.hi, C.shade);
+    return y - 10.5 * s;
+  }
+
+  arm(x0, y0, x1, y1, u, color, outline) {
+    const steps = 4;
+    for (let i = 0; i <= steps; i++) {
+      const x = x0 + ((x1 - x0) * i) / steps;
+      const y = y0 + ((y1 - y0) * i) / steps;
+      this.px(x - 1.1 * u, y - 1.1 * u, 2.2 * u, 2.2 * u, outline);
+    }
+    for (let i = 0; i <= steps; i++) {
+      const x = x0 + ((x1 - x0) * i) / steps;
+      const y = y0 + ((y1 - y0) * i) / steps;
+      this.px(x - 0.7 * u, y - 0.7 * u, 1.4 * u, 1.4 * u, color);
+    }
+  }
+
+  spotlight(cx, topY, baseY, halfW, hue, alpha) {
+    const grd = this.glow.createLinearGradient(cx, topY, cx, baseY);
+    grd.addColorStop(0, `hsla(${(hue + 40) % 360},90%,72%,${alpha})`);
+    grd.addColorStop(1, `hsla(${(hue + 40) % 360},90%,72%,0)`);
+    this.glow.fillStyle = grd;
+    this.glow.beginPath();
+    this.glow.moveTo(cx, topY);
+    this.glow.lineTo(cx - halfW, baseY);
+    this.glow.lineTo(cx + halfW, baseY);
+    this.glow.closePath();
+    this.glow.fill();
+  }
+
+  // crisp pixel disc (flattened ellipse via stacked rows)
+  discFlat(cx, cy, rx, ry, color, g) {
+    g = g || this.g;
+    for (let yy = -Math.round(ry); yy <= Math.round(ry); yy++) {
+      const w = rx * Math.sqrt(Math.max(0, 1 - (yy / ry) * (yy / ry)));
+      this.px(cx - w, cy + yy, w * 2, 1, color, g);
+    }
+  }
+
+  drawDJ(cx, stageY, u, t, C, live, k) {
+    const bob = (0.5 + k * 2) * Math.abs(Math.sin(t * 5));
+    this.spotlight(cx, stageY - 27 * u, stageY + 2 * u, 16 * u, 288, 0.14 + live * 0.16);
+
+    const boothTopY = Math.round(stageY - 9 * u);
+
+    // DJ behind the booth (torso shows above the console)
+    this.djPerson(cx, stageY, u, t, C, bob, k, boothTopY);
+
+    // --- console / booth front panel ---
+    const bw = 32 * u, bh = 9 * u;
+    const bx = cx - bw / 2, by = boothTopY;
+    this.px(bx - u, by - u, bw + 2 * u, bh + u, C.shade);        // outline
+    this.px(bx, by, bw, bh, "#0b0913");                          // face
+    this.px(bx, by, bw, 1.3 * u, C.stageHi);                     // top edge highlight
+    for (let i = 1; i < 4; i++) this.px(bx + (i * bw) / 4, by + 2 * u, 1, bh - 3 * u, "#06040d"); // seams
+    this.px(bx, by + bh - 1.4 * u, bw, 1.4 * u, C.edge);         // neon underglow
+    this.px(bx, by + bh - 1.4 * u, bw, 1.4 * u, C.edge, this.glow);
+
+    // --- gear sitting on the tabletop ---
+    this.turntable(cx - 9.5 * u, boothTopY, u, 0.0);
+    this.mixer(cx, boothTopY, u, k, C);
+    this.turntable(cx + 9.5 * u, boothTopY, u, 1.7);
+  }
+
+  // top-down flattened deck resting on the console edge
+  turntable(px, boothTopY, u, phase) {
+    const cy = Math.round(boothTopY - 1.4 * u);
+    const rx = 4.3 * u, ry = 1.9 * u;
+    const cyan = "hsl(190,82%,56%)";
+    this.discFlat(px, cy, rx + 0.6 * u, ry + 0.5 * u, cyan);            // thin lit rim
+    this.discFlat(px, cy, rx, ry, "#171323");                          // platter body
+    this.discFlat(px, cy, rx * 0.92, ry * 0.92, "#0c0a16");            // vinyl
+    this.discFlat(px, cy, rx * 0.38, ry * 0.38, "hsl(323,85%,58%)");   // lit label
+    this.discFlat(px, cy, rx * 0.38, ry * 0.38, "hsl(323,85%,58%)", this.glow); // label bloom only
+    this.px(px - 0.6 * u, cy - 0.6 * u, 1.2 * u, 1.2 * u, "#0c0a16");  // spindle
+    const a = this.beam * 2.4 + phase;                                  // spin marker
+    this.px(px + Math.cos(a) * rx * 0.6 - 0.5 * u, cy + Math.sin(a) * ry * 0.6 - 0.5 * u, u, u, "#d8cdf0");
+    this.px(px + rx * 0.5, cy - ry * 1.2, 3 * u, 0.8 * u, "#b7adcc");   // tonearm
+  }
+
+  // small mixer between the decks: faders + lit VU
+  mixer(px, boothTopY, u, k, C) {
+    const mw = 5.6 * u, mh = 4 * u;
+    const mx = px - mw / 2, my = Math.round(boothTopY - mh);
+    this.px(mx - u, my - u, mw + 2 * u, mh + u, C.shade);
+    this.px(mx, my, mw, mh, "#15121f");
+    // two channel faders
+    for (const fx of [mx + 1 * u, mx + 3.4 * u]) {
+      this.px(fx, my + 1 * u, 0.8 * u, mh - 2 * u, "#06040d");
+    }
+    this.px(mx + 0.6 * u, my + 1 * u + (0.5 + 0.5 * Math.sin(this.beam * 3)) * (mh - 3.4 * u), 1.6 * u, u, C.light);
+    this.px(mx + 3.0 * u, my + 1 * u + (0.5 + 0.5 * Math.cos(this.beam * 3)) * (mh - 3.4 * u), 1.6 * u, u, C.light);
+    // VU meter dots across the top, lit on beat
+    for (let i = 0; i < 3; i++) {
+      const lit = k > i * 0.3;
+      const c = lit ? `hsl(${[120, 48, 0][i]},90%,58%)` : "#241c34";
+      this.px(mx + 0.8 * u + i * 1.6 * u, my - 0.6 * u, 1.2 * u, 1 * u, c);
+      if (lit) this.px(mx + 0.8 * u + i * 1.6 * u, my - 0.6 * u, 1.2 * u, 1 * u, c, this.glow);
+    }
+  }
+
+  // detailed DJ performer sprite
+  djPerson(cx, feetY, u, t, C, bob, k, boothTopY) {
+    const s = u;
+    const y = feetY - bob;
+    const shoulderY = Math.round(y - 16 * s);
+    const headR = 2.6 * s;
+    const headCY = Math.round(shoulderY - headR - 0.8 * s);
+
+    // legs (hidden by booth) — keep a hint
+    this.px(cx - 2.2 * s, y - 6 * s, 1.8 * s, 6 * s, C.shade);
+    this.px(cx + 0.4 * s, y - 6 * s, 1.8 * s, 6 * s, C.shade);
+
+    // jacket / torso
+    this.block(cx - 3.6 * s, shoulderY, 7.2 * s, 9.5 * s, C.base, C.hi, C.shade);
+    this.px(cx - 0.4 * s, shoulderY + 1 * s, 0.8 * s, 7.5 * s, C.shade);     // zipper
+    this.px(cx - 3.2 * s, shoulderY + 0.4 * s, 1.3 * s, 3 * s, C.hi);        // lapel highlight
+
+    // head + face
+    this.block(cx - headR, headCY - headR, headR * 2, headR * 2, C.base, C.hi, C.shade);
+    this.px(cx - headR, headCY - headR - 1 * s, headR * 2, 1.7 * s, C.shade); // beanie/hair
+    this.px(cx - headR + 0.5 * s, headCY + 0.2 * s, headR * 2 - 1 * s, headR * 0.9, "hsl(288,42%,28%)"); // face shadow
+
+    // headphones (cups + band)
+    this.px(cx - headR - 1.2 * s, headCY - 0.6 * s, 1.5 * s, 3 * s, "#ece7f7");
+    this.px(cx + headR - 0.3 * s, headCY - 0.6 * s, 1.5 * s, 3 * s, "#ece7f7");
+    this.px(cx - headR - 1.0 * s, headCY - headR - 0.6 * s, headR * 2 + 1.8 * s, 1 * s, "#cfc7e6");
+
+    // arms reaching down onto the decks
+    const scratch = Math.sin(t * 14) * k * 2.5 * s;
+    const handY = boothTopY - 1.5 * s;
+    this.arm(cx - 3 * s, shoulderY + 1.5 * s, cx - 9.5 * s + scratch, handY, s, C.base, C.shade);
+    this.arm(cx + 3 * s, shoulderY + 1.5 * s, cx + 9.5 * s, handY - k * 2 * s, s, C.base, C.shade);
+    this.px(cx - 10.2 * s + scratch, handY - 0.6 * s, 1.8 * s, 1.4 * s, C.hi); // hands (lit)
+    this.px(cx + 8.6 * s, handY - 0.6 * s - k * 2 * s, 1.8 * s, 1.4 * s, C.hi);
+
+    // spotlight rim light on crown + shoulders
+    this.px(cx - headR, headCY - headR, headR * 2, 0.8 * s, "hsl(190,85%,72%)");
+    this.px(cx - 3.6 * s, shoulderY, 7.2 * s, 0.8 * s, "hsl(312,82%,68%)");
+  }
+
+  floorGlow(y, hue, k, energy) {
+    const glow = k * 0.55 + energy * 0.45;
+    const grd = this.g.createLinearGradient(0, y, 0, this.h);
+    grd.addColorStop(0, `hsla(${hue},82%,${13 + glow * 30}%,0.95)`);
+    grd.addColorStop(1, "#04030a");
+    this.g.fillStyle = grd;
+    this.g.fillRect(0, y, this.w, this.h - y);
+  }
+
+  crowd(floorY, u, t, C, k, energy) {
+    const want = Math.round((10 + Math.min(1, energy * 1.6) * 26) * (this.w / 360));
+    while (this.ravers.length < want)
+      this.ravers.push({
+        x: Math.random(), ph: Math.random() * 6,
+        scale: 0.78 + Math.random() * 0.45,
+        row: Math.random() < 0.5 ? 0 : 1,
+        hueOff: Math.random() * 50 - 25,
+        pose: Math.random(),       // 0..1 → arms-down → both-arms-up
+        hair: Math.floor(Math.random() * 3), // 0 short, 1 bun/ponytail, 2 tall
+      });
+    while (this.ravers.length > want) this.ravers.pop();
+
+    const bobT = t * 6;
+    for (const r of [...this.ravers].sort((a, b) => a.row - b.row)) {
+      const depth = r.row === 0 ? 0.8 : 1;
+      const x = Math.round(r.x * this.w);
+      const s = u * r.scale * depth;
+      const fy = floorY - (r.row === 0 ? 4 * u : 0);
+      const bob = Math.abs(Math.sin(bobT + r.ph)) * (1.4 * u + k * 6 * u);
+      this.raver(x, fy, s, r, bob, k);
+    }
+  }
+
+  // a crafted 16-bit dancer silhouette: shaped body + mid-tone + neon rim + pose
+  raver(x, fy, s, r, bob, k) {
+    const body = C => C; // noop, keep linter calm
+    const dark = `hsl(${(286 + r.hueOff) % 360},34%,7%)`;     // core silhouette
+    const mid = `hsl(${(290 + r.hueOff) % 360},40%,13%)`;     // subtle interior form
+    const rimH = (310 + r.hueOff + 360) % 360;
+    const rim = `hsl(${rimH},82%,${58 + k * 16}%)`;            // neon edge light
+    const rimSoft = `hsl(${rimH},70%,${40 + k * 12}%)`;
+
+    const top = fy - bob;            // shoulder line reference grows up from feet
+    const hipY = top;                // feet/base
+    const torsoH = 8 * s;
+    const shoulderY = hipY - torsoH;
+    const headR = 1.7 * s;
+    const headCY = shoulderY - headR - 0.4 * s;
+
+    // ---- clean shaped silhouette: shoulders + torso + interior form ----
+    this.px(x - 2.7 * s, shoulderY, 5.4 * s, 2.4 * s, dark);            // shoulders (wide)
+    this.px(x - 2.0 * s, shoulderY + 2.2 * s, 4.0 * s, torsoH - 2 * s, dark); // torso
+    this.px(x - 1.2 * s, shoulderY + 2.6 * s, 2.4 * s, torsoH - 3.4 * s, mid); // interior form
+    // legs split
+    this.px(x - 1.8 * s, hipY - 0.5 * s, 1.4 * s, 1.8 * s, dark);
+    this.px(x + 0.4 * s, hipY - 0.5 * s, 1.4 * s, 1.8 * s, dark);
+
+    // ---- neck + head ----
+    this.px(x - 0.8 * s, shoulderY - 1 * s, 1.6 * s, 1.4 * s, dark);
+    this.px(x - headR, headCY - headR, headR * 2, headR * 2, dark);
+    // hair shapes
+    if (r.hair === 1) this.px(x - 0.7 * s, headCY - headR - 1.3 * s, 1.4 * s, 1.4 * s, dark); // bun
+    if (r.hair === 2) this.px(x - headR, headCY - headR - 1 * s, headR * 2, 1 * s, dark);     // tall
+
+    // ---- arms by pose ----
+    const armC = dark;
+    if (r.pose > 0.55) {
+      // both arms up (hands in the air), swaying
+      const lift = (4.5 + k * 2) * s;
+      const sway = Math.sin(bob * 0.4 + r.ph) * 0.8 * s;
+      this.arm(x - 2.2 * s, shoulderY + 0.5 * s, x - 3 * s + sway, shoulderY - lift, s * 0.85, armC, armC);
+      this.arm(x + 2.2 * s, shoulderY + 0.5 * s, x + 3 * s + sway, shoulderY - lift, s * 0.85, armC, armC);
+      this.px(x - 3.3 * s + sway, shoulderY - lift - 0.6 * s, 1.4 * s, 1.4 * s, rim); // lit hand
+      this.px(x + 2 * s + sway, shoulderY - lift - 0.6 * s, 1.4 * s, 1.4 * s, rim);
+    } else if (r.pose > 0.28) {
+      // one arm raised
+      const lift = (4 + k * 1.5) * s;
+      this.arm(x + 2.2 * s, shoulderY + 0.5 * s, x + 3 * s, shoulderY - lift, s * 0.85, armC, armC);
+      this.px(x + 2.3 * s, shoulderY - lift - 0.6 * s, 1.4 * s, 1.4 * s, rim);
+      this.arm(x - 2.2 * s, shoulderY + 0.5 * s, x - 2.6 * s, shoulderY + 3.5 * s, s * 0.85, armC, armC);
+    } else {
+      // both arms down / on hips
+      this.arm(x - 2.3 * s, shoulderY + 0.5 * s, x - 2.8 * s, shoulderY + 4 * s, s * 0.85, armC, armC);
+      this.arm(x + 2.3 * s, shoulderY + 0.5 * s, x + 2.8 * s, shoulderY + 4 * s, s * 0.85, armC, armC);
+    }
+
+    // ---- neon rim light: head crown, shoulder line, body edge ----
+    this.px(x - headR, headCY - headR, headR * 2, Math.max(1, s), rim);                  // head crown
+    this.px(x - headR, headCY - headR, Math.max(1, s), headR * 1.6, rimSoft);            // head side
+    this.px(x - 2.7 * s, shoulderY, 5.4 * s, Math.max(1, s), rim);                       // shoulder top
+    this.px(x - 2.7 * s, shoulderY, Math.max(1, 0.9 * s), 4.5 * s, rimSoft);             // left body edge
+    this.px(x + 1.8 * s, shoulderY + 2.6 * s, Math.max(1, 0.8 * s), torsoH - 4 * s, rimSoft); // right body edge
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "pixel-rave",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A pixel rave that streams CC-licensed chiptune and makes the crowd & lights react to it. Sibling experiment to Antfarm.",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
+  },
+  "dependencies": {
+    "@types/qrcode": "^1.5.6",
+    "qrcode": "^1.5.4"
+  }
+}

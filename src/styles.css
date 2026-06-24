@@ -1,0 +1,39 @@
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #08060f; color: #d8d4e6;
+  font: 13px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; overflow: hidden; }
+body { height: 100vh; display: flex; }
+
+/* desk scene fills the remaining space; phone sits to the right */
+#stage { position: relative; flex: 1 1 auto; min-width: 0; height: 100%; }
+canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+
+#crt { position: absolute; inset: 0; pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 100% at 50% 42%, transparent 55%, rgba(2,1,6,.7) 100%);
+  mix-blend-mode: multiply; }
+body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, transparent 60%, rgba(2,1,6,.6) 100%); }
+
+#drop { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+  text-align: center; background: rgba(217,70,239,.3); border: 3px dashed #d946ef;
+  color: #fff; font-size: 18px; backdrop-filter: blur(2px); pointer-events: none; }
+#drop small { opacity: .7; font-size: 12px; }
+#stage.dragging #drop { display: flex; }
+
+#toasts { position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; }
+.toast { background: rgba(20,12,30,.92); border: 1px solid #7c3aed; color: #fff;
+  padding: 8px 14px; border-radius: 999px; font-size: 13px; box-shadow: 0 4px 18px rgba(124,58,237,.4);
+  animation: pop .3s ease; }
+@keyframes pop { from { opacity: 0; transform: translateY(-6px) scale(.96); } }
+
+#phone { flex: 0 0 380px; height: 100%; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, #140d22, #0a0712); border-left: 1px solid #221836; padding: 14px; }
+@media (max-width: 760px) { #phone { display: none; } }
+
+/* dev-only progression tester (DEV builds only) */
+.dev-time { position: absolute; bottom: 10px; left: 10px; z-index: 20; font: inherit;
+  background: #1a1530; color: #9fe0c0; border: 1px solid #34294f; border-radius: 6px;
+  padding: 5px 9px; cursor: pointer; opacity: .6; }
+.dev-time:hover { opacity: 1; }

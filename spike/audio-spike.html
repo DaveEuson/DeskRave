@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pixel DJ — Day 1 Audio Spike</title>
+<style>
+  body { margin: 0; background: #0c0816; color: #e7e3f5; font: 14px/1.5 ui-monospace, Consolas, monospace; padding: 20px; }
+  h1 { font-size: 16px; color: #2cf0ff; }
+  .src { border: 1px solid #34294f; border-radius: 10px; padding: 14px; margin: 12px 0; background: #140f22; }
+  .src h2 { margin: 0 0 8px; font-size: 14px; color: #ff4fd8; }
+  button { font: inherit; color: #e7e3f5; background: #221a3c; border: 1px solid #4a3b6e; padding: 8px 12px; border-radius: 7px; cursor: pointer; }
+  button:hover { background: #2c2150; }
+  .bars { display: flex; gap: 10px; align-items: flex-end; height: 70px; margin-top: 10px; }
+  .bar { width: 46px; background: #2a2048; border-radius: 4px 4px 0 0; position: relative; display: flex; align-items: flex-end; justify-content: center; }
+  .bar i { display: block; width: 100%; border-radius: 4px 4px 0 0; }
+  .bar.bass i { background: #f59e0b; } .bar.mid i { background: #34d399; } .bar.treble i { background: #2cf0ff; }
+  .bar span { position: absolute; bottom: -18px; font-size: 11px; opacity: .7; width: 100%; text-align: center; }
+  .beat { width: 46px; height: 46px; border-radius: 50%; background: #2a2048; transition: background 40ms; }
+  .beat.on { background: #ff4fd8; box-shadow: 0 0 18px #ff4fd8; }
+  .note { font-size: 12px; opacity: .75; margin-top: 6px; }
+  code { color: #f59e0b; }
+  #detect { white-space: pre-wrap; color: #9fe0c0; }
+  .ok { color: #34d399; } .warn { color: #f59e0b; } .bad { color: #ff6b8a; }
+</style>
+</head>
+<body>
+<h1>Pixel DJ — Day 1 Audio Reactivity Spike</h1>
+<p class="note">Proves: <code>&lt;audio crossorigin&gt; / MediaStream → AnalyserNode → bass/mid/treble/beat</code> across every source type the design depends on.</p>
+
+<div id="detect">feature detection…</div>
+
+<div class="src">
+  <h2>1 · Local file (MP3/WAV/FLAC/…)</h2>
+  <input type="file" id="file" accept="audio/*,.mp3,.wav,.aiff,.flac,.m4a,.ogg" />
+  <div class="note">Real audio, no CORS. Already proven in <code>AudioStream.ts</code>.</div>
+</div>
+
+<div class="src">
+  <h2>2 · CC station (archive.org, CORS-enabled)</h2>
+  <button id="cc">▶ Play CC track through the analyser</button>
+  <div class="note">archive.org sends <code>Access-Control-Allow-Origin: *</code> → analyser can read it.</div>
+</div>
+
+<div class="src">
+  <h2>3 · Tab / system audio capture — <code>getDisplayMedia({audio:true})</code></h2>
+  <button id="tab">🎧 Capture a tab's audio</button>
+  <div class="note">Pick a tab and <b>check "share tab audio"</b>. This is the "react to YouTube/anything" path. Desktop Chromium only.</div>
+</div>
+
+<h2 style="font-size:14px">Live readout</h2>
+<div class="bars">
+  <div class="bar bass"><i id="bBass"></i><span>bass</span></div>
+  <div class="bar mid"><i id="bMid"></i><span>mid</span></div>
+  <div class="bar treble"><i id="bTreble"></i><span>treble</span></div>
+  <div class="beat" id="beatDot" style="margin-left:18px"></div>
+</div>
+<p class="note">Current source: <b id="srcName">none</b> · bpm est: <b id="bpm">—</b></p>
+
+<script>
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+const analyser = ctx.createAnalyser();
+analyser.fftSize = 1024;
+analyser.smoothingTimeConstant = 0.8;
+const freq = new Uint8Array(analyser.frequencyBinCount);
+let bassAvg = 0, lastBeat = 0, beatTimes = [];
+
+function bands() {
+  analyser.getByteFrequencyData(freq);
+  const n = freq.length;
+  const avg = (lo, hi) => { let s = 0; for (let i = lo; i < hi; i++) s += freq[i]; return s / (hi - lo) / 255; };
+  const bass = avg(0, Math.max(1, n * 0.08 | 0));
+  const mid = avg(n * 0.08 | 0, n * 0.4 | 0);
+  const treble = avg(n * 0.4 | 0, n);
+  const level = (bass + mid + treble) / 3;
+  bassAvg = bassAvg * 0.95 + bass * 0.05;
+  const now = performance.now();
+  let beat = false;
+  if (bass > bassAvg * 1.3 && bass > 0.4 && now - lastBeat > 220) {
+    beat = true; lastBeat = now;
+    beatTimes.push(now); if (beatTimes.length > 8) beatTimes.shift();
+  }
+  return { bass, mid, treble, level, beat };
+}
+
+function estBpm() {
+  if (beatTimes.length < 4) return null;
+  let d = 0; for (let i = 1; i < beatTimes.length; i++) d += beatTimes[i] - beatTimes[i-1];
+  return Math.round(60000 / (d / (beatTimes.length - 1)));
+}
+
+let raf = 0;
+function loop() {
+  raf = requestAnimationFrame(loop);
+  const b = bands();
+  document.getElementById('bBass').style.height = (b.bass*70|0)+'px';
+  document.getElementById('bMid').style.height = (b.mid*70|0)+'px';
+  document.getElementById('bTreble').style.height = (b.treble*70|0)+'px';
+  document.getElementById('beatDot').className = 'beat' + (b.beat ? ' on' : '');
+  const bpm = estBpm(); if (bpm) document.getElementById('bpm').textContent = bpm;
+}
+
+async function attach(node, name) {
+  if (ctx.state === 'suspended') await ctx.resume();
+  try { analyser.disconnect(); } catch {}
+  node.connect(analyser);
+  document.getElementById('srcName').textContent = name;
+  beatTimes = [];
+  if (!raf) loop();
+}
+
+// 1 · local file
+document.getElementById('file').onchange = (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const el = new Audio(URL.createObjectURL(f)); el.loop = true;
+  el.play();
+  attach(ctx.createMediaElementSource(el), 'local: ' + f.name);
+};
+
+// 2 · CC station
+document.getElementById('cc').onclick = () => {
+  const el = new Audio('https://archive.org/download/mus-dubious-dream/Dubious%20Dream.mp3');
+  el.crossOrigin = 'anonymous'; el.loop = true; el.play();
+  attach(ctx.createMediaElementSource(el), 'CC: Dubious Dream');
+};
+
+// 3 · tab/system capture
+document.getElementById('tab').onclick = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    const aud = stream.getAudioTracks();
+    if (!aud.length) { document.getElementById('srcName').textContent = '⚠ no audio shared — re-pick and tick "share tab audio"'; stream.getTracks().forEach(t=>t.stop()); return; }
+    stream.getVideoTracks().forEach(t => t.stop()); // we only want audio
+    attach(ctx.createMediaStreamSource(stream), 'tab capture');
+  } catch (err) { document.getElementById('srcName').textContent = '⚠ ' + err.name + ': ' + err.message; }
+};
+
+// ---- headless self-test: proves MediaStream → AnalyserNode → FFT without a permission prompt ----
+// Routes an oscillator through a real MediaStream (same node type getDisplayMedia yields) and
+// checks the analyser reports energy in the right band.
+window.__spikeSelfTest = async function () {
+  const detect = {
+    AudioContext: typeof (window.AudioContext || window.webkitAudioContext) === 'function',
+    getDisplayMedia: typeof navigator.mediaDevices?.getDisplayMedia === 'function',
+    createMediaStreamSource: typeof ctx.createMediaStreamSource === 'function',
+    createMediaElementSource: typeof ctx.createMediaElementSource === 'function',
+  };
+  async function probe(hz) {
+    const c = new (window.AudioContext || window.webkitAudioContext)();
+    if (c.state === 'suspended') { try { await c.resume(); } catch {} }
+    const osc = c.createOscillator(); osc.type = 'sine'; osc.frequency.value = hz;
+    const g = c.createGain(); g.gain.value = 0.6;
+    const dest = c.createMediaStreamDestination();
+    osc.connect(g).connect(dest);
+    osc.start();
+    const src = c.createMediaStreamSource(dest.stream); // ← the getDisplayMedia code path
+    const an = c.createAnalyser(); an.fftSize = 1024;
+    src.connect(an);
+    await new Promise(r => setTimeout(r, 250));
+    const f = new Uint8Array(an.frequencyBinCount);
+    an.getByteFrequencyData(f);
+    const n = f.length;
+    const band = (lo, hi) => { let s = 0; for (let i = lo|0; i < (hi|0); i++) s += f[i]; return +(s / (hi - lo) / 255).toFixed(3); };
+    const out = { state: c.state, audioTracks: dest.stream.getAudioTracks().length, bass: band(0, n*0.08), mid: band(n*0.08, n*0.4), treble: band(n*0.4, n) };
+    osc.stop(); await c.close();
+    return out;
+  }
+  const low = await probe(120);    // → bass band
+  const mid = await probe(3000);   // → mid band
+  const high = await probe(14000); // → treble band (band split puts treble ≳ 9.5 kHz)
+  return { detect, low, mid, high,
+    verdict: {
+      streamPipelineWorks: (low.bass > 0.01 && high.treble > 0.005),
+      bandsSeparateCleanly: (low.bass > low.mid && low.bass > low.treble)
+        && (mid.mid >= mid.bass && mid.mid >= mid.treble)
+        && (high.treble > high.bass && high.treble > high.mid),
+    } };
+};
+
+// reflect feature detection on screen immediately
+(() => {
+  const has = (b) => b ? '<span class="ok">yes</span>' : '<span class="bad">no</span>';
+  const gdm = typeof navigator.mediaDevices?.getDisplayMedia === 'function';
+  document.getElementById('detect').innerHTML =
+    `AudioContext: ${has(true)}   ·   createMediaElementSource: ${has(true)}   ·   createMediaStreamSource: ${has(typeof ctx.createMediaStreamSource==='function')}\n` +
+    `getDisplayMedia (tab capture): ${has(gdm)}${gdm ? '' : ' <span class="warn">(Firefox/Safari lack tab-audio)</span>'}`;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #07050d; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  * { box-sizing: border-box; }
+  @keyframes neonflicker { 0%,100%{opacity:1;} 92%{opacity:1;} 93%{opacity:.4;} 94%{opacity:1;} 96%{opacity:.7;} 97%{opacity:1;} }
+  @keyframes eqbar { 0%,100%{ transform: scaleY(0.35);} 50%{ transform: scaleY(1);} }
+  @keyframes dotpulse { 0%,100%{ opacity:1; box-shadow:0 0 6px #34d399;} 50%{ opacity:.45; box-shadow:0 0 2px #34d399;} }
+  @keyframes toastpop { 0%{ transform: translate(-50%,14px); opacity:0;} 12%{ transform: translate(-50%,0); opacity:1;} 82%{ opacity:1;} 100%{ opacity:0;} }
+  .scr::-webkit-scrollbar { width: 0; }
+</style>
+</helmet>
+<div style="position: relative; min-height: 100vh; width: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 30px; padding: 26px; background: radial-gradient(130% 100% at 50% 0%, #160b26 0%, #07050d 68%);">
+
+  <!-- ===== SCENE ===== -->
+  <div style="position: relative; width: min(52vw, 700px); min-width: 360px; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; box-shadow: 0 40px 110px -28px rgba(150,40,180,0.55), 0 0 0 1px rgba(170,110,210,0.14);">
+    <canvas ref="{{ canvasRef }}" style="position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; display: block;"></canvas>
+
+    <sc-if value="{{ showClock }}" hint-placeholder-val="{{ true }}">
+      <div style="position: absolute; top: 14px; right: 17px; z-index: 3; text-align: right; font-family: 'Press Start 2P', monospace; pointer-events: none;">
+        <div style="font-size: clamp(9px, 1.35vw, 17px); color: #e6f8ff; letter-spacing: 1px; text-shadow: 0 0 6px #22d3ee, 0 0 14px #0891b2;">{{ clockTime }}</div>
+        <sc-if value="{{ showDate }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size: clamp(5px, 0.66vw, 8px); color: #9bd6e8; letter-spacing: 1px; margin-top: 6px;">{{ clockDate }}</div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ dayMode }}" hint-placeholder-val="{{ true }}">
+      <div style="position: absolute; top: 15%; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: 'Press Start 2P', monospace; text-align: center; white-space: nowrap; animation: neonflicker 5s infinite; z-index: 3;">
+        <div style="font-size: clamp(5px, 0.72vw, 9px); letter-spacing: 3px; color: #9beaff; text-shadow: 0 0 4px #22d3ee, 0 0 10px #0891b2;">{{ kicker }}</div>
+        <div style="font-size: clamp(9px, 1.7vw, 21px); letter-spacing: 3px; color: #ffe3fa; text-shadow: 0 0 5px #ff4fd8, 0 0 14px #c026d3, 0 0 26px #7c1fa8;">{{ djName }}</div>
+      </div>
+    </sc-if>
+    <div style="position: absolute; top: 29%; left: 50%; transform: translateX(-50%); z-index: 3;">
+      <sc-if value="{{ showChip }}" hint-placeholder-val="{{ false }}">
+        <div style="font-family: ui-monospace, monospace; font-size: clamp(7px, 0.9vw, 12px); letter-spacing: 1px; color: #ffd1f3; background: rgba(20,8,30,0.55); border: 1px solid rgba(255,120,220,0.35); padding: 3px 10px; border-radius: 999px; white-space: nowrap; text-shadow: 0 0 8px rgba(255,90,210,0.6);">{{ chipText }}</div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ hype }}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; top: 40%; left: 50%; transform: translateX(-50%); z-index: 5; font-family: 'Press Start 2P', monospace; font-size: clamp(7px, 1.05vw, 14px); letter-spacing: 2px; color: #fff; white-space: nowrap; padding: 6px 14px; border-radius: 999px; background: rgba(217,70,239,0.28); border: 1px solid rgba(255,140,230,0.6); text-shadow: 0 0 10px rgba(255,90,210,0.9); animation: toastpop 1.6s ease;">🔥 THE CROWD GOES WILD</div>
+    </sc-if>
+    <sc-if value="{{ scanlines }}" hint-placeholder-val="{{ true }}">
+      <div style="position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.32) 0px, rgba(0,0,0,0.32) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 3px); mix-blend-mode: multiply; opacity: 0.5; z-index: 4;"></div>
+    </sc-if>
+    <div style="position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 120px 30px rgba(5,3,12,0.9); z-index: 4;"></div>
+  </div>
+
+  <!-- ===== PHONE ===== -->
+  <div style="position: relative; width: clamp(280px, 23vw, 332px); aspect-ratio: 9 / 19.2; border-radius: 46px; padding: 13px; background: linear-gradient(160deg, #1a1426, #0a0712); box-shadow: 0 30px 70px -20px rgba(0,0,0,0.8), 0 0 0 2px rgba(120,90,160,0.25), inset 0 0 0 1px rgba(255,255,255,0.04); flex: 0 0 auto;">
+    <div style="position: relative; width: 100%; height: 100%; border-radius: 34px; overflow: hidden; background: linear-gradient(180deg, #120c1e 0%, #0c0816 100%); color: #ece8f6; display: flex; flex-direction: column;">
+      <div style="position: absolute; top: 9px; left: 50%; transform: translateX(-50%); width: 34%; height: 22px; background: #07050d; border-radius: 0 0 14px 14px; z-index: 6;"></div>
+
+      <!-- toast -->
+      <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+        <div style="position: absolute; top: 64px; left: 50%; z-index: 7; animation: toastpop 2.6s ease forwards; font-size: 12px; font-weight: 700; color: #fff; background: linear-gradient(135deg,#22c55e,#0891b2); padding: 9px 16px; border-radius: 999px; box-shadow: 0 8px 24px -6px rgba(34,197,94,0.7); white-space: nowrap;">{{ toast }}</div>
+      </sc-if>
+
+      <!-- options sheet -->
+      <sc-if value="{{ optionsOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeOptions }}" style="position: absolute; inset: 0; z-index: 8; background: rgba(5,3,10,0.6);"></div>
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; z-index: 9; background: #15101f; border-radius: 22px 22px 0 0; padding: 16px 20px calc(22px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(190,120,230,0.22); box-shadow: 0 -16px 40px -10px rgba(0,0,0,0.6);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="font-size: 14px; font-weight: 800; color: #fff;">Options</div>
+            <div onClick="{{ closeOptions }}" style="cursor: pointer; font-size: 17px; color: #9d92ba;">✕</div>
+          </div>
+          <sc-for list="{{ options }}" as="o" hint-placeholder-count="4">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 2px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <span style="font-size: 13px; color: #ece8f6;">{{ o.label }}</span>
+              <div onClick="{{ o.toggle }}" style="width: 42px; height: 24px; border-radius: 999px; background: {{ o.track }}; position: relative; cursor: pointer; transition: background 0.15s;">
+                <div style="position: absolute; top: 3px; left: {{ o.knobX }}; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left 0.15s;"></div>
+              </div>
+            </div>
+          </sc-for>
+          <div onClick="{{ savePostcard }}" style="margin-top: 12px; text-align: center; font-size: 13px; font-weight: 700; color: #fff; background: linear-gradient(135deg,#d946ef,#6d28d9); padding: 12px; border-radius: 12px; cursor: pointer;">📸 Save postcard</div>
+        </div>
+      </sc-if>
+
+      <!-- header -->
+      <div style="flex: 0 0 auto; padding: 14px 18px 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; color: #cfc7e6; margin-bottom: 10px;">
+          <span>9:41</span><span style="letter-spacing: 2px;">●●● ▼ ▮</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="font-family: 'Press Start 2P', monospace; font-size: 10px; letter-spacing: 1px; color: #ffd8f5; text-shadow: 0 0 8px rgba(217,70,239,0.6); line-height: 1.5;">DESK CLUB</div>
+          <div style="display: flex; align-items: center; gap: 9px;">
+            <div onClick="{{ openOptions }}" style="cursor: pointer; font-size: 16px; color: #9d92ba; line-height: 1;">⚙</div>
+            <div style="text-align: right;">
+              <div style="font-size: 10px; color: #c39be8; font-weight: 700; letter-spacing: 0.5px;">DJ LV {{ level }}</div>
+              <div style="width: 64px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.1); overflow: hidden; margin-top: 3px;"><div style="height: 100%; width: {{ xpPct }}; background: linear-gradient(90deg,#d946ef,#22d3ee); border-radius: 3px;"></div></div>
+            </div>
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: #34d399; animation: dotpulse 2s infinite;"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="scr" style="flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 4px 18px 18px;">
+
+        <!-- ===== SEND TAB ===== -->
+        <sc-if value="{{ tabSend }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <sc-if value="{{ hasRequest }}" hint-placeholder-val="{{ false }}">
+              <div style="border-radius: 14px; padding: 12px 14px; background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(217,70,239,0.12)); border: 1px solid rgba(245,180,90,0.4); display: flex; align-items: center; gap: 10px;">
+                <div style="font-size: 20px;">🙋</div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 10px; letter-spacing: 1px; color: #f5c98a; text-transform: uppercase;">Crowd request</div>
+                  <div style="font-size: 14px; font-weight: 800; color: #fff; margin-top: 2px;">{{ requestLabel }}</div>
+                </div>
+                <div onClick="{{ honorRequest }}" style="cursor: pointer; font-size: 12px; font-weight: 700; color: #06281e; background: #f5b34a; padding: 8px 12px; border-radius: 10px;">Honor</div>
+                <div onClick="{{ dismissRequest }}" style="cursor: pointer; font-size: 16px; color: #b6a9d4; padding: 4px;">✕</div>
+              </div>
+            </sc-if>
+            <div style="position: relative; border-radius: 16px; padding: 14px; background: linear-gradient(135deg, rgba(217,70,239,0.14), rgba(34,211,238,0.08)); border: 1px solid rgba(190,120,230,0.22);">
+              <div style="font-size: 10px; letter-spacing: 2px; color: #c39be8; text-transform: uppercase; margin-bottom: 6px;">On the floor</div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="display: flex; align-items: flex-end; gap: 2.5px; height: 26px; width: 30px; flex: 0 0 auto;">
+                  <span style="flex:1; background: linear-gradient(#22d3ee,#d946ef); border-radius: 2px; height: 100%; transform-origin: bottom; animation: eqbar 0.7s ease-in-out infinite;"></span>
+                  <span style="flex:1; background: linear-gradient(#22d3ee,#d946ef); border-radius: 2px; height: 100%; transform-origin: bottom; animation: eqbar 0.9s ease-in-out infinite 0.15s;"></span>
+                  <span style="flex:1; background: linear-gradient(#22d3ee,#d946ef); border-radius: 2px; height: 100%; transform-origin: bottom; animation: eqbar 0.6s ease-in-out infinite 0.05s;"></span>
+                  <span style="flex:1; background: linear-gradient(#22d3ee,#d946ef); border-radius: 2px; height: 100%; transform-origin: bottom; animation: eqbar 0.8s ease-in-out infinite 0.22s;"></span>
+                </div>
+                <div style="min-width: 0;">
+                  <div style="font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ npTitle }}</div>
+                  <div style="font-size: 12px; color: #b6a9d4; margin-top: 2px;">{{ npSub }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: #ece8f6; margin-bottom: 4px;">Send from your phone</div>
+              <div style="font-size: 11px; color: #9d92ba; margin-bottom: 10px;">Pick a clip — the room reacts to it live.</div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                <sc-for list="{{ media }}" as="m" hint-placeholder-count="6">
+                  <div onClick="{{ m.onSelect }}" style="position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; cursor: pointer; background: {{ m.bg }};">
+                    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 38%, rgba(0,0,0,0.6));"></div>
+                    <div style="position: absolute; top: 6px; left: 7px; font-size: 13px; color: rgba(255,255,255,0.92);">{{ m.icon }}</div>
+                    <div style="position: absolute; top: 6px; right: 6px; font-size: 8px; font-weight: 600; color: #fff; background: rgba(0,0,0,0.5); padding: 1px 4px; border-radius: 5px;">{{ m.dur }}</div>
+                    <div style="position: absolute; left: 7px; right: 7px; bottom: 14px; font-size: 9.5px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ m.title }}</div>
+                    <div style="position: absolute; left: 7px; bottom: 5px; font-size: 8px; color: rgba(255,255,255,0.75);">{{ m.genre }}</div>
+                    <sc-if value="{{ m.selected }}" hint-placeholder-val="{{ false }}">
+                      <div style="position: absolute; inset: 0; border: 2.5px solid #2cf0ff; border-radius: 12px; box-shadow: 0 0 14px rgba(44,240,255,0.6) inset, 0 0 10px rgba(44,240,255,0.5);"></div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <div onClick="{{ send }}" style="margin-top: 12px; text-align: center; font-weight: 700; font-size: 14px; padding: 13px; border-radius: 14px; cursor: pointer; color: {{ sendFg }}; background: {{ sendBg }}; box-shadow: {{ sendShadow }};">{{ sendLabel }}</div>
+            </div>
+
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px;">
+                <span style="font-size: 12px; font-weight: 700; color: #ece8f6;">Vibe</span>
+                <span onClick="{{ toggleAuto }}" style="cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; padding: 4px 9px; border-radius: 999px; color: {{ autoFg }}; background: {{ autoBg }}; border: 1px solid {{ autoBd }};">{{ autoLabel }}</span>
+              </div>
+              <div style="display: flex; gap: 7px;">
+                <sc-for list="{{ vibes }}" as="v" hint-placeholder-count="3">
+                  <div onClick="{{ v.on }}" style="flex: 1; text-align: center; padding: 10px 0; border-radius: 11px; cursor: pointer; font-size: 12.5px; font-weight: 700; color: {{ v.fg }}; background: {{ v.bg }}; border: 1px solid {{ v.bd }};">{{ v.label }}</div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: #ece8f6; margin-bottom: 8px;">Club lights</div>
+              <div style="display: flex; gap: 11px;">
+                <sc-for list="{{ palettes }}" as="p" hint-placeholder-count="5">
+                  <div onClick="{{ p.on }}" style="width: 34px; height: 34px; border-radius: 50%; cursor: pointer; background: {{ p.sw }}; box-shadow: {{ p.glow }}; border: {{ p.ring }};"></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ===== DJ TAB ===== -->
+        <sc-if value="{{ tabDj }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="font-size: 13px; font-weight: 800; letter-spacing: 0.3px; color: #fff;">Your DJ</div>
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: #ece8f6; margin-bottom: 7px;">Name</div>
+              <input value="{{ djName }}" onInput="{{ setName }}" maxLength="16" style="width: 100%; padding: 11px 13px; border-radius: 12px; border: 1px solid rgba(190,120,230,0.28); background: rgba(255,255,255,0.04); color: #fff; font-size: 15px; font-family: 'Press Start 2P', monospace; letter-spacing: 1px; outline: none;" />
+            </div>
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: #ece8f6; margin-bottom: 9px;">Avatar</div>
+              <div style="display: grid; grid-template-columns: repeat(2,1fr); gap: 9px;">
+                <sc-for list="{{ avatars }}" as="a" hint-placeholder-count="4">
+                  <div onClick="{{ a.on }}" style="position: relative; border-radius: 14px; padding: 12px 10px; cursor: {{ a.cursor }}; background: {{ a.bg }}; border: 1px solid {{ a.bd }}; opacity: {{ a.op }}; display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; background: {{ a.swatch }}; box-shadow: inset 0 -6px 0 rgba(0,0,0,0.25);"></div>
+                    <div style="min-width:0;">
+                      <div style="font-size: 12px; font-weight: 700; color: #fff;">{{ a.name }}</div>
+                      <div style="font-size: 10px; color: #a99cc8;">{{ a.note }}</div>
+                    </div>
+                    <sc-if value="{{ a.active }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 8px; right: 9px; font-size: 11px; color: #2cf0ff;">●</div></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: #ece8f6; margin-bottom: 8px;">Jacket</div>
+              <div style="display: flex; gap: 11px;">
+                <sc-for list="{{ jackets }}" as="j" hint-placeholder-count="5">
+                  <div onClick="{{ j.on }}" style="width: 32px; height: 32px; border-radius: 9px; cursor: pointer; background: {{ j.sw }}; border: {{ j.ring }};"></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ===== STAGE TAB ===== -->
+        <sc-if value="{{ tabStage }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="font-size: 13px; font-weight: 800; color: #fff;">Where you're playing</div>
+            <div style="display: flex; gap: 8px;">
+              <div onClick="{{ setDay }}" style="flex:1; text-align:center; padding: 10px 0; border-radius: 11px; cursor: pointer; font-size: 12px; font-weight: 700; color: {{ dayFg }}; background: {{ dayBg }}; border: 1px solid {{ dayBd }};">☀ Club night</div>
+              <div onClick="{{ setNight }}" style="flex:1; text-align:center; padding: 10px 0; border-radius: 11px; cursor: pointer; font-size: 12px; font-weight: 700; color: {{ nightFg }}; background: {{ nightBg }}; border: 1px solid {{ nightBd }};">☾ After hours</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 9px;">
+              <sc-for list="{{ venues }}" as="vn" hint-placeholder-count="4">
+                <div onClick="{{ vn.on }}" style="position: relative; border-radius: 14px; padding: 13px 14px; cursor: {{ vn.cursor }}; background: {{ vn.bg }}; border: 1px solid {{ vn.bd }}; opacity: {{ vn.op }}; overflow: hidden;">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                      <div style="font-size: 13px; font-weight: 700; color: #fff;">{{ vn.name }}</div>
+                      <div style="font-size: 10.5px; color: #a99cc8; margin-top: 2px;">{{ vn.sub }}</div>
+                    </div>
+                    <div style="font-size: 11px; font-weight: 700; color: {{ vn.tagFg }};">{{ vn.tag }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: #ece8f6; margin: 4px 0 8px;">Weather</div>
+              <div style="display: flex; gap: 7px;">
+                <sc-for list="{{ weather }}" as="wx" hint-placeholder-count="4">
+                  <div onClick="{{ wx.on }}" style="flex: 1; text-align: center; padding: 9px 0; border-radius: 10px; cursor: pointer; font-size: 11.5px; font-weight: 700; color: {{ wx.fg }}; background: {{ wx.bg }}; border: 1px solid {{ wx.bd }};">{{ wx.label }}</div>
+                </sc-for>
+              </div>
+              <div style="font-size: 10px; color: #8d82aa; margin-top: 7px;">Shows at outdoor venues (backyard &amp; festivals).</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ===== PROGRESS TAB ===== -->
+        <sc-if value="{{ tabProg }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="border-radius: 16px; padding: 16px; background: linear-gradient(135deg, rgba(217,70,239,0.16), rgba(34,211,238,0.1)); border: 1px solid rgba(190,120,230,0.25);">
+              <div style="font-size: 11px; letter-spacing: 2px; color: #c39be8; text-transform: uppercase;">Resident DJ</div>
+              <div style="font-family: 'Press Start 2P', monospace; font-size: 18px; color: #fff; margin: 8px 0 12px; text-shadow: 0 0 10px rgba(217,70,239,0.6);">LEVEL {{ level }}</div>
+              <div style="width: 100%; height: 9px; border-radius: 5px; background: rgba(255,255,255,0.1); overflow: hidden;"><div style="height: 100%; width: {{ xpPct }}; background: linear-gradient(90deg,#d946ef,#22d3ee);"></div></div>
+              <div style="font-size: 11px; color: #b6a9d4; margin-top: 8px;">{{ xpNote }}</div>
+            </div>
+            <div style="display: flex; gap: 9px;">
+              <div style="flex: 1; border-radius: 12px; padding: 11px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(190,120,230,0.16);">
+                <div style="font-size: 10px; letter-spacing: 1px; color: #a99cc8; text-transform: uppercase;">Peak crowd</div>
+                <div style="font-family: 'Press Start 2P', monospace; font-size: 15px; color: #2cf0ff; margin-top: 7px;">{{ peakCrowd }}</div>
+              </div>
+              <div style="flex: 1; border-radius: 12px; padding: 11px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(190,120,230,0.16); min-width: 0;">
+                <div style="font-size: 10px; letter-spacing: 1px; color: #a99cc8; text-transform: uppercase;">Last played</div>
+                <sc-if value="{{ hasHistory }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size: 13px; font-weight: 700; color: #fff; margin-top: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ lastTrack }}</div>
+                </sc-if>
+                <sc-if value="{{ noHistory }}" hint-placeholder-val="{{ true }}">
+                  <div style="font-size: 13px; color: #8d82aa; margin-top: 7px;">—</div>
+                </sc-if>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: #ece8f6; margin-bottom: 9px;">Trophy shelf</div>
+              <div style="display: grid; grid-template-columns: repeat(4,1fr); gap: 8px;">
+                <sc-for list="{{ trophies }}" as="tr" hint-placeholder-count="8">
+                  <div style="aspect-ratio: 1; border-radius: 12px; background: {{ tr.bg }}; border: 1px solid {{ tr.bd }}; opacity: {{ tr.op }}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center;">
+                    <div style="font-size: 18px; filter: {{ tr.filter }};">{{ tr.icon }}</div>
+                    <div style="font-size: 7.5px; font-weight: 600; color: #cfc7e6; line-height: 1.1; padding: 0 2px;">{{ tr.name }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: #ece8f6; margin-bottom: 9px;">Unlocks</div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <sc-for list="{{ unlocks }}" as="ul" hint-placeholder-count="6">
+                  <div style="display: flex; align-items: center; gap: 11px; padding: 11px 13px; border-radius: 12px; background: {{ ul.bg }}; border: 1px solid {{ ul.bd }}; opacity: {{ ul.op }};">
+                    <div style="font-size: 15px; width: 18px; text-align: center;">{{ ul.mark }}</div>
+                    <div style="flex: 1;">
+                      <div style="font-size: 12.5px; font-weight: 700; color: #fff;">{{ ul.name }}</div>
+                      <div style="font-size: 10px; color: #a99cc8;">{{ ul.kind }}</div>
+                    </div>
+                    <div style="font-size: 11px; font-weight: 700; color: {{ ul.tagFg }};">{{ ul.tag }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+
+      <!-- TAB BAR -->
+      <div style="flex: 0 0 auto; display: flex; border-top: 1px solid rgba(255,255,255,0.07); background: rgba(10,7,18,0.85); padding: 9px 8px calc(9px + env(safe-area-inset-bottom));">
+        <sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="4">
+          <div onClick="{{ tb.on }}" style="flex: 1; text-align: center; cursor: pointer; padding: 5px 0;">
+            <div style="font-size: 15px; line-height: 1; color: {{ tb.color }};">{{ tb.icon }}</div>
+            <div style="font-size: 9.5px; font-weight: 600; margin-top: 4px; color: {{ tb.color }};">{{ tb.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1320,&quot;height&quot;:760},&quot;djName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;DJ NOVA&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;startVibe&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;chill&quot;,&quot;groove&quot;,&quot;rave&quot;],&quot;default&quot;:&quot;rave&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const VIBE = {
+  chill:  { crowd: 0.42, motion: 0.6, base: 0.30, bpm: 96 },
+  groove: { crowd: 0.80, motion: 1.0, base: 0.55, bpm: 116 },
+  rave:   { crowd: 1.0,  motion: 1.4, base: 0.82, bpm: 128 },
+};
+// which dance moves belong to each vibe (weighted by repetition)
+const MOVES = {
+  chill:  ["sway", "nod", "sway", "twostep"],
+  groove: ["nod", "twostep", "clap", "twostep", "pump"],
+  rave:   ["jump", "wave", "pump", "jump", "wave"],
+};
+const VENUE = {
+  backyard:  { name: "Backyard Jam",       sub: "Where every DJ starts",   lvl: 1,  rig: "string", beams: 1, crowd: 0.45, sky: "warm" },
+  house:     { name: "House Party",        sub: "Pack the dorm basement",  lvl: 2,  rig: "bars",   beams: 3, crowd: 0.7,  sky: "house" },
+  club:      { name: "Neon Club",          sub: "Your resident night",     lvl: 4,  rig: "truss",  beams: 5, crowd: 1.0,  sky: "club" },
+  festDay:   { name: "Festival · Opener",  sub: "Afternoon main stage",    lvl: 6,  rig: "mega",   beams: 6, crowd: 1.5,  sky: "day",    totems: true },
+  festDusk:  { name: "Festival · Sunset",  sub: "Golden-hour set",         lvl: 8,  rig: "mega",   beams: 7, crowd: 1.8,  sky: "sunset", totems: true },
+  festNight: { name: "Festival · Headliner", sub: "Lasers · 20k · fireworks", lvl: 11, rig: "mega", beams: 8, crowd: 2.3, sky: "fest", totems: true, laser: true, jumbo: true, fireworks: true },
+};
+const AVATARS = {
+  beanie: { name: "Beanie",     note: "Classic head-nodder", lvl: 1 },
+  cap:    { name: "Snapback",   note: "Flat-brim flair",     lvl: 1 },
+  visor:  { name: "Cyber Visor",note: "Glowing LED visor",   lvl: 3 },
+  afro:   { name: "Afro",       note: "Big hair, big energy", lvl: 5 },
+};
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.canvasRef = React.createRef();
+    this.raf = 0;
+    this.beam = 0;
+    this.sentT = -99;
+    this.toastTimer = 0;
+    this.mediaItems = [
+      { title: "City Lights",  dur: "1:12", kind: "video", hue: 205, genre: "Synthwave", vibe: "groove" },
+      { title: "Sunset Drive", dur: "0:42", kind: "video", hue: 18,  genre: "Lo-fi",     vibe: "chill" },
+      { title: "Bass Test",    dur: "2:30", kind: "audio", hue: 300, genre: "Bass",      vibe: "rave" },
+      { title: "Beach Loop",   dur: "0:15", kind: "video", hue: 162, genre: "Tropical",  vibe: "chill" },
+      { title: "Mixtape 03",   dur: "4:05", kind: "audio", hue: 268, genre: "House",     vibe: "groove" },
+      { title: "Fireworks",    dur: "0:30", kind: "video", hue: 332, genre: "Hardstyle", vibe: "rave" },
+    ];
+    this.jacketHues = [288, 200, 36, 150, 262];
+    this.peakCrowd = 0;
+    this.state = {
+      djName: (props && props.djName) || "DJ NOVA",
+      vibe: (props && props.startVibe) || "rave",
+      auto: false,
+      hue: 288,
+      selected: null,
+      nowPlaying: null,
+      mediaHue: 288,
+      venue: "club",
+      mode: "day",
+      dj: "beanie",
+      jacket: 288,
+      tab: "send",
+      level: 4,
+      xp: 0.55,
+      toast: "",
+      weather: "clear",
+      history: [],
+      sound: false,
+      request: null,
+      optionsOpen: false,
+      showClock: true,
+      showDate: true,
+      clock24: false,
+      scanlines: true,
+      tick: 0,
+    };
+  }
+
+  componentDidMount() {
+    const canvas = this.canvasRef.current;
+    if (!canvas) return;
+    this.g = canvas.getContext("2d");
+    this.glowCanvas = document.createElement("canvas");
+    this.glow = this.glowCanvas.getContext("2d");
+    this.ravers = [];
+    this.t0 = performance.now();
+    this.setup(canvas);
+    const ro = new ResizeObserver(() => this.setup(canvas));
+    ro.observe(canvas);
+    this.ro = ro;
+    const loop = () => {
+      this.render((performance.now() - this.t0) / 1000);
+      this.raf = requestAnimationFrame(loop);
+    };
+    this.raf = requestAnimationFrame(loop);
+    this.clockTimer = setInterval(() => { this.maybeRequest(); this.setState({ tick: Date.now() }); }, 1000);
+  }
+  componentWillUnmount() {
+    cancelAnimationFrame(this.raf);
+    if (this.ro) this.ro.disconnect();
+    clearTimeout(this.toastTimer);
+    clearInterval(this.clockTimer);
+  }
+
+  // ---------- helpers ----------
+  unlocked(lvl) { return this.state.level >= lvl; }
+  flash(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => this.setState({ toast: "" }), 2600);
+  }
+  addXp(amount) {
+    let { xp, level } = this.state;
+    xp += amount;
+    let leveled = false;
+    while (xp >= 1 && level < 12) { xp -= 1; level += 1; leveled = true; }
+    if (level >= 12) xp = Math.min(xp, 0.999);
+    this.setState({ xp, level });
+    if (leveled) {
+      this.flash("⭐ Level up — DJ Lv " + level);
+      const newV = Object.entries(VENUE).find(([, v]) => v.lvl === level);
+      const newA = Object.entries(AVATARS).find(([, a]) => a.lvl === level);
+      if (newV) setTimeout(() => this.flash("🔓 Unlocked: " + newV[1].name), 1400);
+      else if (newA) setTimeout(() => this.flash("🔓 Unlocked: " + newA[1].name), 1400);
+    }
+  }
+
+  // ---------- handlers ----------
+  select(i) { this.setState({ selected: i }); }
+  send() {
+    const i = this.state.selected;
+    if (i == null) return;
+    this.ensureAudio();
+    const m = this.mediaItems[i];
+    this.sentT = (performance.now() - this.t0) / 1000;
+    const patch = { nowPlaying: m, mediaHue: m.hue };
+    if (this.state.auto) patch.vibe = m.vibe; // AI classify → set vibe
+    patch.history = [m.title, ...this.state.history.filter((h) => h !== m.title)].slice(0, 6);
+    this.setState(patch);
+    this.addXp(0.5);
+  }
+  setVibe(v) { this.setState({ vibe: v, auto: false }); }
+  toggleAuto() {
+    const auto = !this.state.auto;
+    const patch = { auto };
+    if (auto && this.state.nowPlaying) patch.vibe = this.state.nowPlaying.vibe;
+    this.setState(patch);
+  }
+  setPalette(p) { this.setState({ hue: p.hue }); }
+  setName(e) { this.setState({ djName: (e.target.value || " ").toUpperCase().slice(0, 16) }); }
+  setTab(t) { this.setState({ tab: t }); }
+  setDj(k) { if (this.unlocked(AVATARS[k].lvl)) this.setState({ dj: k }); else this.flash("🔒 Reach Lv " + AVATARS[k].lvl + " to unlock"); }
+  setJacket(h) { this.setState({ jacket: h }); }
+  setVenue(k) { if (this.unlocked(VENUE[k].lvl)) this.setState({ venue: k }); else this.flash("🔒 Reach Lv " + VENUE[k].lvl + " to unlock"); }
+  setMode(m) { this.setState({ mode: m }); }
+  setWeather(w) { this.setState({ weather: w }); }
+  openOptions() { this.setState({ optionsOpen: true }); }
+  closeOptions() { this.setState({ optionsOpen: false }); }
+  toggleOpt(key) { if (key === "sound") this.ensureAudio(); this.setState({ [key]: !this.state[key] }); }
+
+  renderVals() {
+    const s = this.state;
+    const np = s.nowPlaying;
+    const day = s.mode === "day";
+    const media = this.mediaItems.map((m, i) => ({
+      ...m,
+      icon: m.kind === "video" ? "▶" : "♪",
+      selected: s.selected === i,
+      bg: `linear-gradient(140deg, hsl(${m.hue},72%,46%), hsl(${(m.hue + 38) % 360},78%,26%))`,
+      onSelect: () => this.select(i),
+    }));
+    const vibes = ["chill", "groove", "rave"].map((v) => {
+      const active = s.vibe === v;
+      return {
+        label: v.charAt(0).toUpperCase() + v.slice(1), active,
+        fg: active ? "#fff" : "#b6a9d4",
+        bg: active ? "linear-gradient(135deg,#d946ef,#7c3aed)" : "rgba(255,255,255,0.04)",
+        bd: active ? "rgba(255,150,240,0.5)" : "rgba(190,120,230,0.2)",
+        on: () => this.setVibe(v),
+      };
+    });
+    const palDefs = [
+      { hue: 288, sw: "#d946ef" }, { hue: 190, sw: "#22d3ee" }, { hue: 36, sw: "#f59e0b" },
+      { hue: 150, sw: "#34d399" }, { hue: 262, sw: "#8b5cf6" },
+    ];
+    const palettes = palDefs.map((p) => {
+      const active = s.hue === p.hue;
+      return { ...p, glow: active ? `0 0 0 3px rgba(255,255,255,0.9), 0 0 16px ${p.sw}` : `0 0 10px ${p.sw}88`,
+        ring: active ? "2px solid #fff" : "2px solid rgba(255,255,255,0.12)", on: () => this.setPalette(p) };
+    });
+    const avatars = Object.entries(AVATARS).map(([k, a]) => {
+      const open = this.unlocked(a.lvl), active = s.dj === k;
+      return { name: a.name, note: open ? a.note : "Unlocks at Lv " + a.lvl, active,
+        cursor: open ? "pointer" : "not-allowed", op: open ? "1" : "0.5",
+        bg: active ? "rgba(217,70,239,0.16)" : "rgba(255,255,255,0.04)",
+        bd: active ? "rgba(255,150,240,0.5)" : "rgba(190,120,230,0.16)",
+        swatch: `linear-gradient(140deg, hsl(${s.jacket},55%,52%), hsl(${s.jacket},60%,30%))`,
+        on: () => this.setDj(k) };
+    });
+    const jackets = this.jacketHues.map((h) => ({
+      sw: `linear-gradient(140deg, hsl(${h},60%,52%), hsl(${h},65%,30%))`,
+      ring: s.jacket === h ? "2px solid #fff" : "2px solid rgba(255,255,255,0.12)", on: () => this.setJacket(h),
+    }));
+    const venues = Object.entries(VENUE).map(([k, v]) => {
+      const open = this.unlocked(v.lvl), active = s.venue === k;
+      return { name: v.name, sub: open ? v.sub : "Reach Level " + v.lvl, cursor: open ? "pointer" : "not-allowed",
+        op: open ? "1" : "0.55",
+        bg: active ? "rgba(217,70,239,0.16)" : "rgba(255,255,255,0.04)",
+        bd: active ? "rgba(255,150,240,0.5)" : "rgba(190,120,230,0.16)",
+        tag: active ? "PLAYING" : open ? "" : "🔒 LV " + v.lvl, tagFg: active ? "#2cf0ff" : "#8b7fb0",
+        on: () => this.setVenue(k) };
+    });
+    const unlockDefs = [
+      ...Object.values(VENUE).map((v) => ({ name: v.name, kind: "Venue", lvl: v.lvl })),
+      ...Object.values(AVATARS).map((a) => ({ name: a.name, kind: "DJ avatar", lvl: a.lvl })),
+    ].sort((a, b) => a.lvl - b.lvl);
+    const unlocks = unlockDefs.map((u) => {
+      const open = this.unlocked(u.lvl);
+      return { name: u.name, kind: u.kind, mark: open ? "✓" : "🔒", op: open ? "1" : "0.6",
+        bg: open ? "rgba(52,211,153,0.08)" : "rgba(255,255,255,0.03)",
+        bd: open ? "rgba(52,211,153,0.2)" : "rgba(190,120,230,0.12)",
+        tag: open ? "Unlocked" : "Lv " + u.lvl, tagFg: open ? "#5be0a8" : "#8b7fb0" };
+    });
+    const tabs = [
+      { key: "send", icon: "▲", label: "Send" },
+      { key: "dj", icon: "◆", label: "DJ" },
+      { key: "stage", icon: "⌂", label: "Stage" },
+      { key: "prog", icon: "★", label: "Level" },
+    ].map((t) => ({ ...t, color: s.tab === t.key ? "#e879f9" : "#6f6491", on: () => this.setTab(t.key) }));
+
+    // live clock + date
+    const now = new Date();
+    const hh = now.getHours(), mm = String(now.getMinutes()).padStart(2, "0"), ss = String(now.getSeconds()).padStart(2, "0");
+    let clockTime;
+    if (s.clock24) clockTime = String(hh).padStart(2, "0") + ":" + mm + ":" + ss;
+    else { const h12 = hh % 12 || 12; clockTime = h12 + ":" + mm + ":" + ss + " " + (hh < 12 ? "AM" : "PM"); }
+    const WD = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][now.getDay()];
+    const MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][now.getMonth()];
+    const clockDate = WD + " · " + MON + " " + now.getDate();
+    const optDefs = [["showClock", "Desk clock"], ["showDate", "Show date"], ["clock24", "24-hour time"], ["scanlines", "CRT scanlines"], ["sound", "Sound (beat thump)"]];
+    const options = optDefs.map(([k, label]) => ({
+      label, active: !!s[k], track: s[k] ? "#34d399" : "rgba(255,255,255,0.14)", knobX: s[k] ? "21px" : "3px",
+      toggle: () => this.toggleOpt(k),
+    }));
+
+    const since = (performance.now() - (this.t0 || performance.now())) / 1000 - this.sentT;
+    const isLive = since >= 0 && since < 26;
+    const showLive = !!np && isLive;
+    const weather = ["clear", "rain", "snow", "haze"].map((w) => {
+      const label = { clear: "Clear", rain: "Rain", snow: "Snow", haze: "Haze" }[w], active = s.weather === w;
+      return { label, active, fg: active ? "#fff" : "#b6a9d4",
+        bg: active ? "linear-gradient(135deg,#3b82f6,#6d28d9)" : "rgba(255,255,255,0.04)",
+        bd: active ? "rgba(150,180,255,0.5)" : "rgba(190,120,230,0.18)", on: () => this.setWeather(w) };
+    });
+    const TROPHIES = [
+      { lvl: 1, icon: "🎧", name: "First Set" }, { lvl: 2, icon: "💿", name: "Dorm Legend" },
+      { lvl: 3, icon: "🕶️", name: "Cyber Look" }, { lvl: 4, icon: "🏙️", name: "Resident" },
+      { lvl: 5, icon: "🎤", name: "Crowd Work" }, { lvl: 6, icon: "🎪", name: "Fest Debut" },
+      { lvl: 8, icon: "🌇", name: "Sunset Slot" }, { lvl: 11, icon: "🏆", name: "Headliner" },
+    ];
+    const trophies = TROPHIES.map((tr) => {
+      const open = this.unlocked(tr.lvl);
+      return { icon: tr.icon, name: open ? tr.name : "Lv " + tr.lvl, open,
+        bg: open ? "rgba(217,70,239,0.14)" : "rgba(255,255,255,0.03)",
+        bd: open ? "rgba(255,150,240,0.4)" : "rgba(190,120,230,0.12)",
+        op: open ? "1" : "0.4", filter: open ? "none" : "grayscale(1)" };
+    });
+    const hasSel = s.selected != null;
+    const npSub = showLive
+      ? (s.auto ? "🤖 " + s.vibe + " · " : "") + np.genre + " · " + np.dur + " · live"
+      : np ? "Last: " + np.title + " · the floor is winding down" : "Send a clip to wake the room";
+    return {
+      canvasRef: this.canvasRef,
+      djName: s.djName, level: s.level, xpPct: Math.round(s.xp * 100) + "%",
+      dayMode: day,
+      kicker: showLive ? "▶ NOW PLAYING" : "● LIVE TONIGHT ●",
+      showChip: day && showLive, chipText: showLive ? "▶ " + np.title : "",
+      npTitle: showLive ? np.title : "Idle — ambient set", npSub,
+      media, vibes, palettes, avatars, jackets, venues, unlocks, tabs,
+      tabSend: s.tab === "send", tabDj: s.tab === "dj", tabStage: s.tab === "stage", tabProg: s.tab === "prog",
+      setName: (e) => this.setName(e), send: () => this.send(),
+      sendLabel: hasSel ? "Send to the floor  ▶" : "Pick a clip first",
+      sendFg: hasSel ? "#fff" : "#7d72a0",
+      sendBg: hasSel ? "linear-gradient(135deg,#d946ef,#6d28d9)" : "rgba(255,255,255,0.05)",
+      sendShadow: hasSel ? "0 8px 24px -6px rgba(217,70,239,0.7)" : "none",
+      autoLabel: s.auto ? "🤖 AUTO ON" : "🤖 AUTO",
+      autoFg: s.auto ? "#06281e" : "#8fe6c4", autoBg: s.auto ? "#34d399" : "rgba(52,211,153,0.08)",
+      autoBd: s.auto ? "#34d399" : "rgba(52,211,153,0.3)", toggleAuto: () => this.toggleAuto(),
+      setDay: () => this.setMode("day"), setNight: () => this.setMode("night"),
+      dayFg: day ? "#fff" : "#b6a9d4", dayBg: day ? "linear-gradient(135deg,#d946ef,#7c3aed)" : "rgba(255,255,255,0.04)", dayBd: day ? "rgba(255,150,240,0.5)" : "rgba(190,120,230,0.18)",
+      nightFg: !day ? "#fff" : "#b6a9d4", nightBg: !day ? "linear-gradient(135deg,#3b82f6,#1e3a8a)" : "rgba(255,255,255,0.04)", nightBd: !day ? "rgba(120,170,255,0.5)" : "rgba(190,120,230,0.18)",
+      xpNote: s.level >= 12 ? "Max level — legendary status" : "Send clips to earn XP and unlock venues & looks.",
+      toast: s.toast,
+      showClock: s.showClock, showDate: s.showDate, clockTime, clockDate,
+      scanlines: s.scanlines, optionsOpen: s.optionsOpen, options,
+      openOptions: () => this.openOptions(), closeOptions: () => this.closeOptions(),
+      weather, trophies, peakCrowd: this.peakCrowd || 0,
+      lastTrack: s.history[0] || "", hasHistory: s.history.length > 0, noHistory: s.history.length === 0,
+      hype: showLive && since < 3.5,
+      hasRequest: !!s.request, requestLabel: s.request ? s.request.label : "",
+      honorRequest: () => this.honorRequest(), dismissRequest: () => this.dismissRequest(),
+      savePostcard: () => this.savePostcard(),
+    };
+  }
+
+  // ---------- scene ----------
+  setup(canvas) {
+    const PIXEL_H = 200;
+    const cw = canvas.clientWidth || 1280, ch = canvas.clientHeight || 720;
+    this.h = PIXEL_H;
+    this.w = Math.max(240, Math.round(PIXEL_H * (cw / ch)));
+    canvas.width = this.w; canvas.height = this.h;
+    this.glowCanvas.width = this.w; this.glowCanvas.height = this.h;
+    this.g.imageSmoothingEnabled = false; this.glow.imageSmoothingEnabled = false;
+  }
+
+  pulse(t) {
+    const v = VIBE[this.state.vibe] || VIBE.rave;
+    const beat = (t * v.bpm) / 60;
+    const kick = Math.exp(-(beat - Math.floor(beat)) * 7);
+    // real time of day: 1 ≈ 11pm peak, 0 ≈ late morning
+    const now = new Date(), hour = now.getHours() + now.getMinutes() / 60;
+    const tod = 0.5 + 0.5 * Math.cos(((hour - 23) / 12) * Math.PI);
+    const since = t - this.sentT;
+    const PLAY = 26; // a "track" runs ~26s, then the floor winds down to ambient
+    const isLive = since >= 0 && since < PLAY;
+    let energy;
+    if (isLive) {
+      energy = v.base + 0.12 + 0.06 * Math.sin(t * 0.2);
+      if (since < 2.4) energy += 0.45 * Math.exp(-since * 1.7);     // the drop
+      if (since > PLAY - 4) energy *= (PLAY - since) / 4;            // fade out
+    } else {
+      energy = 0.08 + 0.22 * tod + 0.03 * Math.sin(t * 0.25);       // closing-time ambient, tracks the clock
+    }
+    energy = Math.max(0.04, Math.min(1.05, energy));
+    return { kick, energy, v, beat, isLive, tod };
+  }
+
+  px(x, y, w, h, color, g) {
+    g = g || this.g;
+    g.fillStyle = color;
+    g.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+  }
+  block(x, y, w, h, base, hi, outline) {
+    this.px(x - 1, y - 1, w + 2, h + 2, outline);
+    this.px(x, y, w, h, base);
+    this.px(x, y, w, Math.max(1, h * 0.34), hi);
+  }
+  arm(x0, y0, x1, y1, u, color, outline) {
+    const n = 4;
+    for (let i = 0; i <= n; i++) { const x = x0 + ((x1 - x0) * i) / n, y = y0 + ((y1 - y0) * i) / n; this.px(x - 1.1 * u, y - 1.1 * u, 2.2 * u, 2.2 * u, outline); }
+    for (let i = 0; i <= n; i++) { const x = x0 + ((x1 - x0) * i) / n, y = y0 + ((y1 - y0) * i) / n; this.px(x - 0.7 * u, y - 0.7 * u, 1.4 * u, 1.4 * u, color); }
+  }
+  discFlat(cx, cy, rx, ry, color, g) {
+    g = g || this.g;
+    for (let yy = -Math.round(ry); yy <= Math.round(ry); yy++) { const w = rx * Math.sqrt(Math.max(0, 1 - (yy / ry) * (yy / ry))); this.px(cx - w, cy + yy, w * 2, 1, color, g); }
+  }
+
+  render(t) {
+    if (!this.g) return;
+    const { kick, energy, v, beat, isLive, tod } = this.pulse(t);
+    this.beam += 0.008 + energy * 0.03;
+    const bi = Math.floor(beat);
+    if (bi !== this._lastBeatInt) { this._lastBeatInt = bi; if (isLive && this.state.sound && this.audio) this.playThump(energy); }
+    this.glow.clearRect(0, 0, this.w, this.h);
+    if (this.state.mode === "night") this.studio(t, energy, kick, beat);
+    else this.club(t, energy, kick, v, beat, isLive, tod);
+    this.g.save();
+    this.g.globalCompositeOperation = "lighter";
+    this.g.globalAlpha = 0.9;
+    this.g.filter = "blur(2px)";
+    this.g.drawImage(this.glowCanvas, 0, 0);
+    this.g.filter = "none";
+    this.g.restore();
+  }
+
+  club(t, energy, k, v, beat, isLive, tod) {
+    const W = this.w, H = this.h, u = H / 100;
+    const hue = this.state.hue;
+    const ven = VENUE[this.state.venue] || VENUE.club;
+    const live = 0.22 + energy * 0.7;
+    const playing = isLive;
+    const C = {
+      stage: `hsl(${hue},42%,10%)`, stageHi: `hsl(${hue},52%,15%)`, edge: `hsl(${hue},92%,${54 + k * 16}%)`,
+      base: `hsl(${this.state.jacket},48%,46%)`, hi: `hsl(${this.state.jacket},58%,66%)`, shade: `hsl(${this.state.jacket},58%,22%)`,
+      light: `hsl(${(hue + 35) % 360},95%,64%)`,
+    };
+    const stageTopY = Math.round(H * 0.56), stageH = Math.round(14 * u);
+    const x0 = Math.round(W * 0.10), x1 = Math.round(W * 0.90), trussY = Math.round(6 * u);
+
+    this.background(hue, energy, ven, tod);
+    this.rig(x0, x1, trussY, stageTopY, u, hue, k, live, ven);
+    this.backWall(x0, x1, trussY, stageTopY, u, hue, live, ven);
+    if (ven.rig === "truss" || ven.rig === "mega") this.visualizer(W, stageTopY, u, t, energy, k, playing, this.state.mediaHue, ven);
+    this.stageDeck(x0, x1, stageTopY, stageH, u, C, live, hue, ven);
+    this.drawDJ((x0 + x1) / 2, stageTopY, u, t, C, live, k, hue, isLive);
+    this.floorGlow(stageTopY + stageH, hue, k, energy, ven);
+    if (ven.fireworks) this.fireworks(t);
+    this.crowd(Math.round(H * 0.95), u, t, k, energy, v, hue, ven, isLive);
+    this.drawWeather(t, ven);
+  }
+
+  background(hue, energy, ven, tod) {
+    tod = tod == null ? 0.7 : tod;
+    const g = this.g, W = this.w, H = this.h, sky = ven.sky;
+    const grd = g.createLinearGradient(0, 0, 0, H);
+    if (sky === "day") { grd.addColorStop(0, "#5fa9d8"); grd.addColorStop(0.5, "#9cc6dd"); grd.addColorStop(0.82, "#d4e2e2"); grd.addColorStop(1, "#1a2230"); }
+    else if (sky === "sunset") { grd.addColorStop(0, "#3a2a6a"); grd.addColorStop(0.4, "#b5557a"); grd.addColorStop(0.72, "#e8915a"); grd.addColorStop(1, "#241526"); }
+    else if (sky === "warm") { grd.addColorStop(0, `hsl(28,40%,${7 + energy * 4}%)`); grd.addColorStop(0.5, "#0d0a14"); grd.addColorStop(1, "#070510"); }
+    else if (sky === "house") { grd.addColorStop(0, `hsl(${hue},35%,${6 + energy * 4 + tod * 5}%)`); grd.addColorStop(0.6, "#0c0a16"); grd.addColorStop(1, "#070510"); }
+    else if (sky === "fest") { grd.addColorStop(0, `hsl(${hue},60%,${7 + energy * 6}%)`); grd.addColorStop(0.5, "#0a0618"); grd.addColorStop(1, "#04030a"); }
+    else { grd.addColorStop(0, `hsl(${hue},55%,${4 + energy * 5 + tod * 6}%)`); grd.addColorStop(0.55, "#0a0616"); grd.addColorStop(1, "#04030a"); }
+    g.fillStyle = grd; g.fillRect(0, 0, W, H);
+    if (sky === "day" || sky === "sunset") {
+      const sx = W * 0.5, sy = sky === "day" ? H * 0.15 : H * 0.36, sr = sky === "day" ? 7 : 9;
+      this.discFlat(sx, sy, sr, sr, sky === "day" ? "#fff6dc" : "#ffd49a");
+      this.discFlat(sx, sy, sr + 3, sr + 3, sky === "day" ? "rgba(255,246,220,0.45)" : "rgba(255,170,110,0.6)", this.glow);
+    }
+    if (sky === "warm" || sky === "fest") {
+      for (let i = 0; i < 30; i++) { const ssx = (Math.sin(i * 91.3) * 0.5 + 0.5) * W, ssy = (Math.cos(i * 53.7) * 0.5 + 0.5) * H * 0.4; this.px(ssx, ssy, 1, 1, "rgba(255,240,210,0.5)"); }
+    }
+    if (sky === "fest") { this.discFlat(W * 0.82, H * 0.15, 5, 5, "#e8eefc"); this.discFlat(W * 0.82, H * 0.15, 7, 7, "rgba(220,230,255,0.4)", this.glow); }
+  }
+
+  rig(x0, x1, y, stageY, u, hue, k, live, ven) {
+    if (ven.rig === "string") return this.stringLights(x0, x1, y, u, k);
+    this.beams(x0, x1, y, stageY, hue, live, k, ven);
+    if (ven.rig === "bars") { // simple light bar
+      this.px(x0, y + 2 * u, x1 - x0, 1.4 * u, "#14101d");
+    } else {
+      this.px(x0 - 4 * u, y, x1 - x0 + 8 * u, 2.2 * u, "#15111e");
+      for (let bx = x0 - 4 * u; bx < x1 + 4 * u; bx += 4 * u) this.px(bx, y, 1, 2.2 * u, "#241c34");
+      if (ven.rig === "mega") { this.px(x0 - 4 * u, y - 2.4 * u, x1 - x0 + 8 * u, 2 * u, "#100c1a"); } // second tier
+    }
+    const hues = [hue, (hue + 32) % 360, 188, 40, (hue - 20 + 360) % 360, (hue + 60) % 360, 210];
+    const n = ven.beams;
+    for (let i = 0; i < n; i++) {
+      const fx = x0 + ((i + 0.5) / n) * (x1 - x0);
+      const c = `hsl(${hues[i % hues.length]},92%,${48 + k * 36}%)`;
+      this.px(fx - 1.5 * u, y + 2.2 * u, 3 * u, 2.6 * u, c);
+      this.px(fx - 1.5 * u, y + 2.2 * u, 3 * u, 2.6 * u, c, this.glow);
+    }
+    if (ven.laser) this.lasers(x0, x1, y, stageY, hue, k);
+  }
+
+  stringLights(x0, x1, y, u, k) {
+    const n = 16, span = x1 - x0;
+    for (let i = 0; i <= n; i++) {
+      const fx = x0 + (i / n) * span;
+      const sag = Math.sin((i / n) * Math.PI) * 5 * u; // catenary droop
+      const by = y + sag;
+      this.px(fx - 0.6 * u, by - 0.6 * u, 1.2 * u, 1.2 * u, "#1a1622"); // wire node
+      const warm = [42, 18, 50][i % 3];
+      const c = `hsl(${warm},90%,${60 + k * 12}%)`;
+      this.px(fx - 0.7 * u, by, 1.4 * u, 1.4 * u, c);
+      this.px(fx - 0.7 * u, by, 1.4 * u, 1.4 * u, c, this.glow);
+    }
+  }
+
+  lasers(x0, x1, y, stageY, hue, k) {
+    const cx = (x0 + x1) / 2, count = 5;
+    for (let i = 0; i < count; i++) {
+      const a = this.beam * 1.6 + (i / count) * Math.PI;
+      const tx = cx + Math.cos(a) * (x1 - x0) * 0.5;
+      const g = this.glow;
+      g.strokeStyle = `hsla(${(hue + i * 40) % 360},95%,68%,${0.25 + k * 0.4})`;
+      g.lineWidth = 1;
+      g.beginPath(); g.moveTo(cx, y + 3); g.lineTo(tx, stageY); g.stroke();
+    }
+  }
+
+  visualizer(W, baseY, u, t, energy, k, playing, mediaHue, ven) {
+    const mega = ven && ven.rig === "mega";
+    const n = mega ? 44 : 34, x0 = W * (mega ? 0.15 : 0.22), x1 = W * (mega ? 0.85 : 0.78), bw = (x1 - x0) / n, maxH = (playing ? 26 : 22) * u * (mega ? 1.5 : 1);
+    for (let i = 0; i < n; i++) {
+      const fx = x0 + i * bw, d = Math.abs(i - (n - 1) / 2) / ((n - 1) / 2);
+      const frame = 0.30 + 0.70 * d, wob = 0.55 + 0.45 * Math.sin(t * (2 + i * 0.18) + i * 0.7);
+      const h = Math.max(1, maxH * frame * (0.3 + (0.4 + 0.6 * energy) * wob));
+      const hh = playing ? (mediaHue + d * 20) % 360 : 296 - d * 40;
+      const a = playing ? 0.28 : 0.2;
+      this.px(fx, baseY - h, bw - 1, h, `hsla(${hh},80%,58%,${a})`, this.glow);
+      this.px(fx, baseY - h, bw - 1, h, `hsla(${hh},60%,42%,0.09)`);
+      this.px(fx, baseY - h, bw - 1, Math.max(1, 1.2 * u), `hsla(${(hh + 26) % 360},90%,72%,0.7)`, this.glow);
+    }
+  }
+
+  backWall(x0, x1, trussY, stageY, u, hue, live, ven) {
+    if (ven.rig === "string") { // wooden fence
+      const planks = Math.floor((x1 - x0 + 16 * u) / (3 * u));
+      for (let i = 0; i < planks; i++) {
+        const px = x0 - 8 * u + i * 3 * u, sh = (i % 2 ? 16 : 14);
+        this.px(px, stageY - sh * u, 2.6 * u, sh * u, `hsl(26,${22 + (i % 3) * 4}%,${10 + (i % 2) * 3}%)`);
+      }
+      this.px(x0 - 8 * u, stageY - 12 * u, x1 - x0 + 16 * u, 1.4 * u, "hsl(26,24%,16%)");
+      return;
+    }
+    const stackW = 7 * u, stackH = (stageY - trussY) * 0.62;
+    for (const sx of [x0 + 1 * u, x1 - 8 * u]) {
+      this.px(sx, stageY - stackH, stackW, stackH, "#0c0918");
+      this.px(sx, stageY - stackH, stackW, 1, `hsl(${hue},40%,22%)`);
+      for (let i = 0; i < 3; i++) {
+        const cy = stageY - stackH + (i + 0.6) * (stackH / 3);
+        this.px(sx + stackW / 2 - 1.6 * u, cy - 1.6 * u, 3.2 * u, 3.2 * u, "#070510");
+        this.px(sx + stackW / 2 - 0.6 * u, cy - 0.6 * u, 1.2 * u, 1.2 * u, `hsl(${hue},50%,30%)`);
+      }
+    }
+    if (ven.jumbo) { // jumbotron screens flanking the stage
+      for (const jx of [x0 + 9 * u, x1 - 22 * u]) {
+        const jy = trussY + 6 * u, jw = 13 * u, jh = 9 * u;
+        this.px(jx - u, jy - u, jw + 2 * u, jh + 2 * u, "#0c0a16");
+        for (let r = 0; r < 5; r++) for (let c = 0; c < 8; c++) {
+          const lit = Math.sin(r + c + this.beam * 4) > 0.2;
+          this.px(jx + c * (jw / 8), jy + r * (jh / 5), jw / 8 - 0.4 * u, jh / 5 - 0.4 * u, lit ? `hsl(${(hue + c * 12) % 360},85%,55%)` : "#120e1c", lit ? this.glow : this.g);
+        }
+      }
+    }
+  }
+
+  beams(x0, x1, trussY, stageY, hue, live, k, ven) {
+    const hues = [hue, (hue + 32) % 360, 188, 40, (hue - 20 + 360) % 360, (hue + 60) % 360, 210];
+    const n = ven.beams, alpha = (0.05 + live * 0.1 + k * 0.14) * (ven.sky === "day" || ven.sky === "sunset" ? 0.45 : 1);
+    for (let i = 0; i < n; i++) {
+      const ox = x0 + ((i + 0.5) / n) * (x1 - x0);
+      const sweep = Math.sin(this.beam + i * 1.25) * (x1 - x0) * 0.22, tx = ox + sweep, spread = this.w * 0.05 * (0.6 + k);
+      const grd = this.glow.createLinearGradient(ox, trussY, tx, stageY);
+      grd.addColorStop(0, `hsla(${hues[i % hues.length]},95%,66%,${alpha})`);
+      grd.addColorStop(1, `hsla(${hues[i % hues.length]},95%,66%,0)`);
+      this.glow.fillStyle = grd; this.glow.beginPath();
+      this.glow.moveTo(ox, trussY + 4); this.glow.lineTo(tx - spread, stageY); this.glow.lineTo(tx + spread, stageY); this.glow.closePath(); this.glow.fill();
+    }
+    const flecks = Math.floor(live * 22);
+    for (let i = 0; i < flecks; i++) {
+      const fx = (Math.sin(i * 12.9898 + this.beam) * 0.5 + 0.5) * this.w;
+      const fy = trussY + (Math.cos(i * 78.233 + this.beam) * 0.5 + 0.5) * (stageY - trussY);
+      this.px(fx, fy, 1, 1, `hsl(${(hue + 60) % 360},90%,84%)`, this.glow);
+    }
+  }
+
+  stageDeck(x0, x1, topY, h, u, C, live, hue, ven) {
+    if (ven && ven.rig === "string") return this.yardStage(x0, x1, topY, h, u);
+    if (ven && ven.rig === "bars") return this.basementStage(x0, x1, topY, h, u, hue);
+    this.px(x0, topY, x1 - x0, h, C.stage);
+    this.px(x0, topY, x1 - x0, 1.6 * u, C.stageHi);
+    this.px(x0, topY - u, x1 - x0, u, C.edge);
+    this.px(x0, topY - u, x1 - x0, u, C.edge, this.glow);
+    const leds = Math.floor((x1 - x0) / (3.4 * u));
+    for (let i = 0; i < leds; i++) {
+      const lx = x0 + (i + 0.5) * (3.4 * u);
+      const chase = (Math.sin(i * 0.6 + this.beam * 3) * 0.5 + 0.5) * (0.4 + live * 0.6);
+      const c = `hsl(${(hue + (i % 3) * 30 - 30 + 360) % 360},90%,${44 + chase * 34}%)`;
+      this.px(lx - u, topY + h - 3 * u, 2 * u, 2 * u, c);
+      if (chase > 0.5) this.px(lx - u, topY + h - 3 * u, 2 * u, 2 * u, c, this.glow);
+    }
+  }
+
+  // backyard: gear on a folding table over grass — no stage, no LED wall, no neon strip
+  yardStage(x0, x1, topY, h, u) {
+    const W = this.w, H = this.h, cx = W / 2;
+    const grd = this.g.createLinearGradient(0, topY, 0, H);
+    grd.addColorStop(0, "#16210f"); grd.addColorStop(0.5, "#0e1509"); grd.addColorStop(1, "#080a07");
+    this.g.fillStyle = grd; this.g.fillRect(0, topY, W, H - topY);
+    for (let i = 0; i < 90; i++) {
+      const gx = (Math.sin(i * 17.3) * 0.5 + 0.5) * W, gy = topY + (Math.cos(i * 9.1) * 0.5 + 0.5) * (H - topY) * 0.5;
+      this.px(gx, gy, 1, 1.6 * u, `hsl(${90 + (i % 3) * 14},35%,${14 + (i % 4) * 3}%)`);
+    }
+    // folding trestle table the gear sits on
+    const tw = 40 * u, tx = cx - tw / 2;
+    this.px(tx, topY - 0.4 * u, tw, 2.4 * u, "#2a2018");
+    this.px(tx, topY - 0.4 * u, tw, 0.8 * u, "#3a2c1e");
+    this.px(tx + 3 * u, topY + 2 * u, 1.6 * u, 7 * u, "#1c150f");
+    this.px(tx + tw - 4.6 * u, topY + 2 * u, 1.6 * u, 7 * u, "#1c150f");
+    // cooler + potted plant for flavor
+    this.px(cx - tw / 2 - 8 * u, topY + 3 * u, 6 * u, 5 * u, "#284455"); this.px(cx - tw / 2 - 8 * u, topY + 3 * u, 6 * u, 1.2 * u, "#3a6076");
+    this.px(cx + tw / 2 + 3 * u, topY + 1 * u, 3.2 * u, 3 * u, "#7a4a2a");
+    this.px(cx + tw / 2 + 3.2 * u, topY - 3 * u, 2.8 * u, 4 * u, "#1f3a1c");
+  }
+
+  // house party: a low basement riser, dim and indoor
+  basementStage(x0, x1, topY, h, u, hue) {
+    const W = this.w, H = this.h;
+    this.px(0, topY, W, H - topY, "#0c0a14");
+    this.px(x0 + 6 * u, topY, x1 - x0 - 12 * u, 3 * u, "#171320");
+    this.px(x0 + 6 * u, topY, x1 - x0 - 12 * u, 0.8 * u, `hsl(${hue},40%,20%)`);
+    const n = Math.floor((x1 - x0 - 12 * u) / (4 * u));
+    for (let i = 0; i < n; i++) {
+      const lx = x0 + 8 * u + i * 4 * u, c = `hsl(${(hue + i * 24) % 360},80%,55%)`;
+      this.px(lx, topY + 2.2 * u, 1.2 * u, 1.2 * u, c);
+      this.px(lx, topY + 2.2 * u, 1.2 * u, 1.2 * u, c, this.glow);
+    }
+  }
+
+  spotlight(cx, topY, baseY, halfW, hue, alpha) {
+    const grd = this.glow.createLinearGradient(cx, topY, cx, baseY);
+    grd.addColorStop(0, `hsla(${(hue + 40) % 360},90%,72%,${alpha})`);
+    grd.addColorStop(1, `hsla(${(hue + 40) % 360},90%,72%,0)`);
+    this.glow.fillStyle = grd; this.glow.beginPath();
+    this.glow.moveTo(cx, topY); this.glow.lineTo(cx - halfW, baseY); this.glow.lineTo(cx + halfW, baseY); this.glow.closePath(); this.glow.fill();
+  }
+
+  // DJ reacts by vibe: chill sway/nod · groove headbob+knobs · rave scratch+arm pumps
+  drawDJ(cx, stageY, u, t, C, live, k, hue, isLive) {
+    const vibe = this.state.vibe;
+    const amp = vibe === "chill" ? 0.7 : vibe === "groove" ? 1.4 : 2.4;
+    this._hype = isLive && live > 0.82;
+    const bob = (0.4 + k * amp) * Math.abs(Math.sin(t * (vibe === "chill" ? 3 : 5))) * (isLive ? 1 : 0.35);
+    const sway = (vibe === "chill" || !isLive) ? Math.sin(t * 1.6) * 1.4 * u : 0;
+    this.spotlight(cx, stageY - 27 * u, stageY + 2 * u, 16 * u, hue, (isLive ? 0.14 : 0.06) + live * 0.16);
+    const boothTopY = Math.round(stageY - 9 * u);
+    this.djPerson(cx + sway, stageY, u, t, C, bob, k, boothTopY, vibe, isLive);
+    const bw = 32 * u, bh = 9 * u, bx = cx - bw / 2, by = boothTopY;
+    this.px(bx - u, by - u, bw + 2 * u, bh + u, C.shade);
+    this.px(bx, by, bw, bh, "#0b0913");
+    this.px(bx, by, bw, 1.3 * u, C.stageHi);
+    for (let i = 1; i < 4; i++) this.px(bx + (i * bw) / 4, by + 2 * u, 1, bh - 3 * u, "#06040d");
+    this.px(bx, by + bh - 1.4 * u, bw, 1.4 * u, C.edge);
+    this.px(bx, by + bh - 1.4 * u, bw, 1.4 * u, C.edge, this.glow);
+    this.turntable(cx - 9.5 * u, boothTopY, u, 0.0);
+    this.mixer(cx, boothTopY, u, k, C);
+    this.turntable(cx + 9.5 * u, boothTopY, u, 1.7);
+  }
+
+  turntable(px, boothTopY, u, phase) {
+    const cy = Math.round(boothTopY - 1.4 * u), rx = 4.3 * u, ry = 1.9 * u, cyan = "hsl(190,82%,56%)";
+    this.discFlat(px, cy, rx + 0.6 * u, ry + 0.5 * u, cyan);
+    this.discFlat(px, cy, rx, ry, "#171323");
+    this.discFlat(px, cy, rx * 0.92, ry * 0.92, "#0c0a16");
+    this.discFlat(px, cy, rx * 0.38, ry * 0.38, "hsl(323,85%,58%)");
+    this.discFlat(px, cy, rx * 0.38, ry * 0.38, "hsl(323,85%,58%)", this.glow);
+    this.px(px - 0.6 * u, cy - 0.6 * u, 1.2 * u, 1.2 * u, "#0c0a16");
+    const a = this.beam * 2.4 + phase;
+    this.px(px + Math.cos(a) * rx * 0.6 - 0.5 * u, cy + Math.sin(a) * ry * 0.6 - 0.5 * u, u, u, "#d8cdf0");
+    this.px(px + rx * 0.5, cy - ry * 1.2, 3 * u, 0.8 * u, "#b7adcc");
+  }
+
+  mixer(px, boothTopY, u, k, C) {
+    const mw = 5.6 * u, mh = 4 * u, mx = px - mw / 2, my = Math.round(boothTopY - mh);
+    this.px(mx - u, my - u, mw + 2 * u, mh + u, C.shade);
+    this.px(mx, my, mw, mh, "#15121f");
+    for (const fx of [mx + 1 * u, mx + 3.4 * u]) this.px(fx, my + 1 * u, 0.8 * u, mh - 2 * u, "#06040d");
+    this.px(mx + 0.6 * u, my + 1 * u + (0.5 + 0.5 * Math.sin(this.beam * 3)) * (mh - 3.4 * u), 1.6 * u, u, C.light);
+    this.px(mx + 3.0 * u, my + 1 * u + (0.5 + 0.5 * Math.cos(this.beam * 3)) * (mh - 3.4 * u), 1.6 * u, u, C.light);
+    for (let i = 0; i < 3; i++) {
+      const lit = k > i * 0.3, c = lit ? `hsl(${[120, 48, 0][i]},90%,58%)` : "#241c34";
+      this.px(mx + 0.8 * u + i * 1.6 * u, my - 0.6 * u, 1.2 * u, 1 * u, c);
+      if (lit) this.px(mx + 0.8 * u + i * 1.6 * u, my - 0.6 * u, 1.2 * u, 1 * u, c, this.glow);
+    }
+  }
+
+  // head/hat from avatar
+  djHead(cx, headCY, headR, s, C) {
+    this.block(cx - headR, headCY - headR, headR * 2, headR * 2, C.base, C.hi, C.shade);
+    this.px(cx - headR + 0.5 * s, headCY + 0.2 * s, headR * 2 - 1 * s, headR * 0.9, C.shade); // face shadow
+    const dj = this.state.dj;
+    if (dj === "beanie") this.px(cx - headR, headCY - headR - 1 * s, headR * 2, 1.7 * s, C.shade);
+    else if (dj === "cap") { this.px(cx - headR, headCY - headR - 0.6 * s, headR * 2, 1.4 * s, "#1a1726"); this.px(cx - headR - 1.6 * s, headCY - headR + 0.4 * s, 2.4 * s, 1 * s, "#1a1726"); }
+    else if (dj === "visor") { this.px(cx - headR - 0.4 * s, headCY - 0.4 * s, headR * 2 + 0.8 * s, 1.4 * s, "#21e6ff"); this.px(cx - headR - 0.4 * s, headCY - 0.4 * s, headR * 2 + 0.8 * s, 1.4 * s, "#21e6ff", this.glow); }
+    else if (dj === "afro") { for (const [ox, oy, w, h] of [[-headR - 1.2 * s, -headR - 1.8 * s, headR * 2 + 2.4 * s, 2.6 * s], [-headR - 1.6 * s, -headR + 0.5 * s, 1.8 * s, headR * 1.6], [headR - 0.2 * s, -headR + 0.5 * s, 1.8 * s, headR * 1.6]]) this.px(cx + ox, headCY + oy, w, h, "#181020"); }
+  }
+
+  djPerson(cx, feetY, u, t, C, bob, k, boothTopY, vibe, isLive) {
+    const s = u, y = feetY - bob;
+    const shoulderY = Math.round(y - 16 * s), headR = 2.6 * s, headCY = Math.round(shoulderY - headR - 0.8 * s);
+    this.px(cx - 2.2 * s, y - 6 * s, 1.8 * s, 6 * s, C.shade);
+    this.px(cx + 0.4 * s, y - 6 * s, 1.8 * s, 6 * s, C.shade);
+    this.block(cx - 3.6 * s, shoulderY, 7.2 * s, 9.5 * s, C.base, C.hi, C.shade);
+    this.px(cx - 0.4 * s, shoulderY + 1 * s, 0.8 * s, 7.5 * s, C.shade);
+    this.px(cx - 3.2 * s, shoulderY + 0.4 * s, 1.3 * s, 3 * s, C.hi);
+    this.djHead(cx, headCY, headR, s, C);
+    // headphones (skip cup overlap for visor look but keep band)
+    this.px(cx - headR - 1.2 * s, headCY - 0.6 * s, 1.5 * s, 3 * s, "#ece7f7");
+    this.px(cx + headR - 0.3 * s, headCY - 0.6 * s, 1.5 * s, 3 * s, "#ece7f7");
+    this.px(cx - headR - 1.0 * s, headCY - headR - 0.6 * s, headR * 2 + 1.8 * s, 1 * s, "#cfc7e6");
+    const handY = boothTopY - 1.5 * s;
+    if (!isLive) {
+      // idle — hands resting on the booth, leaning in
+      this.arm(cx - 3 * s, shoulderY + 1.5 * s, cx - 6 * s, handY, s, C.base, C.shade);
+      this.arm(cx + 3 * s, shoulderY + 1.5 * s, cx + 6 * s, handY, s, C.base, C.shade);
+      this.px(cx - 6.7 * s, handY - 0.6 * s, 1.8 * s, 1.4 * s, C.hi);
+      this.px(cx + 5.1 * s, handY - 0.6 * s, 1.8 * s, 1.4 * s, C.hi);
+    } else if (this._hype && k > 0.4) {
+      // PEAK — both hands thrown up to the crowd
+      this.arm(cx - 3 * s, shoulderY + 1.5 * s, cx - 5 * s, shoulderY - 7.5 * s, s, C.base, C.shade);
+      this.arm(cx + 3 * s, shoulderY + 1.5 * s, cx + 5 * s, shoulderY - 7.5 * s, s, C.base, C.shade);
+      this.px(cx - 5.9 * s, shoulderY - 8.6 * s, 1.9 * s, 1.7 * s, C.hi);
+      this.px(cx + 4.0 * s, shoulderY - 8.6 * s, 1.9 * s, 1.7 * s, C.hi);
+    } else if (vibe === "rave" && k > 0.55) {
+      // throw a hand up on the beat
+      this.arm(cx - 3 * s, shoulderY + 1.5 * s, cx - 9.5 * s, handY, s, C.base, C.shade);
+      this.arm(cx + 3 * s, shoulderY + 1.5 * s, cx + 4 * s, shoulderY - 7 * s, s, C.base, C.shade);
+      this.px(cx + 3.2 * s, shoulderY - 8 * s, 1.8 * s, 1.6 * s, C.hi);
+      this.px(cx - 10.2 * s, handY - 0.6 * s, 1.8 * s, 1.4 * s, C.hi);
+    } else {
+      const scratch = Math.sin(t * (vibe === "chill" ? 5 : 14)) * k * (vibe === "rave" ? 3 : 2) * s;
+      this.arm(cx - 3 * s, shoulderY + 1.5 * s, cx - 9.5 * s + scratch, handY, s, C.base, C.shade);
+      this.arm(cx + 3 * s, shoulderY + 1.5 * s, cx + 9.5 * s, handY - k * 2 * s, s, C.base, C.shade);
+      this.px(cx - 10.2 * s + scratch, handY - 0.6 * s, 1.8 * s, 1.4 * s, C.hi);
+      this.px(cx + 8.6 * s, handY - 0.6 * s - k * 2 * s, 1.8 * s, 1.4 * s, C.hi);
+    }
+    this.px(cx - headR, headCY - headR, headR * 2, 0.8 * s, "hsl(190,85%,72%)");
+    this.px(cx - 3.6 * s, shoulderY, 7.2 * s, 0.8 * s, "hsl(312,82%,68%)");
+  }
+
+  floorGlow(y, hue, k, energy, ven) {
+    if (ven && (ven.rig === "string" || ven.rig === "bars")) {
+      const glow = k * 0.3 + energy * 0.3, warm = ven.rig === "string" ? 32 : hue;
+      const grd = this.g.createLinearGradient(0, y, 0, this.h);
+      grd.addColorStop(0, `hsla(${warm},42%,${8 + glow * 12}%,0.5)`);
+      grd.addColorStop(1, ven.rig === "string" ? "#080a07" : "#070510");
+      this.g.fillStyle = grd; this.g.fillRect(0, y, this.w, this.h - y);
+      return;
+    }
+    const glow = k * 0.55 + energy * 0.45;
+    const grd = this.g.createLinearGradient(0, y, 0, this.h);
+    grd.addColorStop(0, `hsla(${hue},82%,${13 + glow * 30}%,0.95)`);
+    grd.addColorStop(1, "#04030a");
+    this.g.fillStyle = grd; this.g.fillRect(0, y, this.w, this.h - y);
+  }
+
+  crowd(floorY, u, t, k, energy, v, hue, ven, isLive) {
+    const want = Math.round((8 + Math.min(1, energy * 1.6) * 28) * v.crowd * ven.crowd * (this.w / 360));
+    while (this.ravers.length < want)
+      this.ravers.push({ x: Math.random(), ph: Math.random() * 6, scale: 0.78 + Math.random() * 0.45, row: Math.random() < 0.5 ? 0 : 1, hueOff: Math.random() * 50 - 25, seed: Math.random(), hair: Math.floor(Math.random() * 3) });
+    while (this.ravers.length > want) this.ravers.pop();
+    this.peakCrowd = Math.max(this.peakCrowd || 0, this.ravers.length);
+    const moves = MOVES[this.state.vibe] || MOVES.rave;
+    for (const r of [...this.ravers].sort((a, b) => a.row - b.row)) {
+      const depth = r.row === 0 ? 0.8 : 1, x = Math.round(r.x * this.w), s = u * r.scale * depth;
+      const fy = floorY - (r.row === 0 ? 4 * u : 0);
+      const move = moves[Math.floor(r.seed * moves.length)];
+      this.raver(x, fy, s, r, t, k, hue, move, v);
+    }
+    if (ven.totems) this.drawTotems(floorY, u, t, hue, ven);
+    // recurring regulars (unlock with level)
+    if (this.state.level >= 2) this.glowDancer(floorY, u, t, k, v);
+    if (this.state.level >= 3 && isLive && energy > 0.45) this.crowdSurfer(floorY, u, t, hue, energy);
+  }
+
+  drawTotems(floorY, u, t, hue, ven) {
+    const W = this.w;
+    const spots = [0.16, 0.32, 0.5, 0.68, 0.84, 0.24, 0.76, 0.42];
+    const count = ven.sky === "fest" ? 7 : 5;
+    for (let i = 0; i < count; i++) {
+      const x = spots[i] * W, sway = Math.sin(t * 1.2 + i * 1.7) * 2 * u;
+      const baseY = floorY - 1 * u, topY = baseY - (19 + (i % 3) * 4) * u, tx = x + sway;
+      // pole leans with sway (segments)
+      const seg = 6;
+      for (let j = 0; j <= seg; j++) { const yy = baseY + (topY - baseY) * (j / seg); const xx = x + sway * (j / seg); this.px(xx - 0.4 * u, yy, 1 * u, (baseY - topY) / seg + 1, "#16121d"); }
+      this.sign(tx, topY - 2 * u, u, i % 5, hue, i);
+    }
+  }
+
+  sign(cx, cy, u, type, hue, seed) {
+    const c = `hsl(${(hue + seed * 44) % 360},90%,66%)`, glow = this.glow;
+    if (type === 0) { this.discFlat(cx, cy, 3 * u, 3 * u, c); this.discFlat(cx, cy, 3 * u, 3 * u, c, glow); this.discFlat(cx, cy, 1.5 * u, 1.5 * u, "#0a0810"); }
+    else if (type === 1) { // heart
+      for (const [dx, dy, w, h] of [[-2.4, -1.2, 2, 2], [0.4, -1.2, 2, 2], [-2.6, 0.2, 5.2, 1.4], [-1.8, 1.4, 3.6, 1.2], [-0.9, 2.4, 1.8, 1.1]]) this.px(cx + dx * u, cy + dy * u, w * u, h * u, c);
+      this.px(cx - 2.6 * u, cy - 1.2 * u, 5.2 * u, 4 * u, c, glow);
+    } else if (type === 2) { // star burst
+      this.px(cx - 0.7 * u, cy - 3 * u, 1.4 * u, 6 * u, c); this.px(cx - 3 * u, cy - 0.7 * u, 6 * u, 1.4 * u, c);
+      this.px(cx - 2 * u, cy - 2 * u, 4 * u, 1 * u, c); this.px(cx - 2 * u, cy + 1 * u, 4 * u, 1 * u, c);
+      this.px(cx - 2.4 * u, cy - 2.4 * u, 4.8 * u, 4.8 * u, c, glow);
+    } else if (type === 3) { // flag on a stick
+      this.px(cx - 0.4 * u, cy - 3 * u, 0.8 * u, 8 * u, "#cfc7e6");
+      for (let r = 0; r < 3; r++) this.px(cx + 0.4 * u, cy - 3 * u + r * 1.3 * u, 4.4 * u, 1.3 * u, r % 2 ? c : "#f4eefc");
+      this.px(cx + 0.4 * u, cy - 3 * u, 4.4 * u, 3.9 * u, c, glow);
+    } else { // diamond
+      for (let r = -3; r <= 3; r++) { const w = 3 - Math.abs(r); this.px(cx - w * u, cy + r * u, w * 2 * u, 1 * u, c); }
+      this.px(cx - 3 * u, cy - 3 * u, 6 * u, 6 * u, c, glow);
+    }
+  }
+
+  fireworks(t) {
+    const W = this.w, H = this.h, U = this.h / 100, period = 2.4;
+    for (let i = 0; i < 3; i++) {
+      const ph = ((t + i * 0.9) % period) / period;
+      const bx = (Math.sin(i * 33.7 + Math.floor((t + i * 0.9) / period)) * 0.5 + 0.5) * W;
+      const by = H * 0.1 + (Math.cos(i * 11.1) * 0.5 + 0.5) * H * 0.2;
+      const r = ph * 11 * U, a = Math.max(0, 1 - ph), hh = (i * 80 + Math.floor(t / period) * 50) % 360, n = 14;
+      for (let j = 0; j < n; j++) { const ang = (j / n) * Math.PI * 2; this.px(bx + Math.cos(ang) * r, by + Math.sin(ang) * r, 1.2 * U, 1.2 * U, `hsla(${hh},90%,72%,${a})`, this.glow); }
+    }
+  }
+
+  raver(x, fy, s, r, t, k, hue, move, v) {
+    const dark = `hsl(${(hue - 2 + r.hueOff + 360) % 360},34%,7%)`;
+    const mid = `hsl(${(hue + 2 + r.hueOff) % 360},40%,13%)`;
+    const rimH = (hue + 22 + r.hueOff + 360) % 360;
+    const rim = `hsl(${rimH},82%,${58 + k * 16}%)`, rimSoft = `hsl(${rimH},70%,${40 + k * 12}%)`;
+    const ph = r.ph, mo = v.motion;
+    let dx = 0, dyJump = 0;
+    const swing = Math.sin(t * 3 + ph);
+    if (move === "sway") dx = swing * 1.8 * s * mo;
+    else if (move === "twostep") dx = (swing > 0 ? 1 : -1) * 1.4 * s;
+    else if (move === "jump") dyJump = Math.max(0, k) * 6 * s * mo;
+    const bobBase = move === "jump" ? 0 : Math.abs(Math.sin(t * 6 + ph)) * (1.2 * s + k * 4 * s) * mo;
+    const cx = x + dx;
+    const hipY = fy - bobBase - dyJump, torsoH = 8 * s, shoulderY = hipY - torsoH;
+    const headR = 1.7 * s, headCY = shoulderY - headR - 0.4 * s;
+    // body
+    this.px(cx - 2.7 * s, shoulderY, 5.4 * s, 2.4 * s, dark);
+    this.px(cx - 2.0 * s, shoulderY + 2.2 * s, 4.0 * s, torsoH - 2 * s, dark);
+    this.px(cx - 1.2 * s, shoulderY + 2.6 * s, 2.4 * s, torsoH - 3.4 * s, mid);
+    // legs — together on jump, split otherwise
+    if (move === "jump") { this.px(cx - 1.4 * s, hipY - 0.5 * s, 1.2 * s, 1.6 * s, dark); this.px(cx + 0.2 * s, hipY - 0.5 * s, 1.2 * s, 1.6 * s, dark); }
+    else { this.px(cx - 1.8 * s, hipY - 0.5 * s, 1.4 * s, 1.8 * s, dark); this.px(cx + 0.4 * s, hipY - 0.5 * s, 1.4 * s, 1.8 * s, dark); }
+    this.px(cx - 0.8 * s, shoulderY - 1 * s, 1.6 * s, 1.4 * s, dark);
+    this.px(cx - headR, headCY - headR, headR * 2, headR * 2, dark);
+    if (r.hair === 1) this.px(cx - 0.7 * s, headCY - headR - 1.3 * s, 1.4 * s, 1.4 * s, dark);
+    if (r.hair === 2) this.px(cx - headR, headCY - headR - 1 * s, headR * 2, 1 * s, dark);
+    // arms by move
+    const sh = shoulderY + 0.5 * s;
+    if (move === "wave" || move === "jump") {
+      const lift = (4.5 + k * 2) * s, sw2 = Math.sin(t * 4 + ph) * 0.9 * s;
+      this.arm(cx - 2.2 * s, sh, cx - 3 * s + sw2, shoulderY - lift, s * 0.85, dark, dark);
+      this.arm(cx + 2.2 * s, sh, cx + 3 * s + sw2, shoulderY - lift, s * 0.85, dark, dark);
+      this.px(cx - 3.3 * s + sw2, shoulderY - lift - 0.6 * s, 1.4 * s, 1.4 * s, rim);
+      this.px(cx + 2 * s + sw2, shoulderY - lift - 0.6 * s, 1.4 * s, 1.4 * s, rim);
+    } else if (move === "pump") {
+      const lift = (3 + k * 4) * s;
+      this.arm(cx + 2 * s, sh, cx + 2.4 * s, shoulderY - lift, s * 0.85, dark, dark);
+      this.px(cx + 1.7 * s, shoulderY - lift - 0.6 * s, 1.5 * s, 1.5 * s, rim);
+      this.arm(cx - 2.2 * s, sh, cx - 2.6 * s, shoulderY + 3.5 * s, s * 0.85, dark, dark);
+    } else if (move === "clap") {
+      const gap = (1 - k) * 1.6 * s + 0.4 * s;
+      this.arm(cx - 2.2 * s, sh, cx - gap, shoulderY + 2.4 * s, s * 0.85, dark, dark);
+      this.arm(cx + 2.2 * s, sh, cx + gap, shoulderY + 2.4 * s, s * 0.85, dark, dark);
+      this.px(cx - gap - 0.6 * s, shoulderY + 1.8 * s, 1.3 * s, 1.3 * s, rim);
+      this.px(cx + gap - 0.7 * s, shoulderY + 1.8 * s, 1.3 * s, 1.3 * s, rim);
+    } else if (move === "twostep") {
+      this.arm(cx - 2.2 * s, sh, cx - 3 * s, shoulderY + 2 * s, s * 0.85, dark, dark);
+      this.arm(cx + 2.2 * s, sh, cx + 2.6 * s, shoulderY - 2 * s, s * 0.85, dark, dark);
+      this.px(cx + 2.2 * s, shoulderY - 2.6 * s, 1.3 * s, 1.3 * s, rim);
+    } else { // sway / nod — relaxed
+      this.arm(cx - 2.3 * s, sh, cx - 2.8 * s + swing * s, shoulderY + 4 * s, s * 0.85, dark, dark);
+      this.arm(cx + 2.3 * s, sh, cx + 2.8 * s + swing * s, shoulderY + 4 * s, s * 0.85, dark, dark);
+    }
+    // rim light
+    this.px(cx - headR, headCY - headR, headR * 2, Math.max(1, s), rim);
+    this.px(cx - headR, headCY - headR, Math.max(1, s), headR * 1.6, rimSoft);
+    this.px(cx - 2.7 * s, shoulderY, 5.4 * s, Math.max(1, s), rim);
+    this.px(cx - 2.7 * s, shoulderY, Math.max(1, 0.9 * s), 4.5 * s, rimSoft);
+  }
+
+  // ================= AFTER-HOURS STUDIO =================
+  studio(t, energy, k, beat) {
+    const W = this.w, H = this.h, u = H / 100, g = this.g;
+    // dark cool room
+    const grd = g.createLinearGradient(0, 0, 0, H);
+    grd.addColorStop(0, "#0a0b16"); grd.addColorStop(0.6, "#070710"); grd.addColorStop(1, "#050509");
+    g.fillStyle = grd; g.fillRect(0, 0, W, H);
+    // window with faint skyline (upper left)
+    this.px(W * 0.06, H * 0.1, W * 0.22, H * 0.3, "#0b0f1e");
+    for (let i = 0; i < 22; i++) {
+      const wx = W * 0.07 + (i % 11) * (W * 0.2 / 11), wy = H * 0.13 + Math.floor(i / 11) * H * 0.13;
+      this.px(wx, wy, 1.4 * u, 1.4 * u, `hsla(200,80%,70%,${0.2 + (i % 3) * 0.12})`);
+    }
+    this.px(W * 0.06, H * 0.1, W * 0.22, 1, "#1a2540"); this.px(W * 0.169, H * 0.1, 1, H * 0.3, "#1a2540");
+
+    const cx = Math.round(W * 0.5);
+    const deskY = Math.round(H * 0.72);
+    // monitor — on the desk, BELOW the producer's head (we see him over the screen)
+    const mw = Math.round(W * 0.36), mh = Math.round(H * 0.34), mx = cx - mw / 2, my = Math.round(H * 0.34);
+    // monitor glow spilling forward (drawn to glow → bloom)
+    const gg = this.glow.createLinearGradient(cx, my, cx, deskY + 8 * u);
+    gg.addColorStop(0, `hsla(205,90%,72%,${0.18 + energy * 0.12})`);
+    gg.addColorStop(1, "hsla(205,90%,72%,0)");
+    this.glow.fillStyle = gg;
+    this.glow.beginPath(); this.glow.moveTo(cx, my + mh * 0.4); this.glow.lineTo(cx - mw * 0.95, deskY + 10 * u); this.glow.lineTo(cx + mw * 0.95, deskY + 10 * u); this.glow.closePath(); this.glow.fill();
+
+    // producer behind desk, lit cool by the monitor
+    this.producer(cx, deskY, u, t, k, energy);
+
+    // monitor bezel + DAW screen (drawn over producer so screen is in front)
+    this.px(mx - 1.4 * u, my - 1.4 * u, mw + 2.8 * u, mh + 2.8 * u, "#16161f");
+    this.px(mx - 0.6 * u, my - 0.6 * u, mw + 1.2 * u, mh + 1.2 * u, "#05060a");
+    this.daw(mx, my, mw, mh, u, t, energy, k, beat);
+    this.px(cx - 1.4 * u, my + mh + 0.6 * u, 2.8 * u, 3 * u, "#16161f"); // stand
+    this.px(cx - 5 * u, my + mh + 3.4 * u, 10 * u, 1.4 * u, "#1c1c26");
+
+    // desk surface (in front of producer's lower body)
+    this.px(0, deskY, W, H - deskY, "#0c0c14");
+    this.px(0, deskY, W, 1.4 * u, "#1b1b28");
+    // studio monitor speakers on the desk
+    for (const sx of [cx - mw * 0.78, cx + mw * 0.78 - 7 * u]) {
+      this.px(sx, deskY - 9 * u, 7 * u, 9 * u, "#13131c");
+      this.px(sx + 1 * u, deskY - 7.4 * u, 5 * u, 5 * u, "#080810");
+      const woof = `hsla(205,80%,60%,${0.25 + k * 0.5})`;
+      this.discFlat(sx + 3.5 * u, deskY - 4.6 * u, 2 * u, 2 * u, "#0c0c16");
+      this.px(sx + 1.6 * u, deskY - 6.6 * u, 3.8 * u, 1 * u, woof, this.glow);
+    }
+    // MIDI keyboard on the desk front
+    const kw = mw * 0.7, kx = cx - kw / 2, ky = deskY + 3 * u;
+    this.px(kx, ky, kw, 4 * u, "#15151f");
+    for (let i = 0; i < 20; i++) this.px(kx + 1 * u + i * ((kw - 2 * u) / 20), ky + 1 * u, 0.7 * u, 2.6 * u, "#cdd2e0");
+    // warm desk lamp (contrast pop) upper right
+    this.px(W * 0.84, deskY - 16 * u, 1 * u, 16 * u, "#1c1c26");
+    this.px(W * 0.8, deskY - 18 * u, 6 * u, 2.4 * u, "#241c12");
+    const lamp = this.glow.createRadialGradient(W * 0.83, deskY - 15 * u, 1, W * 0.83, deskY - 15 * u, 16 * u);
+    lamp.addColorStop(0, "hsla(38,95%,65%,0.4)"); lamp.addColorStop(1, "hsla(38,95%,65%,0)");
+    this.glow.fillStyle = lamp; this.glow.fillRect(W * 0.7, deskY - 28 * u, W * 0.3, 28 * u);
+    // mug
+    this.px(W * 0.2, deskY - 4 * u, 3 * u, 4 * u, "#2a2233"); this.px(W * 0.2 + 3 * u, deskY - 3 * u, 1.2 * u, 2 * u, "#2a2233");
+  }
+
+  producer(cx, deskY, u, t, k, energy) {
+    const s = u, sway = Math.sin(t * 1.4) * 1 * s, nod = Math.abs(Math.sin(t * 2.2)) * 1.2 * s + k * 1.5 * s;
+    const C = { base: "hsl(220,22%,30%)", hi: "hsl(202,72%,56%)", shade: "hsl(222,30%,11%)" }; // lit cool by the screen
+    const x = cx + sway, shoulderY = Math.round(this.h * 0.27 - nod * 0.3);
+    const headR = 3.2 * s, headCY = Math.round(shoulderY - headR - 0.9 * s - nod);
+    // torso (hoodie) — long, extends down behind the monitor to the desk
+    const torsoH = (deskY - shoulderY) + 5 * s;
+    this.block(x - 4.4 * s, shoulderY, 8.8 * s, torsoH, C.base, C.hi, C.shade);
+    this.px(x - 0.5 * s, shoulderY + 1 * s, 1 * s, torsoH * 0.55, C.shade);
+    // soft cool halo behind the head so it separates from the dark room
+    const halo = this.glow.createRadialGradient(x, headCY + headR, 1, x, headCY + headR, headR * 4);
+    halo.addColorStop(0, "hsla(205,90%,66%,0.5)"); halo.addColorStop(1, "hsla(205,90%,66%,0)");
+    this.glow.fillStyle = halo; this.glow.fillRect(x - headR * 4, headCY - headR * 2, headR * 8, headR * 6);
+    // head + avatar hat, lit cool from the screen
+    const HC = { base: "hsl(216,24%,32%)", hi: "hsl(202,72%,60%)", shade: "hsl(222,28%,12%)" };
+    this.djHead(x, headCY, headR, s, HC);
+    // bright cool monitor light filling the face
+    this.px(x - headR + 0.6 * s, headCY - 0.4 * s, headR * 2 - 1.2 * s, headR * 1.2, "hsla(202,85%,64%,0.7)");
+    // crown + jaw + shoulder rim so the silhouette pops
+    this.px(x - headR, headCY - headR, headR * 2, Math.max(1, s), "hsl(200,90%,74%)");
+    this.px(x - headR - 0.6 * s, headCY - headR, Math.max(1, s), headR * 2, "hsl(200,80%,58%)");
+    this.px(x + headR - 0.4 * s, headCY - headR, Math.max(1, s), headR * 2, "hsl(200,80%,58%)");
+    this.px(x - 4.4 * s, headCY + headR + 0.6 * s, 8.8 * s, Math.max(1, s), "hsl(200,82%,62%)");
+    // headphones
+    this.px(x - headR - 1.2 * s, headCY - 0.6 * s, 1.5 * s, 3 * s, "#cdd6e6");
+    this.px(x + headR - 0.3 * s, headCY - 0.6 * s, 1.5 * s, 3 * s, "#cdd6e6");
+    this.px(x - headR - 1.0 * s, headCY - headR - 0.6 * s, headR * 2 + 1.8 * s, 1 * s, "#aeb8cc");
+    // arms reaching forward to the keyboard / mouse
+    const tap = Math.sin(t * 7) * (0.6 + k) * s;
+    this.arm(x - 3 * s, shoulderY + 2 * s, x - 6 * s, deskY + 1 * s + tap, s, C.base, C.shade);
+    this.arm(x + 3 * s, shoulderY + 2 * s, x + 5 * s, deskY + 1 * s - tap, s, C.base, C.shade);
+  }
+
+  daw(mx, my, mw, mh, u, t, energy, k, beat) {
+    const g = this.g;
+    g.fillStyle = "#0c0e16"; g.fillRect(mx, my, mw, mh);
+    // top transport bar
+    this.px(mx, my, mw, mh * 0.12, "#15171f");
+    this.px(mx + 1.4 * u, my + mh * 0.03, 2 * u, mh * 0.06, "#22c55e"); // play
+    this.px(mx + 4.4 * u, my + mh * 0.03, 0.8 * u, mh * 0.06, "#e2e8f0");
+    this.px(mx + 5.6 * u, my + mh * 0.03, 0.8 * u, mh * 0.06, "#e2e8f0");
+    // master meter (reacts to energy)
+    for (let i = 0; i < 8; i++) {
+      const lit = energy * 8 + k * 3 > i;
+      this.px(mx + mw - (10 - i) * 1.3 * u, my + mh * 0.035, 1 * u, mh * 0.05, lit ? `hsl(${120 - i * 14},85%,55%)` : "#1e2230");
+    }
+    // playlist lanes with colored clips
+    const top = my + mh * 0.14, laneH = (mh * 0.62) / 5, lblW = mw * 0.16;
+    const hue = this.state.hue, np = this.state.nowPlaying;
+    this.px(mx, top, lblW, mh * 0.62, "#10121b");
+    const clipPlan = [
+      [[0.0, 0.28], [0.4, 0.3]],
+      [[0.1, 0.2], [0.55, 0.4]],
+      [[0.0, 0.5]],
+      [[0.3, 0.25], [0.62, 0.33]],
+      [[0.15, 0.7]],
+    ];
+    for (let r = 0; r < 5; r++) {
+      this.px(mx + 1 * u, top + r * laneH + 0.6 * u, lblW - 2 * u, laneH - 1.2 * u, "#1a1d2a"); // header
+      this.px(mx + 1.6 * u, top + r * laneH + laneH * 0.4, 1.4 * u, 1.4 * u, `hsl(${(hue + r * 40) % 360},70%,55%)`);
+      const trackW = mw - lblW - 1 * u;
+      for (const [cs, cl] of clipPlan[r]) {
+        const clipHue = (hue + r * 34 + (np ? 0 : 0)) % 360;
+        const cxp = mx + lblW + cs * trackW, cwp = cl * trackW;
+        this.px(cxp, top + r * laneH + 0.8 * u, cwp, laneH - 1.6 * u, `hsl(${clipHue},62%,40%)`);
+        this.px(cxp, top + r * laneH + 0.8 * u, cwp, 1, `hsl(${clipHue},70%,62%)`);
+        // tiny waveform ticks
+        for (let w = 0; w < cwp; w += 1.4 * u) this.px(cxp + w, top + r * laneH + laneH * 0.5, 0.7 * u, Math.max(1, Math.sin(w + r) * 1.4 * u + 1.4 * u), `hsl(${clipHue},80%,72%)`);
+      }
+    }
+    // moving playhead
+    const trackX0 = mx + lblW, trackW = mw - lblW - 1 * u;
+    const ph = trackX0 + ((beat * 0.06) % 1) * trackW;
+    this.px(ph, top, 0.8 * u, mh * 0.62, "#f8fafc");
+    this.px(ph, top, 0.8 * u, mh * 0.62, "rgba(255,255,255,0.7)", this.glow);
+    // mixer strip along the bottom
+    const by = my + mh * 0.78;
+    this.px(mx, by, mw, mh * 0.22, "#0e1019");
+    for (let i = 0; i < 8; i++) {
+      const fx = mx + 2 * u + i * (mw - 4 * u) / 8;
+      this.px(fx, by + 2 * u, 1 * u, mh * 0.14, "#1c2030");
+      const fy = by + 2 * u + (0.5 + 0.5 * Math.sin(this.beam * 2 + i)) * (mh * 0.14 - 1.4 * u);
+      this.px(fx - 0.6 * u, fy, 2.2 * u, 1.4 * u, `hsl(${(hue + i * 24) % 360},70%,58%)`);
+    }
+    // now-playing title on the master, if any
+    if (np) { this.px(mx + lblW + 1 * u, my + mh * 0.02, mw * 0.3, mh * 0.07, "#1a1d2a"); }
+  }
+
+  // ---- weather skins (outdoor venues) ----
+  drawWeather(t, ven) {
+    const w = this.state.weather;
+    if (!w || w === "clear") return;
+    if (!["warm", "day", "sunset", "fest"].includes(ven.sky)) return;
+    const W = this.w, H = this.h, U = H / 100;
+    if (w === "rain") {
+      for (let i = 0; i < 80; i++) {
+        const x = (i * 53.1 + t * 240) % W, y = (i * 97.3 + t * 430) % H;
+        this.px(x, y, 1, 3 * U, "rgba(150,195,235,0.32)");
+      }
+    } else if (w === "snow") {
+      for (let i = 0; i < 60; i++) {
+        const x = (i * 61.7 + Math.sin(t * 0.8 + i) * 7 + t * 14) % W, y = (i * 83.3 + t * 34) % H;
+        this.px(x, y, 1.4 * U, 1.4 * U, "rgba(236,242,255,0.8)");
+      }
+    } else if (w === "haze") {
+      this.g.fillStyle = "rgba(255,205,140,0.10)"; this.g.fillRect(0, 0, W, H);
+      const gr = this.glow.createRadialGradient(W * 0.5, H * 0.2, 1, W * 0.5, H * 0.2, H * 0.55);
+      gr.addColorStop(0, "hsla(40,90%,75%,0.22)"); gr.addColorStop(1, "hsla(40,90%,75%,0)");
+      this.glow.fillStyle = gr; this.glow.fillRect(0, 0, W, H);
+    }
+  }
+
+  // ---- regular #1: front-row glowstick dancer (Lv2+) ----
+  glowDancer(floorY, u, t, k, v) {
+    const x = Math.round(this.w * 0.4), s = u * 1.15;
+    const bob = Math.abs(Math.sin(t * 6)) * (1.4 * s + k * 4 * s) * v.motion;
+    const hipY = floorY - bob, torsoH = 8 * s, shoulderY = hipY - torsoH;
+    const headR = 1.7 * s, headCY = shoulderY - headR - 0.4 * s, dark = "hsl(280,30%,8%)";
+    this.px(x - 2.7 * s, shoulderY, 5.4 * s, 2.4 * s, dark);
+    this.px(x - 2.0 * s, shoulderY + 2.2 * s, 4.0 * s, torsoH - 2 * s, dark);
+    this.px(x - 1.8 * s, hipY - 0.5 * s, 1.4 * s, 1.8 * s, dark); this.px(x + 0.4 * s, hipY - 0.5 * s, 1.4 * s, 1.8 * s, dark);
+    this.px(x - headR, headCY - headR, headR * 2, headR * 2, dark);
+    const lift = (4.5 + k * 2) * s;
+    const lx = x - 3 * s + Math.sin(t * 5) * 1.2 * s, rx = x + 3 * s + Math.cos(t * 5) * 1.2 * s;
+    this.arm(x - 2.2 * s, shoulderY + 0.5 * s, lx, shoulderY - lift, s * 0.85, dark, dark);
+    this.arm(x + 2.2 * s, shoulderY + 0.5 * s, rx, shoulderY - lift, s * 0.85, dark, dark);
+    for (const [gx, gh] of [[lx, 120], [rx, 165]]) {
+      const c = `hsl(${gh},95%,62%)`;
+      this.px(gx - 0.6 * s, shoulderY - lift - 2.4 * s, 1.2 * s, 3 * s, c);
+      this.px(gx - 0.6 * s, shoulderY - lift - 2.4 * s, 1.2 * s, 3 * s, c, this.glow);
+    }
+  }
+
+  // ---- regular #2: crowd-surfer gliding across the top (Lv3+, when live) ----
+  crowdSurfer(floorY, u, t, hue) {
+    const s = u * 1.1, period = 9, ph = (t % period) / period, x = this.w * (0.1 + ph * 0.8);
+    const y = floorY - 11 * u - Math.sin(t * 3) * 1 * u;
+    const dark = "hsl(280,32%,9%)", rim = `hsl(${(hue + 30) % 360},85%,64%)`;
+    this.px(x - 5 * s, y, 9 * s, 2.6 * s, dark);             // torso
+    this.px(x + 4 * s, y - 0.6 * s, 2.4 * s, 2.4 * s, dark); // head
+    this.px(x - 6.5 * s, y + 0.4 * s, 2 * s, 1.4 * s, dark); // legs
+    this.px(x - 6.5 * s, y - 1.4 * s, 1.6 * s, 1.8 * s, dark);
+    this.px(x - 1 * s, y - 3 * s, 1.4 * s, 3 * s, dark); this.px(x + 1.4 * s, y - 3 * s, 1.4 * s, 3 * s, dark); // arms up
+    this.px(x - 5 * s, y, 9 * s, Math.max(1, s), rim);
+    this.px(x + 4 * s, y - 0.6 * s, 2.4 * s, Math.max(1, s), rim);
+    this.px(x - 5 * s, y, 9 * s, Math.max(1, s), rim, this.glow);
+  }
+
+  // ---- sound: a muffled kick "through the wall" while live ----
+  ensureAudio() {
+    if (this.audio) { if (this.audio.state === "suspended") this.audio.resume(); return; }
+    try { this.audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  }
+  playThump(energy) {
+    const ac = this.audio; if (!ac) return;
+    const now = ac.currentTime;
+    const osc = ac.createOscillator(), g = ac.createGain(), lp = ac.createBiquadFilter();
+    lp.type = "lowpass"; lp.frequency.value = 230;
+    osc.type = "sine"; osc.frequency.setValueAtTime(95, now); osc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
+    const vol = 0.035 + 0.05 * Math.min(1, energy);
+    g.gain.setValueAtTime(vol, now); g.gain.exponentialRampToValueAtTime(0.0004, now + 0.18);
+    osc.connect(lp); lp.connect(g); g.connect(ac.destination);
+    osc.start(now); osc.stop(now + 0.2);
+  }
+
+  // ---- crowd requests ----
+  maybeRequest() {
+    const since = (performance.now() - (this.t0 || performance.now())) / 1000 - this.sentT;
+    const isLive = since >= 0 && since < 26;
+    if (!isLive || this.state.request || this.state.mode === "night") return;
+    if (Math.random() < 0.16) {
+      const opts = [{ vibe: "rave", label: "MORE BASS!" }, { vibe: "chill", label: "slow it down" }, { vibe: "groove", label: "keep it groovy" }];
+      const r = opts[Math.floor(Math.random() * opts.length)];
+      this.setState({ request: r });
+      setTimeout(() => { if (this.state.request && this.state.request.label === r.label) this.setState({ request: null }); }, 8000);
+    }
+  }
+  honorRequest() {
+    const r = this.state.request; if (!r) return;
+    this.setState({ request: null, vibe: r.vibe, auto: false });
+    this.addXp(0.12); this.flash("\uD83D\uDE4C Crowd request honored!");
+  }
+  dismissRequest() { this.setState({ request: null }); }
+
+  // ---- shareable pixel postcard ----
+  savePostcard() {
+    const src = this.canvasRef.current; if (!src) return;
+    const scale = 3, capH = 60;
+    const cv = document.createElement("canvas"); cv.width = src.width * scale; cv.height = src.height * scale + capH;
+    const c = cv.getContext("2d"); c.imageSmoothingEnabled = false;
+    c.fillStyle = "#07050d"; c.fillRect(0, 0, cv.width, cv.height);
+    c.drawImage(src, 0, 0, cv.width, src.height * scale);
+    c.fillStyle = "#0c0816"; c.fillRect(0, src.height * scale, cv.width, capH);
+    const ven = VENUE[this.state.venue] || { name: "" };
+    c.fillStyle = "#ffe3fa"; c.font = "bold 24px ui-sans-serif, system-ui";
+    c.fillText(this.state.djName, 20, src.height * scale + 28);
+    c.fillStyle = "#9bd6e8"; c.font = "15px ui-monospace, monospace";
+    c.fillText(ven.name + "  \u00b7  peak " + (this.peakCrowd || 0), 20, src.height * scale + 48);
+    cv.toBlob((b) => { if (!b) return; const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "desk-club-postcard.png"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); });
+    this.flash("\uD83D\uDCF8 Postcard saved");
+  }
+}
+</script>
+</body>
+</html>
