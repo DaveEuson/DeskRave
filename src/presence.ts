@@ -55,8 +55,10 @@ export class Presence {
       this.lastError = "needs localhost or https (open it on the device itself)";
       return false;
     }
+    this.releaseStream(); // drop any lingering stream from a prior attempt/reload
+    let stream: MediaStream | null = null;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 }, audio: false });
+      stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 }, audio: false });
       const video = document.createElement("video");
       video.srcObject = stream;
       video.muted = true;
@@ -74,15 +76,23 @@ export class Presence {
       this.loop();
       return true;
     } catch (e) {
+      stream?.getTracks().forEach((t) => t.stop()); // release the camera so a retry isn't "busy"
+      this.video = null;
+      this.detector = null;
       const err = e as Error;
       this.lastError =
         err?.name === "NotFoundError" || err?.name === "DevicesNotFoundError" ? "no camera found — check it's plugged in"
         : err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError" ? "camera permission was blocked"
-        : err?.name === "NotReadableError" ? "camera is busy (another app has it)"
+        : err?.name === "NotReadableError" ? "camera is busy — close other Chromium windows / re-toggle"
         : err?.message || "camera unavailable";
       console.warn("presence: camera failed —", err?.name, err?.message);
       return false;
     }
+  }
+
+  // release the camera before a fresh acquire (defensive; tabs/HMR can leave one open)
+  private releaseStream(): void {
+    (this.video?.srcObject as MediaStream | null)?.getTracks().forEach((t) => t.stop());
   }
 
   private loop(): void {
