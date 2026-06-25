@@ -58,7 +58,9 @@ export class Presence {
     this.releaseStream(); // drop any lingering stream from a prior attempt/reload
     let stream: MediaStream | null = null;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 }, audio: false });
+      // let Chromium negotiate the camera's native format (this webcam is MJPG-only;
+      // pinning a raw resolution can make it fail to open on some drivers)
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       const video = document.createElement("video");
       video.srcObject = stream;
       video.muted = true;
