@@ -1,4 +1,4 @@
-import { CC_TRACKS, isAudioFile, trackFromFile, type Track } from "./tracks";
+import { CC_TRACKS, STATION_TRACKS, isAudioFile, trackFromFile, type Track } from "./tracks";
 
 import { BANDS } from "./config";
 
@@ -28,7 +28,7 @@ export class AudioStream {
   private volume = 0.8;
   private mutedState = false;
   index = 0;
-  playlist: Track[] = [...CC_TRACKS];
+  playlist: Track[] = [...STATION_TRACKS, ...CC_TRACKS];
   onTrackChange?: (t: Track) => void;
   onPlayState?: (playing: boolean) => void;
   onPlaylistChange?: () => void;

@@ -51,9 +51,11 @@ export class Visualizer {
     const cssW = this.canvas.clientWidth || 640;
     const cssH = this.canvas.clientHeight || 360;
     this.h = PIXEL_H;
-    // match the viewport aspect so CSS upscaling keeps pixels square (no stretch);
-    // small floor avoids a degenerate width on extreme portrait.
-    this.w = Math.max(80, Math.round(PIXEL_H * (cssW / cssH)));
+    // Clamp the render aspect so the landscape club never gets cramped on a tall
+    // phone or stretched on an ultrawide; CSS `object-fit: contain` letterboxes
+    // the leftover into the scene's dark background. Keeps pixels square.
+    const aspect = Math.min(3.4, Math.max(0.72, cssW / cssH));
+    this.w = Math.round(PIXEL_H * aspect);
     this.canvas.width = this.w;
     this.canvas.height = this.h;
     this.glowCanvas.width = this.w;
@@ -251,6 +253,15 @@ export class Visualizer {
     }
   }
 
+  // a filled pixel disc (round platter), rows clipped to a circle
+  private disc(cx: number, cy: number, r: number, color: string, g = this.g): void {
+    const ri = Math.ceil(r);
+    for (let dy = -ri; dy <= ri; dy++) {
+      const w = Math.sqrt(Math.max(0, r * r - dy * dy));
+      if (w >= 0.5) this.px(cx - w, cy + dy, w * 2, 1, color, g);
+    }
+  }
+
   // ── the DJ: booth + 2 turntables + mixer + avatar + vibe animation ──────────
   private dj(cx: number, stageY: number, u: number, t: number, intensity: number): void {
     const live = this.liveness;
@@ -272,27 +283,44 @@ export class Visualizer {
     this.px(cx - 3.4 * u, headY - 0.6 * u, 6.8 * u, 1 * u, "#cfc8e0");
     this.avatarHat(cx, headY, u);
 
-    // arms working the decks; rave throws a fist up on the kick
+    // ── booth: dark slab, two turntables, a mixer ──
+    const bw = 30 * u;
+    const boothTop = stageY - 11 * u;
+    this.px(cx - bw / 2 - u, boothTop - u, bw + 2 * u, 11 * u + u, jacketSh); // outline
+    this.px(cx - bw / 2, boothTop, bw, 11 * u, "#0c0a16"); // body
+    this.px(cx - bw / 2, boothTop, bw, 0.8 * u, `hsl(${this.s.hue},55%,32%)`); // subtle lit top edge
+
+    const labelHue = (this.s.hue + 30) % 360;
+    const pcy = boothTop + 5 * u;
+    for (const dx of [-bw / 4 - 0.5 * u, bw / 4 + 0.5 * u]) {
+      const pcx = cx + dx;
+      this.disc(pcx, pcy, 4 * u, "#070510"); // platter rim
+      this.disc(pcx, pcy, 3.4 * u, "#1b1726"); // vinyl
+      this.disc(pcx, pcy, 1.5 * u, `hsl(${labelHue},85%,${52 + this.kick * 26}%)`); // label
+      this.disc(pcx, pcy, 1.5 * u, `hsla(${labelHue},85%,62%,0.5)`, this.glow); // label glow
+      this.px(pcx - 0.4 * u, pcy - 0.4 * u, 0.9 * u, 0.9 * u, "#070510"); // spindle
+      const a = this.beam * (3 + (this.s.vibe === "rave" ? 4 : 0)) + (dx > 0 ? 1.7 : 0);
+      this.px(pcx + Math.cos(a) * 2.6 * u - 0.4 * u, pcy + Math.sin(a) * 2.6 * u - 0.4 * u, 0.9 * u, 0.9 * u, `hsl(${labelHue},90%,75%)`); // spin mark
+      this.px(pcx + 2.6 * u, pcy - 4 * u, 0.7 * u, 4.6 * u, "#b9b1cc"); // tonearm post
+      this.px(pcx + 0.6 * u, pcy - 3.8 * u, 2.2 * u, 0.7 * u, "#b9b1cc"); // tonearm
+    }
+
+    // centre mixer: channel faders + crossfader, knobs react to the kick
+    const mx = cx, my = boothTop + 2 * u;
+    this.px(mx - 2.6 * u, my, 5.2 * u, 8 * u, "#15111f");
+    this.px(mx - 1.7 * u, my + 1 * u, 0.7 * u, 4.5 * u, "#2a2440"); // fader tracks
+    this.px(mx + 1 * u, my + 1 * u, 0.7 * u, 4.5 * u, "#2a2440");
+    this.px(mx - 1.9 * u, my + 1.5 * u + this.kick * 2.2 * u, 1.1 * u, 0.8 * u, `hsl(${this.s.hue},90%,62%)`);
+    this.px(mx + 0.8 * u, my + 3 * u - this.kick * 2.2 * u, 1.1 * u, 0.8 * u, `hsl(${this.s.hue},90%,62%)`);
+    this.px(mx - 2.2 * u, my + 6.4 * u, 4.4 * u, 0.7 * u, "#2a2440"); // crossfader track
+    this.px(mx - 0.5 * u + Math.sin(this.beam * 2) * 1.4 * u, my + 6 * u, 1 * u, 1.5 * u, `hsl(${labelHue},90%,66%)`);
+
+    // arms ON the decks (drawn after the booth); rave throws a fist up on the kick
     const fistUp = this.s.vibe === "rave" && this.kick > 0.5;
     const scratch = Math.sin(t * (10 + intensity * 10)) * this.kick * 3 * u * intensity;
-    this.limb(cx - 2.5 * u, y - 14 * u, cx - 6 * u + scratch, stageY - 7 * u, u, skin);
+    this.limb(cx - 2.5 * u, y - 14 * u, cx - bw / 4 + scratch, pcy, u, skin);
     if (fistUp) this.limb(cx + 2.5 * u, y - 14 * u, cx + 5 * u, headY - 4 * u, u, skin);
-    else this.limb(cx + 2.5 * u, y - 14 * u, cx + 6 * u, stageY - 7 * u - this.kick * 2 * u, u, skin);
-
-    // booth + mixer + two turntables
-    const bw = 26 * u;
-    this.px(cx - bw / 2 - u, stageY - 9 * u - u, bw + 2 * u, 9 * u + u, jacketSh);
-    this.px(cx - bw / 2, stageY - 9 * u, bw, 9 * u, "#0c0a16");
-    this.px(cx - bw / 2, stageY - 9 * u, bw, 1.4 * u, `hsl(${this.s.hue},90%,55%)`);
-    this.px(cx - 2 * u, stageY - 8 * u, 4 * u, 6 * u, "#15111f"); // mixer
-    for (let i = 0; i < 3; i++) this.px(cx - 1.2 * u + i * 1.2 * u, stageY - 6 * u + (i % 2) * u, 0.8 * u, 0.8 * u, `hsl(${this.s.hue},90%,60%)`);
-    for (const dx of [-bw / 4 - u, bw / 4 + u]) {
-      const pcx = cx + dx, pcy = stageY - 5 * u;
-      this.px(pcx - 3 * u, pcy - 3 * u, 6 * u, 6 * u, `hsl(${(this.s.hue + 30) % 360},85%,${55 + this.kick * 25}%)`);
-      this.px(pcx - 3 * u, pcy - 3 * u, 6 * u, 6 * u, `hsla(${(this.s.hue + 30) % 360},85%,60%,0.6)`, this.glow);
-      const a = this.beam * 3 + (dx > 0 ? 1.6 : 0);
-      this.px(pcx + Math.cos(a) * 2 * u - 0.5 * u, pcy + Math.sin(a) * 2 * u - 0.5 * u, u, u, "#0c0a16");
-    }
+    else this.limb(cx + 2.5 * u, y - 14 * u, cx + bw / 4, pcy - this.kick * 2 * u, u, skin);
   }
 
   private avatarHat(cx: number, headY: number, u: number): void {

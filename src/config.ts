@@ -139,4 +139,23 @@ export const CC_STATION = {
   ] as StationTrack[],
 };
 
+// ── Internet radio stations (first-class, like a real radio widget) ───────────
+// Streamed through a same-origin proxy (/api/radio) so the AnalyserNode can read
+// them regardless of each station's CORS headers. SomaFM is listener-supported
+// and freely streamable — credited in the HUD.
+export interface Station {
+  name: string;
+  genre: string;
+  stream: string;
+  hue: number;
+}
+export const STATIONS: Station[] = [
+  { name: "Groove Salad", genre: "downtempo", stream: "https://ice1.somafm.com/groovesalad-128-mp3", hue: 150 },
+  { name: "Beat Blender", genre: "deep house", stream: "https://ice1.somafm.com/beatblender-128-mp3", hue: 288 },
+  { name: "DEF CON Radio", genre: "electronic", stream: "https://ice1.somafm.com/defcon-128-mp3", hue: 190 },
+  { name: "The Trip", genre: "prog house", stream: "https://ice1.somafm.com/thetrip-128-mp3", hue: 262 },
+];
+
+export const radioUrl = (stream: string): string => `/api/radio?url=${encodeURIComponent(stream)}`;
+
 export const ACCEPTED_AUDIO = /\.(mp3|wav|wave|aif|aiff|aifc|flac|m4a|mp4|aac|ogg|oga|opus)$/i;

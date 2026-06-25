@@ -4,7 +4,7 @@ import { AudioStream } from "./AudioStream";
 import { Visualizer } from "./Visualizer";
 import { Classifier } from "./classifier";
 import { Controls } from "./controls";
-import { loadProfile, saveProfile, type Profile } from "./profile";
+import { loadProfile, loadProfileSync, saveProfile, type Profile } from "./profile";
 import { accrue, unlockLabel } from "./xp";
 import { VENUES, VIBES, type AvatarId, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, uploadFile } from "./library";
@@ -14,11 +14,7 @@ const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) 
 const audio = new AudioStream();
 const scene = new Visualizer($<HTMLCanvasElement>("c"));
 const classifier = new Classifier();
-let profile: Profile = (await loadProfile().catch(() => null)) ?? defaultBoot();
-
-function defaultBoot(): Profile {
-  return JSON.parse(localStorage.getItem("pixeldj.profile") || "null") ?? ({} as Profile);
-}
+let profile: Profile = loadProfileSync(); // instant boot from the mirror
 
 // ── reflect the whole profile into the scene ────────────────────────────────
 function syncScene(): void {
@@ -64,6 +60,9 @@ controls.setMedia(audio.tracks, audio.index);
 // load the persisted server library on boot (uploads survive reload)
 void fetchLibrary().then((lib) => { if (lib.length) { audio.addTracks(lib); controls.setMedia(audio.tracks, audio.index); } });
 
+// refresh the server-authoritative profile (the sync boot used the local mirror)
+void loadProfile().then((p) => { profile = p; controls.setProfile(profile); syncScene(); });
+
 // ── auto-vibe from the classifier ───────────────────────────────────────────
 classifier.onResult = (c) => {
   controls.setNowPlaying(c.vibe, audio.index);
@@ -79,6 +78,7 @@ function ingest(files: FileList | null): void {
   if (first >= 0) { void audio.select(first); for (const f of Array.from(files)) void uploadFile(f); }
 }
 const stageEl = $("stage");
+stageEl.addEventListener("click", () => controls.reveal()); // tap the scene → open controls
 let dragDepth = 0;
 addEventListener("dragenter", (e) => { if (e.dataTransfer?.types.includes("Files")) { dragDepth++; stageEl.classList.add("dragging"); } });
 addEventListener("dragover", (e) => { if (e.dataTransfer?.types.includes("Files")) e.preventDefault(); });
@@ -124,9 +124,12 @@ function tickProgress(dtMs: number): void {
 // ── render loop ─────────────────────────────────────────────────────────────
 syncScene();
 controls.setProfile(profile);
+toast("👆 Tap the screen to open controls & pick a station");
 let lastT = performance.now();
+let frames = 0;
 function frame(now: number): void {
   requestAnimationFrame(frame);
+  frames++;
   const dt = now - lastT; lastT = now;
   const playing = audio.playing;
   const lv = playing ? audio.levels() : null;
@@ -142,6 +145,11 @@ function frame(now: number): void {
 }
 requestAnimationFrame(frame);
 
+// ── PWA: register the service worker in production builds (skip in dev/HMR) ──
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  addEventListener("load", () => void navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
+
 // ── dev-only helpers (stripped from production builds) ──────────────────────
 if (import.meta.env.DEV) {
   (window as unknown as { __pr: unknown }).__pr = { scene, audio, controls, profile: () => profile };
@@ -151,4 +159,18 @@ if (import.meta.env.DEV) {
   dev.title = "dev: accrue 30 listening minutes";
   dev.onclick = () => applyProgress(accrue(profile, 30, "dev-" + Date.now()));
   document.body.appendChild(dev);
+
+  // perf overlay: FPS + frame-time + backbuffer size (benchmark on the Jetson)
+  const perf = document.createElement("div");
+  perf.className = "dev-perf";
+  document.body.appendChild(perf);
+  let lastSample = performance.now();
+  setInterval(() => {
+    const nowS = performance.now();
+    const fps = Math.round((frames * 1000) / (nowS - lastSample));
+    frames = 0;
+    lastSample = nowS;
+    const cv = $<HTMLCanvasElement>("c");
+    perf.textContent = `${fps} fps · ${(1000 / Math.max(1, fps)).toFixed(1)} ms · ${cv.width}×${cv.height} · ${audio.playing ? "live" : "idle"}`;
+  }, 1000);
 }

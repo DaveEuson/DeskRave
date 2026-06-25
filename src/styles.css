@@ -5,8 +5,8 @@ html, body { margin: 0; height: 100%; background: #08060f; color: #d8d4e6;
 body { height: 100vh; }
 
 /* the scene IS the widget — full-bleed; controls float over it */
-#stage { position: fixed; inset: 0; }
-canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+#stage { position: fixed; inset: 0; background: #04030a; }
+canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; object-fit: contain; }
 
 #crt { position: absolute; inset: 0; pointer-events: none;
   background:
@@ -33,3 +33,6 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
   background: #1a1530; color: #9fe0c0; border: 1px solid #34294f; border-radius: 6px;
   padding: 5px 9px; cursor: pointer; opacity: .6; }
 .dev-time:hover { opacity: 1; }
+.dev-perf { position: absolute; top: 10px; left: 92px; z-index: 20;
+  background: rgba(10,8,20,.7); color: #9fe0c0; border: 1px solid #34294f; border-radius: 6px;
+  padding: 5px 9px; font: 12px ui-monospace, monospace; pointer-events: none; }

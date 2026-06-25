@@ -9,6 +9,10 @@ dist
 # design-handoff zip (the extracted folder is committed instead)
 *.zip
 
+# debug screenshots pulled off devices
+jetson-shot*.png
+pdj-shot*.png
+
 # user-uploaded music — keep the folder, ignore its contents
 public/media/*
 !public/media/.gitkeep

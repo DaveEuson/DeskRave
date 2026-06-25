@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- maskable safe area: keep art within the centre ~80% -->
+  <rect width="512" height="512" rx="96" fill="#0c0a16"/>
+  <rect width="512" height="512" rx="96" fill="url(#g)" opacity="0.25"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d946ef"/>
+      <stop offset="1" stop-color="#2cf0ff"/>
+    </linearGradient>
+  </defs>
+  <!-- chunky pixel DJ: head + headphones behind a booth with two platters -->
+  <g shape-rendering="crispEdges">
+    <rect x="216" y="150" width="80" height="76" fill="#caa07a"/>
+    <rect x="184" y="120" width="144" height="34" fill="#d946ef"/>
+    <rect x="180" y="172" width="24" height="46" fill="#eae6f6"/>
+    <rect x="308" y="172" width="24" height="46" fill="#eae6f6"/>
+    <rect x="200" y="226" width="112" height="70" fill="#7c3aed"/>
+    <rect x="150" y="300" width="212" height="70" fill="#100c1c"/>
+    <rect x="150" y="300" width="212" height="12" fill="#2cf0ff"/>
+    <rect x="176" y="320" width="48" height="40" fill="#22d3ee"/>
+    <rect x="288" y="320" width="48" height="40" fill="#ff4fd8"/>
+  </g>
+</svg>

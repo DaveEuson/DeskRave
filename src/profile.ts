@@ -65,6 +65,19 @@ export function defaultProfile(): Profile {
   };
 }
 
+// Instant, synchronous boot from the localStorage mirror (or default) — avoids a
+// top-level await so the widget starts immediately; the server copy refreshes after.
+export function loadProfileSync(): Profile {
+  const id = deviceId();
+  try {
+    const cached = localStorage.getItem(LS_KEY);
+    if (cached) return { ...defaultProfile(), ...JSON.parse(cached), id };
+  } catch {
+    /* ignore */
+  }
+  return defaultProfile();
+}
+
 // Load: server is source of truth; fall back to the localStorage mirror, then default.
 export async function loadProfile(): Promise<Profile> {
   const id = deviceId();

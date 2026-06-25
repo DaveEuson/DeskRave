@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin, type Connect } from "vite";
 import { createWriteStream, promises as fs } from "node:fs";
 import { networkInterfaces } from "node:os";
+import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -96,6 +97,29 @@ const mediaApi = (port: number): Connect.NextHandleFunction => {
     if (req.method === "GET" && url.startsWith("/api/info")) {
       res.setHeader("content-type", "application/json");
       return res.end(JSON.stringify({ host: lanUrl(port) }));
+    }
+
+    // ── internet-radio proxy (re-serves a stream same-origin so the FFT works) ──
+    if (req.method === "GET" && url.startsWith("/api/radio")) {
+      const target = new URL(url, "http://x").searchParams.get("url") || "";
+      let host = "";
+      try { host = new URL(target).hostname; } catch { /* invalid url */ }
+      if (!/(^|\.)somafm\.com$/i.test(host)) {
+        res.statusCode = 400;
+        return res.end("station not allowed");
+      }
+      try {
+        const up = await fetch(target, { headers: { "user-agent": "PixelDJ/0.1", icy: "0" } });
+        res.setHeader("content-type", up.headers.get("content-type") || "audio/mpeg");
+        res.setHeader("access-control-allow-origin", "*");
+        res.setHeader("cache-control", "no-store");
+        if (up.body) Readable.fromWeb(up.body as Parameters<typeof Readable.fromWeb>[0]).pipe(res);
+        else res.end();
+      } catch {
+        res.statusCode = 502;
+        res.end("stream error");
+      }
+      return;
     }
 
     // ── profile persistence (server-authoritative) ──────────────────────────

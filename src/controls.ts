@@ -67,13 +67,20 @@ export class Controls {
     root.querySelectorAll<HTMLButtonElement>(".sheet-nav button").forEach((b) =>
       (b.onclick = () => { this.view = b.dataset.view as View; this.renderNav(); this.renderBody(); }));
 
+    root.classList.add("hint"); // pulse the dock until first interaction
     this.renderBody();
   }
 
   private setOpen(open: boolean): void {
     this.open = open;
     this.root.classList.toggle("open", open);
+    this.root.classList.remove("hint"); // any interaction clears the "tap me" hint
     if (open) this.renderBody();
+  }
+
+  // tapping the scene anywhere opens the sheet (big touch target for the kiosk)
+  reveal(): void {
+    if (!this.open) this.setOpen(true);
   }
 
   setProfile(p: Profile): void { this.p = p; if (this.open) this.renderBody(); this.renderDock(); }
