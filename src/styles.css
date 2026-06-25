@@ -27,6 +27,18 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
   pointer-events: none; text-shadow: 0 1px 3px #000; }
 #deskTimer.on { opacity: .9; }
 
+/* "what the camera sees" — privacy preview, mirrored, with the detection box */
+#camPreview { position: absolute; left: 12px; bottom: 12px; width: 160px; height: 120px;
+  border-radius: 10px; overflow: hidden; border: 1px solid #2a3a30; background: #000;
+  box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+#camPreview[hidden] { display: none; }
+#camVideo { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+#camBoxes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#camStatus { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 6px; font: 11px ui-monospace, monospace;
+  color: #cdeede; background: linear-gradient(transparent, rgba(0,0,0,.75)); text-align: center; }
+#camHide { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; line-height: 1; padding: 0;
+  border-radius: 999px; background: rgba(10,8,20,.7); color: #d8d4e6; border: 1px solid #34294f; cursor: pointer; }
+
 #toasts { position: absolute; top: 44px; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; }
 .toast { background: rgba(20,12,30,.92); border: 1px solid #7c3aed; color: #fff;

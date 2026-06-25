@@ -17,6 +17,8 @@ export class Presence {
   private running = false;
   private lastSeen = 0;
   private graceMs = 2500; // stay "present" briefly after the last sighting (anti-flicker)
+  private lastBoxes: { x: number; y: number; w: number; h: number }[] = [];
+  lastError = "";
   onChange?: (s: PresenceState) => void;
 
   get current(): PresenceState {
@@ -24,6 +26,13 @@ export class Presence {
   }
   get active(): boolean {
     return this.running;
+  }
+  // for the on-screen "what the camera sees" preview
+  get stream(): MediaStream | null {
+    return (this.video?.srcObject as MediaStream) ?? null;
+  }
+  get boxes(): { x: number; y: number; w: number; h: number }[] {
+    return this.lastBoxes;
   }
 
   private set(present: boolean, count: number): void {
@@ -42,6 +51,10 @@ export class Presence {
   // (localhost or https). Returns false if unavailable/denied.
   async startCamera(): Promise<boolean> {
     if (this.running) return true;
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      this.lastError = "needs localhost or https (open it on the device itself)";
+      return false;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 }, audio: false });
       const video = document.createElement("video");
@@ -61,7 +74,13 @@ export class Presence {
       this.loop();
       return true;
     } catch (e) {
-      console.warn("presence: camera unavailable —", (e as Error)?.message ?? e);
+      const err = e as Error;
+      this.lastError =
+        err?.name === "NotFoundError" || err?.name === "DevicesNotFoundError" ? "no camera found — check it's plugged in"
+        : err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError" ? "camera permission was blocked"
+        : err?.name === "NotReadableError" ? "camera is busy (another app has it)"
+        : err?.message || "camera unavailable";
+      console.warn("presence: camera failed —", err?.name, err?.message);
       return false;
     }
   }
@@ -71,7 +90,13 @@ export class Presence {
     let count = 0;
     if (this.video.readyState >= 2) {
       try {
-        count = this.detector.detectForVideo(this.video, performance.now()).detections.length;
+        const dets = this.detector.detectForVideo(this.video, performance.now()).detections;
+        count = dets.length;
+        const vw = this.video.videoWidth || 320, vh = this.video.videoHeight || 240;
+        this.lastBoxes = dets.map((d) => {
+          const b = d.boundingBox!;
+          return { x: 1 - (b.originX + b.width) / vw, y: b.originY / vh, w: b.width / vw, h: b.height / vh }; // mirrored x for the mirrored preview
+        });
       } catch {
         /* frame not ready */
       }

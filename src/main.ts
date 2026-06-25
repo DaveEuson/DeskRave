@@ -59,20 +59,39 @@ presence.onChange = (st) => {
   }
   syncScene();
 };
+// ── "what the camera sees" privacy preview ──────────────────────────────────
+const camPreview = $("camPreview");
+const camVideo = $<HTMLVideoElement>("camVideo");
+const camBoxes = $<HTMLCanvasElement>("camBoxes");
+const camStatus = $("camStatus");
+$("camHide").onclick = () => { camPreview.hidden = true; };
+function drawCam(): void {
+  if (camPreview.hidden || !presence.active) return;
+  const ctx = camBoxes.getContext("2d")!;
+  ctx.clearRect(0, 0, camBoxes.width, camBoxes.height);
+  ctx.strokeStyle = presence.current.present ? "#34d399" : "#f59e0b";
+  ctx.lineWidth = 2;
+  for (const b of presence.boxes) ctx.strokeRect(b.x * camBoxes.width, b.y * camBoxes.height, b.w * camBoxes.width, b.h * camBoxes.height);
+}
+
 async function setCamera(on: boolean): Promise<void> {
   if (on) {
     const ok = await presence.startCamera();
     if (!ok) {
       profile.settings.camera = false;
       controls.setProfile(profile);
-      toast("📷 camera needs localhost/https + permission");
+      toast("📷 " + (presence.lastError || "camera unavailable"));
     } else {
       presenceDrives = true;
+      if (presence.stream) camVideo.srcObject = presence.stream;
+      camPreview.hidden = false; // show people exactly what the camera sees
       toast("👁 Presence on — the DJ plays when it sees you");
     }
   } else {
     presenceDrives = false; // set before stop() so the resulting "absent" doesn't pause your music
     presence.stop();
+    camPreview.hidden = true;
+    camVideo.srcObject = null;
   }
   persist();
 }
@@ -165,6 +184,10 @@ setInterval(() => {
   const here = presence.current.present || audio.playing;
   deskTimer.classList.toggle("on", here);
   deskTimer.textContent = `👤 at desk ${fmtDuration(sessionMs)}`;
+  const c = presence.current.count;
+  camStatus.textContent = !presence.active ? "camera off"
+    : presence.current.present ? `👁 I see you${c > 1 ? ` ×${c}` : ""}`
+    : "👀 no one in view";
 }, 1000);
 
 // ── render loop ─────────────────────────────────────────────────────────────
@@ -182,6 +205,7 @@ function frame(now: number): void {
   const playing = audio.playing;
   const lv = playing ? audio.levels() : null;
   scene.render(lv, now / 1000, new Date());
+  drawCam();
 
   if (lv) {
     controls.setEq(lv.spectrum);
