@@ -70,9 +70,11 @@ export class Presence {
 
       const vision = await FilesetResolver.forVisionTasks(WASM);
       this.detector = await FaceDetector.createFromOptions(vision, {
-        baseOptions: { modelAssetPath: MODEL },
+        // CPU delegate: avoids WebGL inference, which is unreliable on this Jetson's
+        // Chromium. Cheap at our ~4 Hz detection rate.
+        baseOptions: { modelAssetPath: MODEL, delegate: "CPU" },
         runningMode: "VIDEO",
-        minDetectionConfidence: 0.5,
+        minDetectionConfidence: 0.4,
       });
       this.running = true;
       this.loop();
