@@ -47,9 +47,10 @@ export class Presence {
     this.set(present, count);
   }
 
-  // Start the webcam + detector. Needs a user gesture + a secure context
-  // (localhost or https). Returns false if unavailable/denied.
-  async startCamera(): Promise<boolean> {
+  // Start the webcam + detector on a VISIBLE <video> element (must be on-screen so
+  // the browser actually decodes frames — hidden/offscreen video often won't, which
+  // starves the detector). Needs a user gesture + secure context (localhost/https).
+  async startCamera(video: HTMLVideoElement): Promise<boolean> {
     if (this.running) return true;
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
       this.lastError = "needs localhost or https (open it on the device itself)";
@@ -61,7 +62,6 @@ export class Presence {
       // let Chromium negotiate the camera's native format (this webcam is MJPG-only;
       // pinning a raw resolution can make it fail to open on some drivers)
       stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      const video = document.createElement("video");
       video.srcObject = stream;
       video.muted = true;
       video.playsInline = true;

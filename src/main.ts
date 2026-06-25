@@ -76,15 +76,15 @@ function drawCam(): void {
 
 async function setCamera(on: boolean): Promise<void> {
   if (on) {
-    const ok = await presence.startCamera();
+    camPreview.hidden = false; // show it first so the <video> actually decodes frames
+    const ok = await presence.startCamera(camVideo); // detect on the visible preview video
     if (!ok) {
+      camPreview.hidden = true;
       profile.settings.camera = false;
       controls.setProfile(profile);
       toast("📷 " + (presence.lastError || "camera unavailable"));
     } else {
       presenceDrives = true;
-      if (presence.stream) camVideo.srcObject = presence.stream;
-      camPreview.hidden = false; // show people exactly what the camera sees
       toast("👁 Presence on — the DJ plays when it sees you");
     }
   } else {
