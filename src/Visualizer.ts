@@ -33,6 +33,7 @@ export class Visualizer {
   private beam = 0;
   private liveness = 0; // eased 0..1 for smooth idle↔live wind-down
   private spectrum: number[] = [];
+  private presenceCount = 0; // real people the camera sees → guarantees some crowd
 
   private s: SceneState = {
     hue: 288, jacketHue: 288, venue: "club", vibe: "groove", avatar: "beanie",
@@ -66,6 +67,10 @@ export class Visualizer {
 
   setState(p: Partial<SceneState>): void {
     Object.assign(this.s, p);
+  }
+
+  setPresence(count: number): void {
+    this.presenceCount = count;
   }
 
   private px(x: number, y: number, w: number, h: number, color: string, g = this.g): void {
@@ -363,7 +368,9 @@ export class Visualizer {
 
   // ── crowd with vibe-based dance moves ───────────────────────────────────────
   private crowd(floorY: number, u: number, t: number, vibe: VibeProfile, venueScale: number): void {
-    const want = Math.round((6 + this.energy * 34) * vibe.crowd * venueScale * this.liveness * (this.w / 360)) + (this.s.live ? 0 : 2);
+    const want = Math.round((6 + this.energy * 34) * vibe.crowd * venueScale * this.liveness * (this.w / 360))
+      + Math.round(this.presenceCount * 3 * venueScale) // each real person → a few dancers
+      + (this.s.live ? 0 : 2);
     while (this.dancers.length < want)
       this.dancers.push({ x: Math.random(), ph: Math.random() * 6, scale: 0.7 + Math.random() * 0.4, row: Math.random() < 0.5 ? 0 : 1, hair: Math.random() * 30 - 15 });
     while (this.dancers.length > want) this.dancers.pop();

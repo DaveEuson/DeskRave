@@ -8,6 +8,7 @@ export interface Settings {
   clock24: boolean;
   scanlines: boolean;
   sound: boolean;
+  camera: boolean; // presence detection — DJ wakes when it sees you
   weather: "clear" | "rain" | "snow" | "haze";
 }
 
@@ -60,7 +61,7 @@ export function defaultProfile(): Profile {
     unlocks: ["backyard", "beanie", "snapback"],
     peakCrowd: 0,
     history: [],
-    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, weather: "clear" },
+    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, camera: false, weather: "clear" },
     lastSeen: new Date().toISOString(),
   };
 }

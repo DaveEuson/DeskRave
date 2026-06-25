@@ -8,12 +8,14 @@ import { loadProfile, loadProfileSync, saveProfile, type Profile } from "./profi
 import { accrue, unlockLabel } from "./xp";
 import { VENUES, VIBES, type AvatarId, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, uploadFile } from "./library";
+import { Presence } from "./presence";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 
 const audio = new AudioStream();
 const scene = new Visualizer($<HTMLCanvasElement>("c"));
 const classifier = new Classifier();
+const presence = new Presence();
 let profile: Profile = loadProfileSync(); // instant boot from the mirror
 
 // ── reflect the whole profile into the scene ────────────────────────────────
@@ -41,10 +43,39 @@ const controls = new Controls($("controls"), profile, {
   onAvatar: (a: AvatarId) => { profile.avatar = a; persist(); controls.setProfile(profile); syncScene(); },
   onJacket: (hue) => { profile.jacketHue = hue; persist(); controls.setProfile(profile); syncScene(); },
   onVenue: (v: VenueId) => { profile.venue = v; persist(); controls.setProfile(profile); syncScene(); },
-  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); },
+  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); if ("camera" in patch) void setCamera(!!patch.camera); },
   onSelectTrack: (i) => void audio.select(i),
   onAddFiles: () => fileInput.click(),
 });
+
+// ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
+let presenceDrives = false; // does presence control playback right now?
+presence.onChange = (st) => {
+  scene.setPresence(st.count);
+  if (presenceDrives) {
+    // arrive → start the set; leave → wind down (autoplay needs the kiosk flag or a prior gesture)
+    if (st.present && !audio.playing && audio.current) void audio.play();
+    else if (!st.present && audio.playing) audio.pause();
+  }
+  syncScene();
+};
+async function setCamera(on: boolean): Promise<void> {
+  if (on) {
+    const ok = await presence.startCamera();
+    if (!ok) {
+      profile.settings.camera = false;
+      controls.setProfile(profile);
+      toast("📷 camera needs localhost/https + permission");
+    } else {
+      presenceDrives = true;
+      toast("👁 Presence on — the DJ plays when it sees you");
+    }
+  } else {
+    presenceDrives = false; // set before stop() so the resulting "absent" doesn't pause your music
+    presence.stop();
+  }
+  persist();
+}
 
 // ── audio events ────────────────────────────────────────────────────────────
 audio.onTrackChange = () => {
@@ -121,16 +152,33 @@ function tickProgress(dtMs: number): void {
   }
 }
 
+// ── session "time at desk" timer ─────────────────────────────────────────────
+const deskTimer = $("deskTimer");
+let sessionMs = 0; // accumulates while present at the desk (or while playing)
+function fmtDuration(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
+}
+setInterval(() => {
+  const here = presence.current.present || audio.playing;
+  deskTimer.classList.toggle("on", here);
+  deskTimer.textContent = `👤 at desk ${fmtDuration(sessionMs)}`;
+}, 1000);
+
 // ── render loop ─────────────────────────────────────────────────────────────
 syncScene();
 controls.setProfile(profile);
 toast("👆 Tap the screen to open controls & pick a station");
+if (profile.settings.camera) void setCamera(true); // resume presence if it was on
 let lastT = performance.now();
 let frames = 0;
 function frame(now: number): void {
   requestAnimationFrame(frame);
   frames++;
   const dt = now - lastT; lastT = now;
+  if (presence.current.present || audio.playing) sessionMs += dt;
   const playing = audio.playing;
   const lv = playing ? audio.levels() : null;
   scene.render(lv, now / 1000, new Date());
@@ -152,13 +200,22 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
 
 // ── dev-only helpers (stripped from production builds) ──────────────────────
 if (import.meta.env.DEV) {
-  (window as unknown as { __pr: unknown }).__pr = { scene, audio, controls, profile: () => profile };
+  (window as unknown as { __pr: unknown }).__pr = { scene, audio, controls, presence, profile: () => profile };
   const dev = document.createElement("button");
   dev.textContent = "+30 min";
   dev.className = "dev-time";
   dev.title = "dev: accrue 30 listening minutes";
   dev.onclick = () => applyProgress(accrue(profile, 30, "dev-" + Date.now()));
   document.body.appendChild(dev);
+
+  // mock presence toggle: test the "DJ wakes when it sees you" behaviour sans camera
+  const mock = document.createElement("button");
+  mock.textContent = "👤 mock present";
+  mock.className = "dev-time";
+  mock.style.left = "210px";
+  let mockOn = false;
+  mock.onclick = () => { mockOn = !mockOn; presenceDrives = mockOn; presence.setMock(mockOn, mockOn ? 2 : 0); mock.textContent = mockOn ? "👤 present ✓" : "👤 mock present"; };
+  document.body.appendChild(mock);
 
   // perf overlay: FPS + frame-time + backbuffer size (benchmark on the Jetson)
   const perf = document.createElement("div");
