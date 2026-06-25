@@ -25,6 +25,8 @@ export class AudioStream {
   private freq: Uint8Array<ArrayBuffer>;
   private bassAvg = 0;
   private lastBeat = 0;
+  private volume = 0.8;
+  private mutedState = false;
   index = 0;
   playlist: Track[] = [...CC_TRACKS];
   onTrackChange?: (t: Track) => void;
@@ -109,6 +111,12 @@ export class AudioStream {
     if (wasPlaying) await this.play();
   }
 
+  async prev(): Promise<void> {
+    const wasPlaying = !this.el.paused;
+    this.load(this.index - 1);
+    if (wasPlaying) await this.play();
+  }
+
   get tracks(): Track[] {
     return this.playlist;
   }
@@ -149,7 +157,18 @@ export class AudioStream {
   }
 
   setVolume(v: number): void {
-    this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
+    this.volume = v;
+    if (!this.mutedState) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
+  }
+
+  get muted(): boolean {
+    return this.mutedState;
+  }
+
+  toggleMute(): boolean {
+    this.mutedState = !this.mutedState;
+    this.master.gain.setTargetAtTime(this.mutedState ? 0 : this.volume, this.ctx.currentTime, 0.03);
+    return this.mutedState;
   }
 
   // Read the analyser and reduce the spectrum to a few useful numbers + a beat flag.

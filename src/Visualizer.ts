@@ -51,7 +51,9 @@ export class Visualizer {
     const cssW = this.canvas.clientWidth || 640;
     const cssH = this.canvas.clientHeight || 360;
     this.h = PIXEL_H;
-    this.w = Math.max(200, Math.round(PIXEL_H * (cssW / cssH)));
+    // match the viewport aspect so CSS upscaling keeps pixels square (no stretch);
+    // small floor avoids a degenerate width on extreme portrait.
+    this.w = Math.max(80, Math.round(PIXEL_H * (cssW / cssH)));
     this.canvas.width = this.w;
     this.canvas.height = this.h;
     this.glowCanvas.width = this.w;
@@ -339,7 +341,7 @@ export class Visualizer {
     while (this.dancers.length > want) this.dancers.pop();
 
     const moves = vibe.moves;
-    const rimC = `hsl(${(this.s.hue + 18) % 360},75%,60%)`;
+    const rimC = `hsla(${(this.s.hue + 18) % 360},70%,62%,0.5)`;
     const sorted = [...this.dancers].sort((a, b) => a.row - b.row);
     for (const d of sorted) {
       const depth = d.row === 0 ? 0.78 : 1;
@@ -362,21 +364,27 @@ export class Visualizer {
       }
       const x = baseX + dx;
       const bodyTop = fy - 8 * s - bob;
-      const headTop = bodyTop - 3 * s;
-      const bodyC = `hsl(${(this.s.hue + d.hair + 360) % 360},30%,${11 + this.kick * 12}%)`;
-      // tapered torso
-      this.px(x - 2 * s, bodyTop, 4 * s, 8 * s, bodyC);
-      this.px(x - 2.6 * s, bodyTop + 3 * s, 5.2 * s, 3 * s, bodyC);
-      this.px(x - 1.8 * s, headTop, 3.6 * s, 3 * s, bodyC); // head
-      this.px(x - 1.8 * s, headTop, 3.6 * s, Math.max(1, 0.8 * s), rimC); // rim light
+      const headTop = bodyTop - 3.2 * s;
+      const lit = 12 + this.kick * 11;
+      const bodyC = `hsl(${(this.s.hue + d.hair + 360) % 360},30%,${lit}%)`;
+      const hairC = `hsl(${(this.s.hue + d.hair + 360) % 360},34%,${Math.max(7, lit - 5)}%)`;
+      // tapered silhouette: wide shoulders → narrower neck → head
+      this.px(x - 2.4 * s, bodyTop + 2.5 * s, 4.8 * s, 5.5 * s, bodyC); // shoulders/torso
+      this.px(x - 1.7 * s, bodyTop, 3.4 * s, 3 * s, bodyC); // upper torso/neck
+      this.px(x - 1.5 * s, headTop, 3 * s, 3 * s, bodyC); // head
+      this.px(x - 1.7 * s, headTop - 0.5 * s, 3.4 * s, 1.3 * s, hairC); // hair tuft on top
+      // soft neon backlight down the left edge (a rim-lit silhouette, not a face)
+      this.px(x - 1.7 * s, headTop, 0.7 * s, 3.6 * s, rimC);
+      this.px(x - 2.4 * s, bodyTop + 2.5 * s, 0.7 * s, 3 * s, rimC);
       // arms
       if (armUp > 0) {
-        this.px(x - 3 * s, headTop - armUp, 1.2 * s, 4 * s + armUp, bodyC);
-        this.px(x + 1.8 * s, headTop - armUp, 1.2 * s, 4 * s + armUp, bodyC);
+        this.px(x - 2.8 * s, headTop - armUp, 1.1 * s, 4.6 * s + armUp, bodyC);
+        this.px(x + 1.7 * s, headTop - armUp, 1.1 * s, 4.6 * s + armUp, bodyC);
       } else if (clap > 0) {
-        const hands = (1 - clap) * 2 * s;
-        this.px(x - 2.6 * s + hands, bodyTop + s, 1 * s, 1 * s, rimC);
-        this.px(x + 1.6 * s - hands, bodyTop + s, 1 * s, 1 * s, rimC);
+        const hands = (1 - clap) * 1.6 * s;
+        const handC = `hsla(${(this.s.hue + 18) % 360},45%,52%,0.6)`;
+        this.px(x - 2.1 * s + hands, bodyTop + 2.6 * s, 0.9 * s, 0.9 * s, handC);
+        this.px(x + 1.2 * s - hands, bodyTop + 2.6 * s, 0.9 * s, 0.9 * s, handC);
       }
     }
   }

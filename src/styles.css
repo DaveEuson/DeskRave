@@ -2,10 +2,10 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: #08060f; color: #d8d4e6;
   font: 13px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; overflow: hidden; }
-body { height: 100vh; display: flex; }
+body { height: 100vh; }
 
-/* desk scene fills the remaining space; phone sits to the right */
-#stage { position: relative; flex: 1 1 auto; min-width: 0; height: 100%; }
+/* the scene IS the widget — full-bleed; controls float over it */
+#stage { position: fixed; inset: 0; }
 canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 
 #crt { position: absolute; inset: 0; pointer-events: none;
@@ -28,12 +28,8 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
   animation: pop .3s ease; }
 @keyframes pop { from { opacity: 0; transform: translateY(-6px) scale(.96); } }
 
-#phone { flex: 0 0 380px; height: 100%; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(160deg, #140d22, #0a0712); border-left: 1px solid #221836; padding: 14px; }
-@media (max-width: 760px) { #phone { display: none; } }
-
 /* dev-only progression tester (DEV builds only) */
-.dev-time { position: absolute; bottom: 10px; left: 10px; z-index: 20; font: inherit;
+.dev-time { position: absolute; top: 10px; left: 10px; z-index: 20; font: inherit;
   background: #1a1530; color: #9fe0c0; border: 1px solid #34294f; border-radius: 6px;
   padding: 5px 9px; cursor: pointer; opacity: .6; }
 .dev-time:hover { opacity: 1; }

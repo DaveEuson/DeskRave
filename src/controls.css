@@ -1,0 +1,90 @@
+/* Widget control surface: a slim always-on dock + a tap-to-reveal sheet.
+   Touch-first (finger-sized targets, no hover dependency), bottom-anchored so it
+   reflows the same for desktop / Pi touchscreen / phone. */
+#controls {
+  --bg0: #140c22; --line: #2a2040; --mag: #d946ef; --cyan: #2cf0ff; --violet: #7c3aed; --mint: #34d399;
+  position: fixed; inset: 0; z-index: 10; pointer-events: none;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+#controls .scrim { position: absolute; inset: 0; background: rgba(4,2,10,.55); opacity: 0;
+  transition: opacity .2s; pointer-events: none; }
+#controls.open .scrim { opacity: 1; pointer-events: auto; }
+
+/* dock — always visible, glanceable now-playing + play/pause */
+.dock { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; pointer-events: auto;
+  display: flex; align-items: center; gap: 10px; padding: 0 12px; cursor: pointer;
+  background: rgba(12,8,22,.85); backdrop-filter: blur(8px); border-top: 1px solid var(--line); }
+.dock-pp { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 999px; border: 0; cursor: pointer;
+  background: linear-gradient(120deg, var(--mag), var(--violet)); color: #fff; font-size: 16px; }
+.dock-now { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dock-title { color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dock-sub { color: #9b8fc0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dock-eq { display: flex; gap: 2px; align-items: flex-end; height: 22px; }
+.dock-eq i { width: 3px; height: 3px; background: linear-gradient(var(--cyan), var(--mag)); border-radius: 2px; transition: height 70ms linear; }
+.dock-toggle { background: none; border: 0; color: #9b8fc0; font-size: 16px; cursor: pointer; padding: 8px; }
+
+/* sheet — slides up over the scene */
+.sheet { position: absolute; left: 0; right: 0; bottom: 56px; pointer-events: auto;
+  max-height: 60vh; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #17102a, #100a1e); border-top: 1px solid var(--line);
+  border-radius: 18px 18px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,.5);
+  transform: translateY(125%); transition: transform .24s ease; }
+#controls.open .sheet { transform: translateY(0); }
+.sheet-grip { width: 44px; height: 5px; border-radius: 3px; background: #3a2c58; margin: 8px auto 4px; cursor: pointer; }
+.sheet-nav { display: flex; gap: 6px; padding: 4px 12px 8px; border-bottom: 1px solid #1d1533; }
+.sheet-nav button { background: none; border: 0; color: #8a7fae; font-size: 14px; padding: 8px 12px; border-radius: 999px; cursor: pointer; }
+.sheet-nav button.on { background: rgba(124,58,237,.22); color: #fff; }
+.sheet-nav .nav-gear { margin-left: auto; }
+.sheet-body { overflow-y: auto; padding: 12px 14px 18px; }
+
+/* control bits */
+.cv-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #8a7fae; margin: 14px 0 7px; }
+.cv-transport { display: flex; gap: 8px; }
+.cv-transport button { flex: 1; min-height: 44px; background: #1a1130; border: 1px solid var(--line); color: #e7e0f5; font-size: 17px; border-radius: 12px; cursor: pointer; }
+.cv-transport .pp { flex: 1.6; background: linear-gradient(120deg, var(--mag), var(--violet)); border: 0; color: #fff; }
+.cv-transport button.on { background: rgba(217,70,239,.18); border-color: var(--mag); color: #ff8fe6; }
+.cv-vol { width: 100%; margin: 12px 0 4px; accent-color: var(--mag); height: 26px; }
+.cv-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.cv-row .cv-label { margin: 0; flex: 0 0 auto; }
+.cv-auto { font-size: 11px; padding: 6px 9px; border-radius: 999px; background: #221636; color: #8a7fae; border: 1px solid var(--line); cursor: pointer; }
+.cv-auto.on { background: rgba(52,211,153,.16); color: var(--mint); border-color: var(--mint); }
+.cv-seg { display: flex; flex: 1; background: #160e26; border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.cv-seg button { flex: 1; background: none; border: 0; color: #8a7fae; padding: 7px; border-radius: 999px; text-transform: capitalize; cursor: pointer; font-size: 13px; }
+.cv-seg button.on { background: linear-gradient(120deg, var(--mag), var(--violet)); color: #fff; }
+.cv-listhead { justify-content: space-between; margin-top: 14px; }
+.cv-add { background: #221636; border: 1px solid var(--line); color: #e7e0f5; padding: 7px 11px; border-radius: 10px; cursor: pointer; font-size: 13px; }
+.cv-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.cv-track { display: flex; align-items: center; gap: 10px; min-height: 48px; text-align: left;
+  background: #170f28; border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; cursor: pointer; }
+.cv-track.on { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan); }
+.cv-k { font-size: 16px; }
+.cv-meta { display: flex; flex-direction: column; min-width: 0; }
+.cv-meta b { color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cv-meta small { color: #8a7fae; font-size: 12px; }
+
+.cv-level { background: #170f28; border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+.cv-lvlrow { display: flex; justify-content: space-between; align-items: baseline; }
+.cv-lvlrow b { font-family: "Press Start 2P", monospace; font-size: 13px; color: #fff; }
+.cv-lvlrow span { color: #9b8fc0; font-size: 12px; }
+.cv-bar { height: 12px; background: #0e0a1c; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin: 8px 0 6px; }
+.cv-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--mag)); }
+.cv-level small { color: #8a7fae; font-size: 12px; }
+.cv-name { width: 100%; background: #160e26; border: 1px solid var(--line); border-radius: 10px; padding: 12px; color: #fff; font-family: "Press Start 2P", monospace; font-size: 12px; }
+.cv-pills { display: flex; flex-wrap: wrap; gap: 7px; }
+.cv-pills button { min-height: 40px; background: #170f28; border: 1px solid var(--line); color: #e7e0f5; padding: 8px 12px; border-radius: 12px; cursor: pointer; font-size: 13px; }
+.cv-pills button.on { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan); }
+.cv-pills button.locked { opacity: .45; cursor: not-allowed; }
+.cv-swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.cv-swatches button { width: 34px; height: 34px; border-radius: 999px; background: var(--c); border: 2px solid transparent; cursor: pointer; }
+.cv-swatches button.on { border-color: var(--cyan); box-shadow: 0 0 10px var(--c); }
+.cv-opt { display: flex; justify-content: space-between; align-items: center; padding: 13px 2px; border-bottom: 1px solid #1d1533; color: #e7e0f5; font-size: 15px; }
+.cv-opt input { width: 46px; height: 26px; appearance: none; background: #2a2040; border-radius: 999px; position: relative; cursor: pointer; transition: background .15s; flex: 0 0 auto; }
+.cv-opt input:checked { background: var(--mint); }
+.cv-opt input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 999px; background: #fff; transition: transform .15s; }
+.cv-opt input:checked::after { transform: translateX(20px); }
+
+/* wider screens: keep the sheet a comfortable width instead of full-bleed */
+@media (min-width: 720px) {
+  .sheet { left: auto; right: 12px; width: 380px; border-radius: 18px; bottom: 64px; }
+  .dock { left: auto; right: 12px; bottom: 12px; width: 380px; border-radius: 14px; border: 1px solid var(--line); }
+}
