@@ -4,7 +4,7 @@ import { AudioStream } from "./AudioStream";
 import { Visualizer } from "./Visualizer";
 import { Classifier } from "./classifier";
 import { Controls } from "./controls";
-import { loadProfile, loadProfileSync, saveProfile, type Profile } from "./profile";
+import { loadProfile, loadProfileSync, saveProfile, dayKey, deskTotals, type Profile } from "./profile";
 import { accrue, unlockLabel } from "./xp";
 import { VENUES, VIBES, settingForHour, type AvatarId, type Setting, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, uploadFile } from "./library";
@@ -260,20 +260,36 @@ function tickProgress(dtMs: number): void {
   }
 }
 
-// ── session "time at desk" timer ─────────────────────────────────────────────
+// ── "time at desk" — live session + persistent daily log ─────────────────────
 const deskTimer = $("deskTimer");
-let sessionMs = 0; // accumulates while present at the desk (or while playing)
+let sessionMs = 0; // this session — resets on reload
+let deskAddMs = 0; // unflushed desk time, folded into the daily log each second
+let persistTick = 0;
 function fmtDuration(ms: number): string {
   const s = Math.floor(ms / 1000);
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
   const pad = (n: number) => String(n).padStart(2, "0");
   return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
 }
+function flushDesk(): void {
+  if (deskAddMs <= 0) return;
+  const k = dayKey();
+  profile.deskLog[k] = (profile.deskLog[k] ?? 0) + deskAddMs / 1000;
+  deskAddMs = 0;
+}
+// flush + save the tail when the page is hidden/closed so the day total survives
+addEventListener("pagehide", () => { flushDesk(); persist(); });
+document.addEventListener("visibilitychange", () => { if (document.hidden) { flushDesk(); persist(); } });
 setInterval(() => {
   scene.setState({ setting: currentSetting() }); // café → park → club as the day moves
   const here = presence.current.present || audio.playing;
+  flushDesk();
+  if (++persistTick >= 20) { persistTick = 0; persist(); } // checkpoint the log ~every 20s
+  const todayMs = deskTotals(profile).today * 1000;
   deskTimer.classList.toggle("on", here);
-  deskTimer.textContent = `👤 at desk ${fmtDuration(sessionMs)}`;
+  deskTimer.innerHTML =
+    `<span class="dt-main">👤 ${fmtDuration(sessionMs)} <em>this session</em></span>` +
+    `<span class="dt-sub">total today · ${fmtDuration(todayMs)}</span>`;
   const c = presence.current.count;
   camStatus.textContent = !presence.active ? "camera off"
     : presence.current.present ? `👁 I see you${c > 1 ? ` ×${c}` : ""}`
@@ -291,7 +307,7 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
   frames++;
   const dt = now - lastT; lastT = now;
-  if (presence.current.present || audio.playing) sessionMs += dt;
+  if (presence.current.present || audio.playing) { sessionMs += dt; deskAddMs += dt; }
   const playing = audio.playing;
   const lv = playing ? audio.levels() : null;
   scene.render(lv, now / 1000, new Date());
