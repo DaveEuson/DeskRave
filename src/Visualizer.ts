@@ -431,23 +431,27 @@ export class Visualizer {
   // ── the DJ: booth + 2 turntables + mixer + avatar + vibe animation ──────────
   private dj(cx: number, stageY: number, u: number, t: number, intensity: number, moment = false): void {
     const live = this.liveness;
+    // always-on idle dance: the DJ is never frozen, even with nobody around
+    const idle = (1 + 0.7 * Math.sin(t * 1.6)) * u;
     const beatBob = (0.6 + this.kick * 4 * intensity) * Math.abs(Math.sin(t * (4 + intensity * 4)));
-    const bob = beatBob * live + 0.3 * u;
+    const bob = idle + beatBob * live;
+    const sway = Math.sin(t * 1.1) * 1.6 * u + Math.sin(t * 5) * this.kick * 1.3 * u * live; // side-to-side groove
     const jacket = `hsl(${this.s.jacketHue},55%,${52 + this.kick * 18}%)`;
     const jacketHi = `hsl(${this.s.jacketHue},60%,70%)`;
     const jacketSh = `hsl(${this.s.jacketHue},58%,28%)`;
     const skin = "#caa07a";
     const y = stageY - bob;
+    const dcx = cx + sway; // the DJ's body grooves; the booth/decks stay put
 
-    // body behind booth
-    this.block(cx - 3 * u, y - 16 * u, 6 * u, 8 * u, jacket, jacketHi, jacketSh); // torso
+    // body behind booth (sways)
+    this.block(dcx - 3 * u, y - 16 * u, 6 * u, 8 * u, jacket, jacketHi, jacketSh); // torso
     const headY = y - 22 * u;
-    this.px(cx - 2.4 * u, headY, 4.8 * u, 4.4 * u, skin); // head
+    this.px(dcx - 2.4 * u, headY, 4.8 * u, 4.4 * u, skin); // head
     // headphones (always)
-    this.px(cx - 3.4 * u, headY + u, 1.2 * u, 2.6 * u, "#eae6f6");
-    this.px(cx + 2.2 * u, headY + u, 1.2 * u, 2.6 * u, "#eae6f6");
-    this.px(cx - 3.4 * u, headY - 0.6 * u, 6.8 * u, 1 * u, "#cfc8e0");
-    this.avatarHat(cx, headY, u);
+    this.px(dcx - 3.4 * u, headY + u, 1.2 * u, 2.6 * u, "#eae6f6");
+    this.px(dcx + 2.2 * u, headY + u, 1.2 * u, 2.6 * u, "#eae6f6");
+    this.px(dcx - 3.4 * u, headY - 0.6 * u, 6.8 * u, 1 * u, "#cfc8e0");
+    this.avatarHat(dcx, headY, u);
 
     // ── booth: dark slab, two turntables, a mixer ──
     const bw = 30 * u;
@@ -485,14 +489,15 @@ export class Visualizer {
     // otherwise works the decks (rave throws one fist up on the kick)
     if (moment) {
       const raise = headY - 4 * u - Math.abs(Math.sin(t * 12)) * 2 * u;
-      this.limb(cx - 2.5 * u, y - 14 * u, cx - 5 * u, raise, u, skin);
-      this.limb(cx + 2.5 * u, y - 14 * u, cx + 5 * u, raise, u, skin);
+      this.limb(dcx - 2.5 * u, y - 14 * u, dcx - 5 * u, raise, u, skin);
+      this.limb(dcx + 2.5 * u, y - 14 * u, dcx + 5 * u, raise, u, skin);
     } else {
+      // shoulders sway with the body, hands stay on the decks → grooving while mixing
       const fistUp = this.s.vibe === "rave" && this.kick > 0.5;
       const scratch = Math.sin(t * (10 + intensity * 10)) * this.kick * 3 * u * intensity;
-      this.limb(cx - 2.5 * u, y - 14 * u, cx - bw / 4 + scratch, pcy, u, skin);
-      if (fistUp) this.limb(cx + 2.5 * u, y - 14 * u, cx + 5 * u, headY - 4 * u, u, skin);
-      else this.limb(cx + 2.5 * u, y - 14 * u, cx + bw / 4, pcy - this.kick * 2 * u, u, skin);
+      this.limb(dcx - 2.5 * u, y - 14 * u, cx - bw / 4 + scratch, pcy, u, skin);
+      if (fistUp) this.limb(dcx + 2.5 * u, y - 14 * u, dcx + 5 * u, headY - 4 * u, u, skin);
+      else this.limb(dcx + 2.5 * u, y - 14 * u, cx + bw / 4, pcy - this.kick * 2 * u, u, skin);
     }
   }
 

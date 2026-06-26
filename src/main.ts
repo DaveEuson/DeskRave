@@ -78,22 +78,25 @@ const camSnap = $<HTMLImageElement>("camSnap");
 const camBoxes = $<HTMLCanvasElement>("camBoxes");
 const camStatus = $("camStatus");
 $("camHide").onclick = () => { camPreview.hidden = true; };
-function drawStick(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number, hue: number, t: number): void {
-  ctx.strokeStyle = `hsl(${hue},75%,62%)`;
-  ctx.lineWidth = Math.max(2, s * 0.5);
-  ctx.lineCap = "round";
-  const head = s * 0.9;
-  ctx.beginPath(); ctx.arc(cx, cy, head, 0, Math.PI * 2); ctx.stroke(); // head
-  const shY = cy + head + s * 0.6;
-  const hipY = cy + head + s * 2.4;
-  ctx.beginPath(); ctx.moveTo(cx, cy + head); ctx.lineTo(cx, hipY); ctx.stroke(); // spine
-  const sway = Math.sin(t / 320) * s * 0.6;
+// smoothed presence figures — held through the grace window so they don't flicker
+let figTargets: { x: number; y: number; s: number }[] = [];
+const figDrawn: { x: number; y: number; s: number }[] = [];
+function drawFigure(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number, hue: number, t: number): void {
+  const headR = s * 0.85;
+  cy += Math.sin(t / 500) * s * 0.12; // gentle life
+  ctx.fillStyle = `hsla(${hue},70%,55%,0.3)`;
+  ctx.strokeStyle = `hsl(${hue},85%,66%)`;
+  ctx.lineWidth = Math.max(1.5, s * 0.22);
+  ctx.lineJoin = "round";
+  ctx.beginPath(); ctx.arc(cx, cy, headR, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); // head
+  const shY = cy + headR + s * 0.35; // shoulders → waist silhouette
   ctx.beginPath();
-  ctx.moveTo(cx, shY); ctx.lineTo(cx - s * 1.4, shY + s * 0.8 + sway);
-  ctx.moveTo(cx, shY); ctx.lineTo(cx + s * 1.4, shY + s * 0.8 - sway); // arms
-  ctx.moveTo(cx, hipY); ctx.lineTo(cx - s * 0.9, hipY + s * 2);
-  ctx.moveTo(cx, hipY); ctx.lineTo(cx + s * 0.9, hipY + s * 2); // legs
-  ctx.stroke();
+  ctx.moveTo(cx - s * 1.5, shY);
+  ctx.quadraticCurveTo(cx - s * 1.7, shY + s * 2.6, cx - s * 1.05, shY + s * 3.1);
+  ctx.lineTo(cx + s * 1.05, shY + s * 3.1);
+  ctx.quadraticCurveTo(cx + s * 1.7, shY + s * 2.6, cx + s * 1.5, shY);
+  ctx.quadraticCurveTo(cx, shY - s * 0.7, cx - s * 1.5, shY);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
 }
 
 function drawCam(): void {
@@ -101,13 +104,25 @@ function drawCam(): void {
   const ctx = camBoxes.getContext("2d")!;
   const W = camBoxes.width, H = camBoxes.height;
   if (presence.isNative) {
-    // abstract stick figure(s) on a dark club-tinted backdrop — no camera image, ever
+    // hold the last positions while present (grace) so a missed frame doesn't flicker;
+    // ease the drawn figures toward them for smooth motion
+    if (presence.current.present) {
+      if (presence.faces.length) figTargets = presence.faces.map((f) => ({ ...f }));
+    } else {
+      figTargets = [];
+    }
+    while (figDrawn.length < figTargets.length) figDrawn.push({ ...figTargets[figDrawn.length] });
+    while (figDrawn.length > figTargets.length) figDrawn.pop();
+    for (let i = 0; i < figDrawn.length; i++) {
+      const a = figDrawn[i], b = figTargets[i];
+      a.x += (b.x - a.x) * 0.25; a.y += (b.y - a.y) * 0.25; a.s += (b.s - a.s) * 0.25;
+    }
     ctx.fillStyle = "#0c0a16";
     ctx.fillRect(0, 0, W, H);
     const t = performance.now();
-    for (const f of presence.faces) {
-      const s = Math.max(5, Math.min(20, f.s * W * 0.7));
-      drawStick(ctx, f.x * W, f.y * H + s * 0.4, s, profile.palette, t);
+    for (const f of figDrawn) {
+      const s = Math.max(6, Math.min(20, f.s * W * 0.7));
+      drawFigure(ctx, f.x * W, f.y * H + s * 0.3, s, profile.palette, t);
     }
     return;
   }
