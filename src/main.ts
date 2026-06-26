@@ -6,7 +6,7 @@ import { Classifier } from "./classifier";
 import { Controls } from "./controls";
 import { loadProfile, loadProfileSync, saveProfile, type Profile } from "./profile";
 import { accrue, unlockLabel } from "./xp";
-import { VENUES, VIBES, type AvatarId, type VenueId, type VibeName } from "./config";
+import { VENUES, VIBES, settingForHour, type AvatarId, type Setting, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, uploadFile } from "./library";
 import { Presence } from "./presence";
 
@@ -18,11 +18,17 @@ const classifier = new Classifier();
 const presence = new Presence();
 let profile: Profile = loadProfileSync(); // instant boot from the mirror
 
+// time-of-day scene (café morning / park afternoon / club night); ?setting= forces one
+const forcedSetting = new URLSearchParams(location.search).get("setting") as Setting | null;
+const currentSetting = (): Setting =>
+  forcedSetting && ["cafe", "park", "club"].includes(forcedSetting) ? forcedSetting : settingForHour(new Date().getHours());
+
 // ── reflect the whole profile into the scene ────────────────────────────────
 function syncScene(): void {
   scene.setState({
     hue: profile.palette, jacketHue: profile.jacketHue, venue: profile.venue,
     vibe: profile.vibe, avatar: profile.avatar, djName: profile.djName,
+    setting: currentSetting(),
     showClock: profile.settings.showClock, showDate: profile.settings.showDate,
     clock24: profile.settings.clock24, live: audio.playing,
   });
@@ -181,6 +187,7 @@ function fmtDuration(ms: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
 }
 setInterval(() => {
+  scene.setState({ setting: currentSetting() }); // café → park → club as the day moves
   const here = presence.current.present || audio.playing;
   deskTimer.classList.toggle("on", here);
   deskTimer.textContent = `👤 at desk ${fmtDuration(sessionMs)}`;

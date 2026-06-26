@@ -1,5 +1,5 @@
 import type { Levels } from "./AudioStream";
-import { VENUES, VIBES, clockAmbient, type AvatarId, type VenueConfig, type VenueId, type VibeName, type VibeProfile } from "./config";
+import { SETTING_LABEL, VENUES, VIBES, clockAmbient, type AvatarId, type Setting, type VenueConfig, type VenueId, type VibeName, type VibeProfile } from "./config";
 
 export interface SceneState {
   hue: number; // club palette base
@@ -9,6 +9,7 @@ export interface SceneState {
   avatar: AvatarId;
   live: boolean;
   djName: string;
+  setting: Setting; // cafe (morning) / park (afternoon) / club (night) — from the clock
   showClock: boolean;
   showDate: boolean;
   clock24: boolean;
@@ -37,7 +38,7 @@ export class Visualizer {
 
   private s: SceneState = {
     hue: 288, jacketHue: 288, venue: "club", vibe: "groove", avatar: "beanie",
-    live: false, djName: "DJ NOVA", showClock: true, showDate: true, clock24: false,
+    live: false, djName: "DJ NOVA", setting: "club", showClock: true, showDate: true, clock24: false,
   };
 
   constructor(private canvas: HTMLCanvasElement) {
@@ -107,14 +108,9 @@ export class Visualizer {
     const stageTopY = Math.round(H * 0.6);
 
     this.glow.clearRect(0, 0, W, H);
-    this.sky(V.sky, hue, t);
-    this.rig(V, hue, stageTopY, u);
-    if (V.speakers) this.speakers(stageTopY, u, hue);
-    this.eqWall(stageTopY, u, hue);
-    this.stageDeck(stageTopY, u, hue);
-    this.dj((W * 0.5) | 0, stageTopY, u, t, vibe.djIntensity);
-    this.floorGlow(stageTopY + 10 * u, hue);
-    this.crowd(Math.round(H * 0.95), u, t, vibe, V.crowdScale);
+    if (this.s.setting === "cafe") this.renderCafe(u, t);
+    else if (this.s.setting === "park") this.renderPark(u, t);
+    else this.renderClub(u, t, V, vibe, hue, stageTopY);
     this.marquee(stageTopY, u);
 
     // bloom
@@ -127,6 +123,149 @@ export class Visualizer {
     this.g.restore();
 
     if (this.s.showClock) this.clock(now, u);
+  }
+
+  // ── CLUB (evening/night) — the original reactive nightclub ──────────────────
+  private renderClub(u: number, t: number, V: VenueConfig, vibe: VibeProfile, hue: number, stageTopY: number): void {
+    const W = this.w, H = this.h;
+    this.sky(V.sky, hue, t);
+    this.rig(V, hue, stageTopY, u);
+    if (V.speakers) this.speakers(stageTopY, u, hue);
+    this.eqWall(stageTopY, u, hue);
+    this.stageDeck(stageTopY, u, hue);
+    this.dj((W * 0.5) | 0, stageTopY, u, t, vibe.djIntensity);
+    this.floorGlow(stageTopY + 10 * u, hue);
+    this.crowd(Math.round(H * 0.95), u, t, vibe, V.crowdScale);
+  }
+
+  // ── CAFÉ (morning) — cozy coffee shop, a producer chilling with a laptop ────
+  private renderCafe(u: number, t: number): void {
+    const g = this.g, W = this.w, H = this.h, k = this.kick;
+    const wall = g.createLinearGradient(0, 0, 0, H);
+    wall.addColorStop(0, "#3a2a20"); wall.addColorStop(0.7, "#2a1d16"); wall.addColorStop(1, "#19110c");
+    g.fillStyle = wall; g.fillRect(0, 0, W, H);
+
+    // window with a soft morning sky + sun
+    const wx = W * 0.56, wy = 7 * u, ww = W * 0.36, wh = 32 * u;
+    this.px(wx - 1.5 * u, wy - 1.5 * u, ww + 3 * u, wh + 3 * u, "#5a4030");
+    const sky = g.createLinearGradient(0, wy, 0, wy + wh);
+    sky.addColorStop(0, "#bfe2f5"); sky.addColorStop(0.55, "#f6dcb4"); sky.addColorStop(1, "#f6c889");
+    g.fillStyle = sky; g.fillRect(wx, wy, ww, wh);
+    this.disc(wx + ww * 0.72, wy + wh * 0.3, 4 * u, "#fff4c4");
+    this.disc(wx + ww * 0.72, wy + wh * 0.3, 7 * u, "rgba(255,240,180,0.45)", this.glow);
+    this.px(wx + ww / 2, wy, 0.8 * u, wh, "#5a4030");
+    this.px(wx, wy + wh / 2, ww, 0.8 * u, "#5a4030");
+
+    // wood floor
+    const floorY = Math.round(H * 0.74);
+    this.px(0, floorY, W, H - floorY, "#4a3324");
+    for (let x = 0; x < W; x += 8 * u) this.px(x, floorY, 0.6 * u, H - floorY, "#3a271a");
+
+    // counter + espresso machine
+    const cx = W * 0.15, cy = floorY - 13 * u;
+    this.px(cx - 8 * u, cy, 16 * u, 13 * u, "#3a261a");
+    this.px(cx - 8 * u, cy, 16 * u, 1.4 * u, "#5a4030");
+    this.px(cx - 3 * u, cy - 6 * u, 6 * u, 6 * u, "#c4c8cc");
+    this.px(cx - 2 * u, cy - 4 * u, 1.4 * u, 1.4 * u, `hsl(0,80%,${48 + k * 34}%)`);
+
+    // chalkboard with a tiny EQ
+    const bx = W * 0.33, by = 12 * u;
+    this.px(bx, by, 12 * u, 9 * u, "#171410");
+    this.px(bx - 0.6 * u, by - 0.6 * u, 13.2 * u, 0.6 * u, "#5a4030");
+    for (let i = 0; i < 8; i++) { const v = (this.spectrum[i * 2] ?? 0) * 6 * u; this.px(bx + 1.6 * u + i * 1.2 * u, by + 7.5 * u - v, 0.9 * u, Math.max(1, v), "#d8c8a0"); }
+
+    // the producer at a table with a glowing laptop
+    const p = W * 0.64, feet = floorY;
+    this.px(p - 6 * u, feet - 6 * u, 12 * u, 6 * u, "#3a271a"); // table
+    const jacket = `hsl(${this.s.jacketHue},35%,54%)`;
+    this.block(p - 3 * u, feet - 18 * u, 6 * u, 8 * u, jacket, `hsl(${this.s.jacketHue},40%,68%)`, `hsl(${this.s.jacketHue},38%,30%)`);
+    const headY = feet - 24 * u;
+    this.px(p - 2.4 * u, headY, 4.8 * u, 4.4 * u, "#caa07a");
+    this.px(p - 3.4 * u, headY + u, 1.2 * u, 2.4 * u, "#2a2440");
+    this.px(p + 2.2 * u, headY + u, 1.2 * u, 2.4 * u, "#2a2440");
+    this.avatarHat(p, headY, u);
+    this.px(p - 2.5 * u, feet - 9 * u, 5 * u, 3.4 * u, "#15111a");
+    const screen = `hsl(${this.s.hue},70%,${40 + k * 34}%)`;
+    this.px(p - 2 * u, feet - 8.6 * u, 4 * u, 2.4 * u, screen);
+    this.px(p - 2 * u, feet - 8.6 * u, 4 * u, 2.4 * u, `hsla(${this.s.hue},70%,58%,0.5)`, this.glow);
+    // coffee + steam
+    this.px(p + 4 * u, feet - 7.5 * u, 2 * u, 2 * u, "#e8e2d8");
+    for (let i = 0; i < 2; i++) this.px(p + 4.6 * u, feet - 9 * u - ((t * 4 + i * 3) % 5) * u, 0.6 * u, 0.6 * u, "rgba(225,225,225,0.4)");
+
+    // relaxed patrons + dim string lights
+    this.seatedPerson(W * 0.87, floorY, u, t, "#8a6a9a");
+    this.seatedPerson(W * 0.42, floorY, u, t, "#6a8a7a");
+    for (let x = 4 * u; x < W; x += 7 * u) { const sag = Math.sin((x / W) * Math.PI) * 3 * u; this.px(x, 4 * u + sag, 1.4 * u, 1.4 * u, "hsl(40,75%,60%)"); }
+  }
+
+  // ── PARK (afternoon) — outdoors, blue sky, a busker + a boombox ─────────────
+  private renderPark(u: number, t: number): void {
+    const g = this.g, W = this.w, H = this.h, k = this.kick;
+    const sky = g.createLinearGradient(0, 0, 0, H * 0.7);
+    sky.addColorStop(0, "#5db8e8"); sky.addColorStop(1, "#bfe6f2");
+    g.fillStyle = sky; g.fillRect(0, 0, W, H);
+    // sun
+    this.disc(W * 0.82, 12 * u, 6 * u, "#fff3b0");
+    this.disc(W * 0.82, 12 * u, 10 * u, "rgba(255,245,180,0.4)", this.glow);
+    // drifting clouds
+    for (let i = 0; i < 3; i++) { const cxp = ((t * (4 + i) + i * 140) % (W + 60)) - 30; const cyp = (8 + i * 7) * u; this.cloud(cxp, cyp, u); }
+    // distant treeline
+    const hillY = Math.round(H * 0.6);
+    g.fillStyle = "#3f7a3a"; g.fillRect(0, hillY, W, 6 * u);
+    // grass
+    const grassY = Math.round(H * 0.66);
+    const grass = g.createLinearGradient(0, grassY, 0, H);
+    grass.addColorStop(0, "#5aa84a"); grass.addColorStop(1, "#3c7a34");
+    g.fillStyle = grass; g.fillRect(0, grassY, W, H - grassY);
+    // trees
+    this.tree(W * 0.12, grassY, u);
+    this.tree(W * 0.9, grassY, u);
+    // busker with a boombox (pulses with the kick)
+    const p = W * 0.5, feet = grassY + 10 * u;
+    this.px(p - 9 * u, feet - 1 * u, 6 * u, 2 * u, "#7a5a3a"); // picnic blanket edge
+    const boom = p + 7 * u;
+    this.px(boom - 4 * u, feet - 6 * u, 8 * u, 6 * u, "#2a2630"); // boombox
+    for (const dx of [-2, 2]) { this.disc(boom + dx * u, feet - 3 * u, 1.8 * u + k * 0.8 * u, `hsl(${this.s.hue},80%,${55 + k * 25}%)`); this.disc(boom + dx * u, feet - 3 * u, 2 * u, `hsla(${this.s.hue},80%,60%,0.4)`, this.glow); }
+    // busker sitting
+    const bob = this.kick * 2 * u * Math.abs(Math.sin(t * 5));
+    this.px(p - 2.4 * u, feet - 9 * u - bob, 4.8 * u, 4 * u, "#caa07a"); // head
+    this.block(p - 3 * u, feet - 5 * u - bob, 6 * u, 5 * u, `hsl(${this.s.jacketHue},45%,55%)`, `hsl(${this.s.jacketHue},50%,68%)`, `hsl(${this.s.jacketHue},48%,32%)`);
+    this.avatarHat(p, feet - 9 * u - bob, u);
+    // loungers + a couple of casual dancers on the grass
+    this.seatedPerson(W * 0.3, grassY + 14 * u, u, t, "#c06a6a", true);
+    this.seatedPerson(W * 0.7, grassY + 16 * u, u, t, "#6a6ac0", true);
+    this.parkDancer(W * 0.2, grassY + 22 * u, u, t);
+    this.parkDancer(W * 0.78, grassY + 24 * u, u, t);
+  }
+
+  // small day-scene figures/props
+  private seatedPerson(x: number, baseY: number, u: number, t: number, color: string, grass = false): void {
+    const sway = Math.sin(t * 1.4 + x) * 0.8 * u;
+    const y = baseY - (grass ? 2 * u : 8 * u);
+    if (!grass) this.px(x - 2 * u, y, 4 * u, 6 * u, "#2a1d16"); // chair back
+    this.px(x - 1.8 * u + sway, y - 5 * u, 3.6 * u, 5 * u, color); // torso
+    this.px(x - 1.4 * u + sway, y - 8 * u, 2.8 * u, 3 * u, "#caa07a"); // head
+    this.px(x + 2.5 * u, y - 1.5 * u, 1.6 * u, 1.6 * u, "#e8e2d8"); // cup
+  }
+  private parkDancer(x: number, baseY: number, u: number, t: number): void {
+    const ph = t * 4 + x;
+    const bob = Math.abs(Math.sin(ph)) * (1.5 * u + this.kick * 4 * u);
+    const top = baseY - 8 * u - bob;
+    this.px(x - 1.8 * u, top, 3.6 * u, 8 * u, "#2f5a3a");
+    this.px(x - 1.4 * u, top - 3 * u, 2.8 * u, 3 * u, "#2f5a3a");
+    const armUp = (Math.sin(ph) * 0.5 + 0.5) * 3 * u;
+    this.px(x - 2.6 * u, top - armUp, 1 * u, 3 * u + armUp, "#2f5a3a");
+    this.px(x + 1.6 * u, top - armUp, 1 * u, 3 * u + armUp, "#2f5a3a");
+  }
+  private cloud(x: number, y: number, u: number): void {
+    this.px(x, y, 10 * u, 3 * u, "rgba(255,255,255,0.85)");
+    this.px(x + 2 * u, y - 2 * u, 6 * u, 3 * u, "rgba(255,255,255,0.85)");
+  }
+  private tree(x: number, groundY: number, u: number): void {
+    this.px(x - 1.2 * u, groundY - 10 * u, 2.4 * u, 12 * u, "#5a3a22"); // trunk
+    this.disc(x, groundY - 14 * u, 7 * u, "#2f6a2f");
+    this.disc(x - 4 * u, groundY - 11 * u, 5 * u, "#357435");
+    this.disc(x + 4 * u, groundY - 11 * u, 5 * u, "#357435");
   }
 
   // ── sky per venue ──────────────────────────────────────────────────────────
@@ -426,7 +565,7 @@ export class Visualizer {
 
   // ── marquee ("● LIVE TONIGHT ●" idle / DJ name live) ────────────────────────
   private marquee(stageY: number, u: number): void {
-    const text = this.liveness > 0.5 ? this.s.djName : "● LIVE TONIGHT ●";
+    const text = this.liveness > 0.5 ? this.s.djName : SETTING_LABEL[this.s.setting];
     const g = this.g;
     const size = Math.max(5, Math.round(5 * u));
     g.font = `${size}px "Press Start 2P", monospace`;
