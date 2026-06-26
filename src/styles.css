@@ -21,10 +21,10 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 #drop small { opacity: .7; font-size: 12px; }
 #stage.dragging #drop { display: flex; }
 
-#deskTimer { position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
-  font: 12px ui-monospace, Consolas, monospace; color: #9fe0c0; opacity: 0; transition: opacity .4s;
-  background: rgba(10,8,20,.6); border: 1px solid #2a3a30; border-radius: 999px; padding: 4px 12px;
-  pointer-events: none; text-shadow: 0 1px 3px #000; }
+#deskTimer { position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  font: 700 22px ui-monospace, Consolas, monospace; letter-spacing: .5px; color: #9fe0c0; opacity: 0; transition: opacity .4s;
+  background: rgba(10,8,20,.6); border: 1px solid #2a3a30; border-radius: 999px; padding: 8px 20px;
+  pointer-events: none; text-shadow: 0 2px 6px #000; }
 #deskTimer.on { opacity: .9; }
 
 /* "what the camera sees" — privacy preview, mirrored, with the detection box */
