@@ -33,6 +33,9 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
   box-shadow: 0 6px 20px rgba(0,0,0,.5); }
 #camPreview[hidden] { display: none; }
 #camVideo { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+#camVideo[hidden] { display: none; }
+#camSnap { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+#camSnap[hidden] { display: none; }
 #camBoxes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 #camStatus { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 6px; font: 11px ui-monospace, monospace;
   color: #cdeede; background: linear-gradient(transparent, rgba(0,0,0,.75)); text-align: center; }

@@ -99,6 +99,28 @@ const mediaApi = (port: number): Connect.NextHandleFunction => {
       return res.end(JSON.stringify({ host: lanUrl(port) }));
     }
 
+    // ── native presence (written by jetson/presence_service.py) ─────────────
+    if (req.method === "GET" && url.startsWith("/api/presence-frame")) {
+      try {
+        const buf = await fs.readFile(path.join(DATA_DIR, "presence.jpg"));
+        res.setHeader("content-type", "image/jpeg");
+        res.setHeader("cache-control", "no-store");
+        return res.end(buf);
+      } catch {
+        res.statusCode = 404;
+        return res.end();
+      }
+    }
+    if (req.method === "GET" && url.startsWith("/api/presence")) {
+      res.setHeader("content-type", "application/json");
+      res.setHeader("cache-control", "no-store");
+      try {
+        return res.end(await fs.readFile(path.join(DATA_DIR, "presence.json"), "utf8"));
+      } catch {
+        return res.end('{"present":false,"count":0,"ts":0}'); // service not running
+      }
+    }
+
     // ── internet-radio proxy (re-serves a stream same-origin so the FFT works) ──
     if (req.method === "GET" && url.startsWith("/api/radio")) {
       const target = new URL(url, "http://x").searchParams.get("url") || "";

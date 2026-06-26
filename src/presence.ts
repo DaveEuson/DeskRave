@@ -18,8 +18,13 @@ export class Presence {
   private lastSeen = 0;
   private graceMs = 2500; // stay "present" briefly after the last sighting (anti-flicker)
   private lastBoxes: { x: number; y: number; w: number; h: number }[] = [];
+  private native = false;
   lastError = "";
   onChange?: (s: PresenceState) => void;
+
+  get isNative(): boolean {
+    return this.native;
+  }
 
   get current(): PresenceState {
     return this.state;
@@ -45,6 +50,38 @@ export class Presence {
   // mock for testing the behaviour without a camera
   setMock(present: boolean, count = present ? 1 : 0): void {
     this.set(present, count);
+  }
+
+  // Prefer the native on-device detector (jetson/presence_service.py) if it's
+  // running; otherwise fall back to in-browser detection on the given <video>.
+  async start(video: HTMLVideoElement): Promise<"native" | "browser" | "none"> {
+    try {
+      const d = await fetch("/api/presence", { cache: "no-store" }).then((r) => r.json());
+      if (d && typeof d.ts === "number" && Date.now() / 1000 - d.ts < 5) {
+        this.startNative();
+        return "native";
+      }
+    } catch {
+      /* no service — use the browser */
+    }
+    return (await this.startCamera(video)) ? "browser" : "none";
+  }
+
+  private startNative(): void {
+    this.running = true;
+    this.native = true;
+    const poll = async (): Promise<void> => {
+      if (!this.running || !this.native) return;
+      try {
+        const d = await fetch("/api/presence", { cache: "no-store" }).then((r) => r.json());
+        const fresh = Date.now() / 1000 - (d.ts ?? 0) < 5;
+        this.set(fresh && !!d.present, fresh ? (d.count ?? 0) : 0);
+      } catch {
+        this.set(false, 0);
+      }
+      setTimeout(poll, 600);
+    };
+    void poll();
   }
 
   // Start the webcam + detector on a VISIBLE <video> element (must be on-screen so
@@ -124,6 +161,7 @@ export class Presence {
 
   stop(): void {
     this.running = false;
+    this.native = false;
     (this.video?.srcObject as MediaStream | null)?.getTracks().forEach((t) => t.stop());
     this.video = null;
     this.detector = null;
