@@ -28,8 +28,45 @@ export interface Profile {
   unlocks: string[]; // venue + avatar ids earned
   peakCrowd: number;
   history: string[]; // last ~6 titles
+  deskLog: Record<string, number>; // local date "YYYY-MM-DD" → seconds at desk that day
   settings: Settings;
   lastSeen: string; // ISO — for the away time-lapse (fast-follow)
+}
+
+// ── desk-time accounting ─────────────────────────────────────────────────────
+// Local-date key so day/week/month/year roll over on the user's own midnight.
+export function dayKey(d = new Date()): string {
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+// today = this calendar day, week = rolling last 7 days, month/year = this
+// calendar month/year. Values are seconds.
+export function deskTotals(p: Profile, now = new Date()): { today: number; week: number; month: number; year: number } {
+  const log = p.deskLog ?? {};
+  const today = dayKey(now);
+  const month = today.slice(0, 7), year = today.slice(0, 4);
+  const weekKeys = new Set<string>();
+  for (let i = 0; i < 7; i++) weekKeys.add(dayKey(new Date(now.getTime() - i * 86400000)));
+  let t = 0, w = 0, mo = 0, y = 0;
+  for (const [k, v] of Object.entries(log)) {
+    if (!v) continue;
+    if (k === today) t += v;
+    if (weekKeys.has(k)) w += v;
+    if (k.startsWith(month)) mo += v;
+    if (k.startsWith(year)) y += v;
+  }
+  return { today: t, week: w, month: mo, year: y };
+}
+
+// "45m" / "2h 5m" / "13h" — compact, for the menu stats.
+export function fmtSpan(sec: number): string {
+  const m = Math.round(sec / 60);
+  if (m < 1) return "0m";
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60), mm = m % 60;
+  return mm ? `${h}h ${mm}m` : `${h}h`;
 }
 
 const LS_KEY = "pixeldj.profile";
@@ -61,6 +98,7 @@ export function defaultProfile(): Profile {
     unlocks: ["backyard", "beanie", "snapback"],
     peakCrowd: 0,
     history: [],
+    deskLog: {},
     settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, camera: false, weather: "clear" },
     lastSeen: new Date().toISOString(),
   };

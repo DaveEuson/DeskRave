@@ -1,6 +1,6 @@
 import { AVATARS, JACKET_HUES, PALETTES, VENUES, VENUE_ORDER, type AvatarId, type VenueId, type VibeName } from "./config";
 import { minutesForLevel } from "./xp";
-import type { Profile } from "./profile";
+import { deskTotals, fmtSpan, type Profile } from "./profile";
 import type { Track } from "./tracks";
 
 // The widget's control surface: a slim always-on now-playing dock + a tap-to-reveal
@@ -159,6 +159,12 @@ export class Controls {
         <div class="cv-bar"><i style="width:${Math.round(this.p.xp * 100)}%"></i></div>
         <small>${this.p.listenedMinutes} min listened · next level in ~${Math.max(0, Math.round(need - need * this.p.xp))} min of play</small>
       </div>
+      <span class="cv-label">Time at desk</span>
+      ${(() => { const d = deskTotals(this.p); return `<div class="cv-stats">
+        <div><b>${fmtSpan(d.today)}</b><small>today</small></div>
+        <div><b>${fmtSpan(d.week)}</b><small>this week</small></div>
+        <div><b>${fmtSpan(d.month)}</b><small>this month</small></div>
+        <div><b>${fmtSpan(d.year)}</b><small>this year</small></div></div>`; })()}
       <span class="cv-label">DJ name</span>
       <input class="cv-name" maxlength="14" value="${esc(this.p.djName)}" />
       <span class="cv-label">Hat</span>

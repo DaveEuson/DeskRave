@@ -78,6 +78,10 @@
 .cv-bar { height: 12px; background: #0e0a1c; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin: 8px 0 6px; }
 .cv-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--mag)); }
 .cv-level small { color: #8a7fae; font-size: 12px; }
+.cv-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+.cv-stats > div { background: #170f28; border: 1px solid var(--line); border-radius: 12px; padding: 10px 4px; text-align: center; }
+.cv-stats b { display: block; font-family: "Press Start 2P", monospace; font-size: 12px; color: #9fe0c0; }
+.cv-stats small { display: block; margin-top: 5px; color: #8a7fae; font-size: 11px; }
 .cv-name { width: 100%; background: #160e26; border: 1px solid var(--line); border-radius: 10px; padding: 12px; color: #fff; font-family: "Press Start 2P", monospace; font-size: 12px; }
 .cv-pills { display: flex; flex-wrap: wrap; gap: 7px; }
 .cv-pills button { min-height: 40px; background: #170f28; border: 1px solid var(--line); color: #e7e0f5; padding: 8px 12px; border-radius: 12px; cursor: pointer; font-size: 13px; }
