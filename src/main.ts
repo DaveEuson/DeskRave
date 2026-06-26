@@ -6,7 +6,7 @@ import { Classifier } from "./classifier";
 import { Controls } from "./controls";
 import { loadProfile, loadProfileSync, saveProfile, dayKey, deskTotals, type Profile } from "./profile";
 import { accrue, unlockLabel } from "./xp";
-import { VENUES, VIBES, type AvatarId, type VenueId, type VibeName } from "./config";
+import { CRED_PER_MIN, PRIZES, VENUES, VIBES, type AvatarId, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, uploadFile } from "./library";
 import { Presence } from "./presence";
 
@@ -75,6 +75,26 @@ const controls = new Controls($("controls"), profile, {
   onAvatar: (a: AvatarId) => { profile.avatar = a; persist(); controls.setProfile(profile); syncScene(); },
   onJacket: (hue) => { profile.jacketHue = hue; persist(); controls.setProfile(profile); syncScene(); },
   onVenue: (v: VenueId) => { profile.venue = v; persist(); controls.setProfile(profile); syncScene(); },
+  onBuyVenue: (id: VenueId) => {
+    const m = VENUES[id];
+    if (profile.unlocks.includes(id)) return;
+    if (profile.cred < m.price) { toast(`◈ ${Math.ceil(m.price - profile.cred)} more Cred for ${m.name}`); return; }
+    profile.cred -= m.price;
+    profile.unlocks.push(id);
+    profile.venue = id; // hop straight to the new place
+    persist(); controls.setProfile(profile); syncScene();
+    toast(`🎉 Unlocked ${m.name}!`);
+  },
+  onBuyPrize: (pid: string) => {
+    const pz = PRIZES.find((p) => p.id === pid);
+    if (!pz || profile.unlocks.includes(pid)) return;
+    if (profile.cred < pz.price) { toast(`◈ ${Math.ceil(pz.price - profile.cred)} more Cred for ${pz.name}`); return; }
+    profile.cred -= pz.price;
+    profile.unlocks.push(pid);
+    if (pz.kind === "palette") profile.palette = pz.hue; else profile.jacketHue = pz.hue; // wear it now
+    persist(); controls.setProfile(profile); syncScene();
+    toast(`🎉 ${pz.name} unlocked!`);
+  },
   onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); if ("camera" in patch) void setCamera(!!patch.camera); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); },
   onSelectTrack: (i) => void audio.select(i),
   onAddFiles: () => fileInput.click(),
@@ -301,6 +321,7 @@ function flushDesk(): void {
   if (deskAddMs <= 0) return;
   const k = dayKey();
   profile.deskLog[k] = (profile.deskLog[k] ?? 0) + deskAddMs / 1000;
+  profile.cred += (deskAddMs / 60000) * CRED_PER_MIN; // earn Cred while at the desk
   deskAddMs = 0;
 }
 // flush + save the tail when the page is hidden/closed so the day total survives
@@ -309,6 +330,7 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) { flu
 setInterval(() => {
   scene.setState({ venue: currentVenue() }); // keep the scene synced (honours ?venue=)
   flushDesk();
+  controls.setCred(profile.cred); // live balance while it ticks up at the desk
   if (++persistTick >= 20) { persistTick = 0; persist(); } // checkpoint the log ~every 20s
   const todayMs = deskTotals(profile).today * 1000;
   deskTimer.classList.toggle("on", presence.current.present); // show only while it can see you

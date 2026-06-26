@@ -132,6 +132,33 @@ export const CLUB_LOOK: ClubLook = { crowdScale: 1.0, sky: "club-dark", rig: "tr
 // Venues unlocked for free at the start (everything else costs Cred).
 export const STARTER_VENUES: VenueId[] = ["soundcheck", "cafe", "park", "club"];
 
+// ── Cred economy ──────────────────────────────────────────────────────────────
+// Cred is earned while you're at the desk (camera sees you OR music is playing)
+// and spent in the store on venues + cosmetic prizes. Rate tuned so ~40 desk-hours
+// a week comfortably buys about two venues and a prize (≈600 Cred/week).
+export const CRED_PER_MIN = 0.25; // ≈15 Cred per hour at the desk
+
+// Cosmetic prizes (bought with Cred). A palette prize adds a club-light colour to
+// the picker; a jacket prize adds a DJ-jacket colour. Stored in profile.unlocks.
+export interface Prize {
+  id: string;
+  name: string;
+  price: number;
+  kind: "palette" | "jacket";
+  hue: number;
+}
+export const PRIZES: Prize[] = [
+  { id: "pal-gold", name: "Gold Rush lights", price: 150, kind: "palette", hue: 45 },
+  { id: "pal-vapor", name: "Vaporwave lights", price: 180, kind: "palette", hue: 312 },
+  { id: "pal-toxic", name: "Toxic Green lights", price: 180, kind: "palette", hue: 96 },
+  { id: "pal-ice", name: "Ice Blue lights", price: 200, kind: "palette", hue: 200 },
+  { id: "pal-ember", name: "Ember lights", price: 240, kind: "palette", hue: 14 },
+  { id: "jak-gold", name: "Gold jacket", price: 120, kind: "jacket", hue: 45 },
+  { id: "jak-teal", name: "Teal jacket", price: 120, kind: "jacket", hue: 174 },
+  { id: "jak-lime", name: "Lime jacket", price: 140, kind: "jacket", hue: 96 },
+  { id: "jak-ice", name: "Ice jacket", price: 160, kind: "jacket", hue: 200 },
+];
+
 // ── DJ avatars (head/hat styles; visor & afro level-locked) ───────────────────
 export interface AvatarConfig {
   id: AvatarId;

@@ -7,6 +7,7 @@ function normalize(p: Profile): Profile {
   if (!Array.isArray(p.unlocks)) p.unlocks = [];
   for (const v of STARTER_VENUES) if (!p.unlocks.includes(v)) p.unlocks.push(v);
   if (typeof p.deskLog !== "object" || p.deskLog === null) p.deskLog = {};
+  if (typeof p.cred !== "number" || !isFinite(p.cred)) p.cred = 0;
   // settings merge is shallow, so backfill any keys a stale saved profile lacks
   p.settings = { ...defaultProfile().settings, ...(p.settings ?? {}) };
   return p;
@@ -39,7 +40,8 @@ export interface Profile {
   vibe: VibeName;
   auto: boolean;
   palette: number; // club light base hue
-  unlocks: string[]; // venue + avatar ids earned
+  unlocks: string[]; // venue + avatar + prize ids earned/bought
+  cred: number; // spendable currency earned at the desk
   peakCrowd: number;
   history: string[]; // last ~6 titles
   deskLog: Record<string, number>; // local date "YYYY-MM-DD" → seconds at desk that day
@@ -110,6 +112,7 @@ export function defaultProfile(): Profile {
     auto: true,
     palette: 288,
     unlocks: ["soundcheck", "cafe", "park", "club", "beanie", "snapback"],
+    cred: 0,
     peakCrowd: 0,
     history: [],
     deskLog: {},
