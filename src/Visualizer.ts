@@ -83,6 +83,11 @@ export class Visualizer {
       studio: (u, t) => this.renderStudio(u, t),
       skilodge: (u, t) => this.renderSkiLodge(u, t),
       boat: (u, t) => this.renderBoat(u, t),
+      airport: (u, t) => this.renderAirport(u, t),
+      houseparty: (u, t) => this.renderHouseParty(u, t),
+      laundromat: (u, t) => this.renderLaundromat(u, t),
+      aquarium: (u, t) => this.renderAquarium(u, t),
+      space: (u, t) => this.renderSpace(u, t),
     };
   }
 
@@ -1327,6 +1332,251 @@ export class Visualizer {
     });
     this.parkDancer(W * 0.22, H * 0.95, u, beat, kick, { shirt: "hsl(8,72%,60%)", shirtSh: "hsl(8,68%,44%)", legs: "hsl(204,40%,40%)", skin: "hsl(28,46%,64%)", hair: "hsl(30,42%,24%)" }, 0);
     this.parkDancer(W * 0.8, H * 0.96, u, beat, kick, { shirt: "hsl(48,84%,62%)", shirtSh: "hsl(44,78%,46%)", legs: "hsl(220,30%,36%)", skin: "hsl(26,44%,58%)", hair: "hsl(20,30%,16%)" }, 2.3);
+  }
+
+  private airportPlane(cx: number, cy: number, u: number, climb: number): void {
+    const s = u, tilt = climb * 2.2 * s;
+    const B = "hsl(210,16%,82%)", BH = "hsl(210,16%,92%)", BS = "hsl(210,14%,66%)";
+    this.px(cx - 14 * s, cy - tilt * 0.4, 28 * s, 2.8 * s, B);
+    this.px(cx + 9 * s, cy - tilt * 0.4, 5 * s, 2.8 * s, BH);
+    this.px(cx - 14 * s, cy + 0.5 * s - tilt * 0.4, 28 * s, 0.9 * s, BS);
+    this.px(cx - 13 * s, cy - 5 * s - tilt, 2.4 * s, 5.2 * s, B);
+    this.px(cx - 13 * s, cy - 5 * s - tilt, 4.6 * s, 1.6 * s, "hsl(205,60%,52%)");
+    this.px(cx - 13 * s, cy - 0.4 * s, 4 * s, 1.4 * s, B);
+    this.px(cx - 4 * s, cy + 1.4 * s, 12 * s, 1.6 * s, BS);
+    this.px(cx - 1 * s, cy + 2.4 * s, 4 * s, 2 * s, "hsl(210,14%,40%)");
+    if (Math.floor(performance.now() / 400) % 2 === 0) { this.px(cx + 13 * s, cy - tilt * 0.4, 1 * s, 1 * s, "hsl(0,90%,60%)"); this.disc(cx + 13 * s, cy, 2 * s, 2 * s, "hsla(0,90%,60%,0.4)", this.glow); }
+    if (climb < 0.05) for (let i = 0; i < 4; i++) this.px(cx - 16 * s - i * 2.4 * s, cy + 3 * s, 1.6 * s, 1 * s, `hsla(40,40%,80%,${0.3 - i * 0.06})`);
+    else for (let i = 0; i < 5; i++) this.px(cx - 14 * s - i * 3 * s, cy + 2 * s + i * 1 * s, 2 * s, 1 * s, `hsla(0,0%,90%,${0.4 - i * 0.07})`);
+  }
+
+  // ── AIRPORT — departures lounge, a plane takes off on a loop ────────────────
+  private renderAirport(u: number, t: number): void {
+    const W = this.w, H = this.h;
+    const { kick, beat } = this.pulse(t, 110);
+    const floorY = Math.round(H * 0.72);
+    this.g.fillStyle = "hsl(214,18%,22%)"; this.g.fillRect(0, 0, W, floorY);
+    const wy = 8 * u, wh = 34 * u;
+    const sg = this.g.createLinearGradient(0, wy, 0, wy + wh);
+    sg.addColorStop(0, "hsl(232,40%,30%)"); sg.addColorStop(0.6, "hsl(212,46%,50%)"); sg.addColorStop(1, "hsl(28,60%,62%)");
+    this.g.fillStyle = sg; this.g.fillRect(4 * u, wy, W - 8 * u, wh);
+    this.px(4 * u, wy + wh - 6 * u, W - 8 * u, 6 * u, "hsl(220,14%,20%)");
+    for (let x = 8 * u; x < W - 6 * u; x += 8 * u) this.px(x, wy + wh - 3 * u, 1.4 * u, 1.4 * u, ((x | 0) % 2) ? "hsl(40,95%,62%)" : "hsl(150,80%,55%)");
+    this.g.save();
+    this.g.beginPath(); this.g.rect(4 * u, wy, W - 8 * u, wh); this.g.clip();
+    const runwayY = wy + wh - 8 * u;
+    const T = 11, p = (t % T) / T;
+    let plx, ply, climb;
+    if (p < 0.62) { const f = p / 0.62; plx = 6 * u + (f * f) * (W * 0.72); ply = runwayY; climb = 0; }
+    else { const f = (p - 0.62) / 0.38; plx = W * 0.72 + f * (W * 0.55); ply = runwayY - f * f * 36 * u; climb = f; }
+    this.airportPlane(plx, ply, u, climb);
+    this.airportPlane(((t * 3 + 40) % (W + 60 * u)) - 30 * u, wy + 5 * u, u * 0.6, 0.4);
+    this.g.restore();
+    for (let x = 4 * u; x < W; x += 18 * u) this.px(x, wy, 1.2 * u, wh, "hsl(214,16%,16%)");
+    this.px(4 * u, wy + wh, W - 8 * u, 1.6 * u, "hsl(214,16%,16%)");
+    this.px(W * 0.5 - 20 * u, 3 * u, 40 * u, 4 * u, "hsl(214,20%,10%)");
+    for (let i = 0; i < 10; i++) { const flip = (Math.floor(beat * 2 + i) % 5) === 0; this.px(W * 0.5 - 18 * u + i * 3.6 * u, 3.8 * u, 3 * u, 2.4 * u, flip ? "hsl(45,90%,58%)" : "hsl(214,16%,22%)"); }
+    this.g.fillStyle = "hsl(214,16%,16%)"; this.g.fillRect(0, floorY, W, H - floorY);
+    this.px(0, floorY, W, 1.2 * u, "hsl(214,16%,26%)");
+    this.disc(W * 0.5, floorY + 8 * u, 30 * u, 6 * u, "hsla(210,60%,60%,0.06)", this.glow);
+    for (let i = 0; i < 4; i++) { const sx2 = W * 0.08 + i * 9 * u; this.px(sx2, floorY - 8 * u, 7 * u, 6 * u, "hsl(208,40%,42%)"); this.px(sx2, floorY - 11 * u, 7 * u, 3 * u, "hsl(208,40%,48%)"); this.px(sx2, floorY - 2 * u, 1 * u, 2 * u, "hsl(214,12%,20%)"); }
+    this.parkDancer(W * 0.82, H * 0.95, u, beat, kick * 0.5, { shirt: "hsl(214,30%,52%)", shirtSh: "hsl(214,28%,38%)", legs: "hsl(220,18%,30%)", skin: "hsl(26,44%,60%)", hair: "hsl(24,30%,20%)" }, 0.5);
+    this.px(W * 0.88, floorY + 2 * u, 4 * u, 7 * u, "hsl(0,0%,30%)");
+    this.px(W * 0.895, floorY - 1 * u, 1 * u, 3 * u, "hsl(0,0%,46%)");
+    this.commuter(W * 0.1, floorY + 13 * u, u, t, "hsl(208,22%,40%)", 0.8, "watch");
+    this.commuter(W * 0.66, floorY + 13 * u, u, t, "hsl(30,18%,40%)", 2.2, "phone");
+    this.djBooth(W * 0.42, H * 0.97, u, t, beat, kick, {
+      skin: "hsl(26,46%,62%)", jacket: "hsl(208,42%,46%)", jacketHi: "hsl(208,48%,58%)", jacketSh: "hsl(208,42%,30%)",
+      hair: "hsl(24,30%,18%)", glow: "hsl(196,90%,58%)", booth: "hsl(214,18%,22%)", boothHi: "hsl(214,24%,32%)", boothSh: "hsl(214,18%,12%)",
+    });
+  }
+
+  // ── HOUSE PARTY — someone's living room, couch, red cups, floor lamp ────────
+  private renderHouseParty(u: number, t: number): void {
+    const W = this.w, H = this.h;
+    const { kick, beat } = this.pulse(t, 118);
+    const floorY = Math.round(H * 0.70);
+    const wg = this.g.createLinearGradient(0, 0, 0, floorY);
+    wg.addColorStop(0, "hsl(28,30%,32%)"); wg.addColorStop(1, "hsl(26,28%,24%)");
+    this.g.fillStyle = wg; this.g.fillRect(0, 0, W, floorY);
+    for (const [fx, fw, hue] of [[W * 0.12, 14, 320], [W * 0.3, 11, 190], [W * 0.86, 13, 45]]) {
+      this.px(fx - fw / 2 * u, 8 * u, fw * u, 16 * u, "hsl(26,24%,16%)");
+      this.px(fx - fw / 2 * u + 1.2 * u, 9.4 * u, fw * u - 2.4 * u, 13 * u, `hsl(${hue},45%,40%)`);
+      this.px(fx - fw / 2 * u + 1.2 * u, 9.4 * u, fw * u - 2.4 * u, 4 * u, `hsl(${hue},55%,54%)`);
+    }
+    this.stringLights(W, u, beat, 40, 2 * u, 6 * u);
+    const lampX = W * 0.93;
+    this.px(lampX - 0.8 * u, floorY - 26 * u, 1.6 * u, 26 * u, "hsl(26,20%,24%)");
+    this.px(lampX - 4 * u, floorY - 30 * u, 8 * u, 4.4 * u, "hsl(40,60%,54%)");
+    this.disc(lampX, floorY - 22 * u, 14 * u, 18 * u, "hsla(38,95%,60%,0.12)", this.glow);
+    this.g.fillStyle = "hsl(26,30%,28%)"; this.g.fillRect(0, floorY, W, H - floorY);
+    for (let py = floorY + 4 * u; py < H; py += 5 * u) this.px(0, py, W, 1, "hsl(24,26%,20%)");
+    this.px(0, floorY, W, 1, "hsl(28,34%,38%)");
+    this.disc(W * 0.5, H * 0.9, 40 * u, 9 * u, "hsl(8,40%,34%)");
+    this.disc(W * 0.5, H * 0.9, 30 * u, 6 * u, "hsl(20,44%,42%)");
+    this.px(W * 0.05, floorY - 10 * u, 26 * u, 12 * u, "hsl(214,24%,38%)");
+    this.px(W * 0.05, floorY - 16 * u, 26 * u, 7 * u, "hsl(214,26%,44%)");
+    this.px(W * 0.05, floorY - 16 * u, 4 * u, 13 * u, "hsl(214,26%,48%)");
+    this.px(W * 0.05 + 22 * u, floorY - 16 * u, 4 * u, 13 * u, "hsl(214,26%,34%)");
+    const plx = W * 0.34;
+    this.px(plx - 2.4 * u, floorY - 6 * u, 4.8 * u, 6 * u, "hsl(16,50%,44%)");
+    this.disc(plx, floorY - 8 * u, 4 * u, 5 * u, "hsl(132,40%,40%)");
+    this.disc(plx - 2 * u, floorY - 11 * u, 2.4 * u, 3 * u, "hsl(122,46%,46%)");
+    this.barStaff(W * 0.5, H * 0.66, u * 0.9, t, {
+      shirt: "hsl(190,45%,48%)", shirtHi: "hsl(190,52%,60%)", shirtSh: "hsl(190,45%,32%)",
+      skin: "hsl(28,44%,62%)", hair: "hsl(30,40%,26%)", machine: "bottles",
+      counter: "hsl(26,24%,28%)", counterHi: "hsl(28,30%,38%)", counterW: 26,
+    });
+    this.parkDancer(W * 0.46, H * 0.94, u, beat, kick, { shirt: "hsl(45,80%,58%)", shirtSh: "hsl(42,74%,44%)", legs: "hsl(220,28%,36%)", skin: "hsl(28,46%,64%)", hair: "hsl(30,42%,24%)" }, 0);
+    this.parkDancer(W * 0.6, H * 0.95, u, beat, kick, { shirt: "hsl(320,55%,58%)", shirtSh: "hsl(320,50%,42%)", legs: "hsl(28,30%,32%)", skin: "hsl(26,44%,58%)", hair: "hsl(20,30%,16%)" }, Math.PI);
+    this.px(W * 0.43, H * 0.86, 2 * u, 2.4 * u, "hsl(2,70%,52%)");
+    this.px(W * 0.64, H * 0.87, 2 * u, 2.4 * u, "hsl(2,70%,52%)");
+    this.djBooth(W * 0.8, H * 0.97, u * 0.92, t, beat, kick, {
+      skin: "hsl(26,46%,62%)", jacket: "hsl(28,46%,46%)", jacketHi: "hsl(30,52%,58%)", jacketSh: "hsl(26,42%,30%)",
+      hat: "hsl(8,55%,50%)", cap: true, glow: "hsl(40,90%,60%)", booth: "hsl(26,28%,26%)", boothHi: "hsl(28,34%,36%)", boothSh: "hsl(24,24%,16%)",
+    });
+  }
+
+  // ── LAUNDROMAT — mint tiles, washers tumbling, bubbles ──────────────────────
+  private renderLaundromat(u: number, t: number): void {
+    const W = this.w, H = this.h;
+    const { kick, beat } = this.pulse(t, 122);
+    const floorY = Math.round(H * 0.72);
+    this.g.fillStyle = "hsl(180,20%,70%)"; this.g.fillRect(0, 0, W, floorY);
+    for (let y = 4 * u; y < floorY; y += 6 * u) this.px(0, y, W, 0.6 * u, "hsla(180,16%,52%,0.5)");
+    for (let x = 0; x < W; x += 6 * u) this.px(x, 0, 0.6 * u, floorY, "hsla(180,16%,52%,0.5)");
+    this.px(0, 0, W, 3 * u, "hsl(190,12%,82%)");
+    for (let x = 8 * u; x < W; x += 26 * u) { this.px(x, 1 * u, 16 * u, 1.4 * u, "hsl(54,40%,94%)"); this.px(x, 1 * u, 16 * u, 1.4 * u, "hsla(54,80%,92%,0.5)", this.glow); }
+    const n = 5, mw = W / n;
+    for (let i = 0; i < n; i++) {
+      const cx0 = i * mw + mw * 0.5, top = floorY - 26 * u, bw = mw * 0.78;
+      this.px(cx0 - bw / 2, top, bw, 26 * u, "hsl(200,10%,90%)");
+      this.px(cx0 - bw / 2, top, bw, 1.4 * u, "hsl(200,10%,98%)");
+      this.px(cx0 - bw / 2, top + 1.6 * u, bw, 3 * u, "hsl(200,10%,80%)");
+      for (let b = 0; b < 4; b++) this.px(cx0 - bw / 2 + 2 * u + b * 2.2 * u, top + 2.6 * u, 1 * u, 1 * u, ["hsl(0,75%,56%)", "hsl(150,70%,50%)", "hsl(45,90%,56%)", "hsl(205,80%,56%)"][b]);
+      const dy = top + 14 * u, dr = bw * 0.32;
+      this.disc(cx0, dy, dr + 1 * u, dr + 1 * u, "hsl(200,12%,70%)");
+      this.disc(cx0, dy, dr, dr, "hsl(205,55%,30%)");
+      const spin = t * (5 + i * 0.6);
+      const ch = [0, 50, 150, 320, 200];
+      for (let c = 0; c < 4; c++) { const a = spin + c * 1.57; this.px(cx0 + Math.cos(a) * dr * 0.5 - 1 * u, dy + Math.sin(a) * dr * 0.5 - 1 * u, 2.2 * u, 2.2 * u, `hsl(${(ch[i] + c * 40) % 360},65%,58%)`); }
+      this.disc(cx0 - dr * 0.4, dy - dr * 0.4, dr * 0.3, dr * 0.3, "hsla(0,0%,100%,0.3)");
+    }
+    this.g.fillStyle = "hsl(200,8%,40%)"; this.g.fillRect(0, floorY, W, H - floorY);
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 18; c++) if ((r + c) % 2 === 0) this.px(c * (W / 18), floorY + r * ((H - floorY) / 4), W / 18 + 0.5, (H - floorY) / 4 + 0.5, "hsl(200,8%,46%)");
+    this.px(0, floorY, W, 1, "hsl(200,10%,56%)");
+    for (let i = 0; i < 22; i++) { const bx = ((i * 61.7) % 1) * W + Math.sin(t + i) * 3 * u; const by = floorY - ((t * (10 + (i % 4) * 5) + i * 23) % (floorY * 0.9)); const br = (1 + (i % 3)) * u; this.disc(bx, by, br, br, "hsla(190,60%,90%,0.35)"); this.px(bx - br * 0.4, by - br * 0.4, 0.8 * u, 0.8 * u, "hsla(0,0%,100%,0.6)"); }
+    this.parkLounger(W * 0.1, H * 0.93, u, t, { shirt: "hsl(40,60%,56%)", shirtSh: "hsl(40,56%,42%)", skin: "hsl(28,44%,62%)", hair: "hsl(24,30%,22%)", legs: "hsl(220,20%,32%)" }, 0.7);
+    this.px(W * 0.16, floorY + 6 * u, 8 * u, 5 * u, "hsl(20,60%,52%)");
+    this.px(W * 0.16, floorY + 5 * u, 8 * u, 1.4 * u, "hsl(0,0%,92%)");
+    this.djBooth(W * 0.6, H * 0.96, u, t, beat, kick, {
+      skin: "hsl(26,44%,60%)", jacket: "hsl(190,46%,48%)", jacketHi: "hsl(190,52%,60%)", jacketSh: "hsl(190,46%,32%)",
+      hat: "hsl(0,0%,96%)", glow: "hsl(186,90%,58%)", booth: "hsl(200,12%,84%)", boothHi: "hsl(200,12%,94%)", boothSh: "hsl(200,12%,66%)",
+    });
+  }
+
+  // ── AQUARIUM — the tank is the back wall, fish, jellyfish, a bored shark ─────
+  private renderAquarium(u: number, t: number): void {
+    const W = this.w, H = this.h;
+    const { kick, beat } = this.pulse(t, 92);
+    const floorY = Math.round(H * 0.80);
+    const wg = this.g.createLinearGradient(0, 0, 0, floorY);
+    wg.addColorStop(0, "hsl(205,60%,30%)"); wg.addColorStop(1, "hsl(212,64%,16%)");
+    this.g.fillStyle = wg; this.g.fillRect(0, 0, W, floorY);
+    for (let i = 0; i < 6; i++) { const cx0 = ((i / 6) * W + t * 6) % W; this.px(cx0, 0, 8 * u, floorY * 0.7, "hsla(190,80%,70%,0.05)"); }
+    this.disc(W * 0.5, 0, W * 0.5, 18 * u, "hsla(190,90%,80%,0.06)", this.glow);
+    for (let k = 0; k < 7; k++) { const kx = (k + 0.5) * (W / 7); for (let seg = 0; seg < 8; seg++) { const sy = floorY - seg * 3 * u; const off = Math.sin(t * 1.2 + k + seg * 0.5) * 2 * u; this.px(kx + off - 1 * u, sy - 3 * u, 2.2 * u, 3.4 * u, `hsl(140,50%,${28 + seg}%)`); } }
+    const fishHues = [30, 320, 150, 45, 190];
+    for (let i = 0; i < 10; i++) { const dir = (i % 2) ? 1 : -1; const fx = (((t * (8 + (i % 4) * 4) * dir) + i * 47) % (W + 20 * u) + W + 20 * u) % (W + 20 * u) - 10 * u; const fy = 8 * u + ((i * 37) % 1) * (floorY - 16 * u); const fs = 1.4 * u; this.disc(fx, fy, 2.4 * fs, 1.4 * fs, `hsl(${fishHues[i % 5]},65%,58%)`); this.px(fx + dir * 2.4 * fs, fy - 1 * fs, dir * 1.6 * fs, 2 * fs, `hsl(${fishHues[i % 5]},65%,50%)`); this.px(fx - dir * 1 * fs, fy - 0.5 * fs, 0.7 * fs, 0.7 * fs, "hsl(0,0%,10%)"); }
+    for (let j = 0; j < 3; j++) { const jx = W * (0.2 + 0.3 * j) + Math.sin(t * 0.6 + j) * 6 * u; const jy = 14 * u + ((t * 4 + j * 30) % (floorY * 0.6)); this.disc(jx, jy, 3 * u, 2.4 * u, "hsla(300,80%,72%,0.7)"); this.disc(jx, jy, 4.4 * u, 3.4 * u, "hsla(300,85%,72%,0.3)", this.glow); for (let tt = 0; tt < 4; tt++) this.px(jx - 2 * u + tt * 1.4 * u, jy + 2 * u + Math.sin(t * 3 + tt) * 1 * u, 0.8 * u, 4 * u, "hsla(300,75%,78%,0.55)"); }
+    const shx = ((t * 7) % (W + 60 * u)) - 30 * u, shy = floorY * 0.42;
+    this.disc(shx, shy, 14 * u, 4 * u, "hsl(210,18%,46%)"); this.px(shx - 16 * u, shy - 1 * u, 5 * u, 5 * u, "hsl(210,18%,42%)");
+    this.px(shx - 2 * u, shy - 5 * u, 4 * u, 4 * u, "hsl(210,18%,50%)");
+    this.px(shx + 9 * u, shy - 0.5 * u, 0.8 * u, 0.8 * u, "hsl(0,0%,8%)");
+    this.px(shx + 6 * u, shy + 2.4 * u, 6 * u, 0.8 * u, "hsl(210,16%,30%)");
+    for (let i = 0; i < 26; i++) { const bx = ((i * 71.3) % 1) * W; const by = floorY - ((t * (12 + (i % 4) * 6) + i * 19) % floorY); const br = (0.8 + (i % 3) * 0.6) * u; this.disc(bx, by, br, br, "hsla(190,70%,88%,0.4)"); }
+    this.px(0, floorY - 1 * u, W, 2 * u, "hsl(206,24%,12%)");
+    this.g.fillStyle = "hsl(210,16%,9%)"; this.g.fillRect(0, floorY, W, H - floorY);
+    this.disc(W * 0.5, floorY + 6 * u, 34 * u, 6 * u, "hsla(195,80%,60%,0.10)", this.glow);
+    for (const sx of [W * 0.12, W * 0.86]) { this.px(sx - 3 * u, floorY - 1 * u, 6 * u, H - floorY + 1 * u, "hsl(210,20%,8%)"); this.disc(sx, floorY - 3 * u, 2.4 * u, 2.4 * u, "hsl(210,20%,8%)"); }
+    this.djBooth(W * 0.5, H * 0.99, u, t, beat, kick, {
+      skin: "hsl(26,42%,54%)", jacket: "hsl(205,40%,40%)", jacketHi: "hsl(205,46%,52%)", jacketSh: "hsl(205,40%,26%)",
+      hair: "hsl(210,20%,16%)", glow: "hsl(190,90%,60%)", booth: "hsl(206,24%,18%)", boothHi: "hsl(206,30%,28%)", boothSh: "hsl(206,24%,10%)",
+    });
+  }
+
+  private floater(cx: number, cy: number, u: number, t: number, accent: string, ph: number): void {
+    const s = u, bob = Math.sin(t * 1.2 + ph) * 3 * s, y = cy + bob;
+    const a1 = Math.sin(t * 3 + ph), a2 = Math.cos(t * 3 + ph);
+    const SUIT = "hsl(210,12%,84%)", SUITS = "hsl(210,12%,64%)";
+    this.limb(cx - 2.5 * s, y - 2 * s, cx - 6 * s, y - 4 * s + a1 * 2 * s, 1.6 * s, SUIT);
+    this.limb(cx + 2.5 * s, y - 2 * s, cx + 6 * s, y - 4 * s - a1 * 2 * s, 1.6 * s, SUIT);
+    this.limb(cx - 2 * s, y + 4 * s, cx - 4 * s, y + 8 * s + a2 * 2 * s, 1.8 * s, SUIT);
+    this.limb(cx + 2 * s, y + 4 * s, cx + 4 * s, y + 8 * s - a2 * 2 * s, 1.8 * s, SUIT);
+    this.block(cx - 3 * s, y - 4 * s, 6 * s, 9 * s, SUIT, "hsl(210,12%,94%)", SUITS);
+    this.px(cx - 3 * s, y - 1 * s, 6 * s, 2 * s, accent);
+    this.disc(cx, y - 6 * s, 3 * s, 3 * s, "hsl(205,40%,26%)");
+    this.disc(cx, y - 6 * s, 3.4 * s, 3.4 * s, "hsla(195,80%,70%,0.2)", this.glow);
+    this.px(cx - 1 * s, y - 6.8 * s, 1.4 * s, 1.2 * s, "hsla(0,0%,100%,0.45)");
+  }
+
+  private alienCameo(t: number): void {
+    const W = this.w, H = this.h, u = H / 100;
+    const period = 150;
+    const local = t % period, dur = 9;
+    if (local > dur) return;
+    const p = local / dur;
+    const cx = -20 * u + p * (W + 40 * u);
+    const cy = H * 0.2 + Math.sin(p * 6) * 5 * u;
+    this.disc(cx, cy + 8 * u, 7 * u, 9 * u, "hsla(140,90%,60%,0.12)", this.glow);
+    this.disc(cx, cy + 1.6 * u, 11 * u, 3 * u, "hsl(220,10%,40%)");
+    this.disc(cx, cy + 1 * u, 9 * u, 2.4 * u, "hsl(220,12%,56%)");
+    for (let i = -3; i <= 3; i++) { const on = (Math.floor(t * 4 + i) % 2) === 0; this.px(cx + i * 2.6 * u - 0.5 * u, cy + 2 * u, 1 * u, 1 * u, on ? "hsl(140,90%,60%)" : "hsl(320,90%,64%)"); }
+    this.disc(cx, cy - 1 * u, 4.4 * u, 4 * u, "hsla(150,70%,70%,0.4)");
+    this.disc(cx, cy - 1 * u, 4.4 * u, 4 * u, "hsla(150,80%,72%,0.18)", this.glow);
+    this.disc(cx, cy + 0.6 * u, 2.4 * u, 2.6 * u, "hsl(120,55%,52%)");
+    this.px(cx - 1.6 * u, cy - 3 * u, 0.8 * u, 2.2 * u, "hsl(120,50%,46%)");
+    this.px(cx + 0.8 * u, cy - 3 * u, 0.8 * u, 2.2 * u, "hsl(120,50%,46%)");
+    this.px(cx - 1.6 * u, cy - 3.4 * u, 0.8 * u, 0.8 * u, "hsl(140,90%,64%)");
+    this.px(cx + 0.8 * u, cy - 3.4 * u, 0.8 * u, 0.8 * u, "hsl(140,90%,64%)");
+    this.px(cx - 1 * u, cy + 0.2 * u, 1 * u, 1.4 * u, "hsl(0,0%,8%)");
+    this.px(cx + 0.4 * u, cy + 0.2 * u, 1 * u, 1.4 * u, "hsl(0,0%,8%)");
+  }
+
+  // ── SPACE STATION — zero-G, porthole Earth, floating astronauts, a UFO ──────
+  private renderSpace(u: number, t: number): void {
+    const W = this.w, H = this.h;
+    const { kick, energy, beat } = this.pulse(t, 128);
+    const rg = this.g.createLinearGradient(0, 0, 0, H);
+    rg.addColorStop(0, "hsl(258,30%,12%)"); rg.addColorStop(1, "hsl(260,28%,7%)");
+    this.g.fillStyle = rg; this.g.fillRect(0, 0, W, H);
+    const px0 = W * 0.76, py0 = H * 0.42, pr = 26 * u;
+    this.disc(px0, py0, pr + 2 * u, pr + 2 * u, "hsl(220,16%,20%)");
+    this.disc(px0, py0, pr, pr, "hsl(240,50%,6%)");
+    for (let i = 0; i < 40; i++) { const a = (i * 53.7) % (Math.PI * 2), rr = ((i * 31.3) % 1) * pr; const sx = px0 + Math.cos(a) * rr, sy = py0 + Math.sin(a) * rr; if (Math.hypot(sx - px0, sy - py0) < pr) this.px(sx, sy, 1, 1, `hsla(220,30%,92%,${0.4 + 0.5 * Math.abs(Math.sin(t + i))})`); }
+    this.disc(px0 - 6 * u, py0 + 6 * u, 11 * u, 11 * u, "hsl(210,70%,46%)");
+    this.disc(px0 - 6 * u, py0 + 6 * u, 12 * u, 12 * u, "hsla(200,90%,60%,0.2)", this.glow);
+    for (const [ox, oy, r] of [[-9, 3, 3], [-3, 9, 2.6], [-7, 10, 2]]) this.disc(px0 - 6 * u + ox * u, py0 + 6 * u + oy * u, r * u, r * u * 0.8, "hsl(130,46%,44%)");
+    this.px(px0 - 1 * u, py0 - 1 * u, 1.2 * u, 1.2 * u, "hsl(0,0%,100%)");
+    this.px(0, H * 0.16, W * 0.3, H * 0.5, "hsl(255,16%,16%)");
+    this.px(0, H * 0.16, W * 0.3, 1.4 * u, "hsl(255,18%,26%)");
+    for (let r = 0; r < 5; r++) for (let c = 0; c < 6; c++) { const lit = ((Math.floor(beat * 2) + r + c) % 4) === 0; this.px(3 * u + c * 4 * u, H * 0.2 + r * 5 * u, 2.4 * u, 2.4 * u, lit ? ["hsl(0,75%,55%)", "hsl(150,70%,50%)", "hsl(45,90%,56%)", "hsl(205,80%,56%)"][(r + c) % 4] : "hsl(255,12%,22%)"); }
+    this.px(2 * u, H * 0.5, W * 0.26, 8 * u, "hsl(200,50%,10%)");
+    for (let i = 0; i < 10; i++) { const wh = (1 + Math.abs(Math.sin(t * 4 + i)) * 4) * u; this.px(3 * u + i * 2.4 * u, H * 0.5 + 6 * u - wh, 1.4 * u, wh, "hsl(190,80%,56%)"); }
+    for (let j = 0; j < 2; j++) { const a = Math.PI / 2 + Math.sin(t * 0.9 + j * 2) * 0.7; this.limb(W * 0.45, 2 * u, W * 0.45 + Math.cos(a) * H, 2 * u + Math.sin(a) * H, 1 * u, `hsla(275,90%,66%,${0.18 + 0.12 * energy})`, this.glow); }
+    const vy = H * 0.7 + Math.sin(t * 1.1) * 4 * u, vx = W * 0.4 + Math.cos(t * 0.5) * 5 * u;
+    this.disc(vx, vy, 3 * u, 3 * u, "hsl(255,10%,12%)"); this.disc(vx, vy, 1 * u, 1 * u, "hsl(45,85%,56%)");
+    const dx2 = W * 0.55 + Math.sin(t * 0.7) * 6 * u, dy2 = H * 0.24 + Math.cos(t * 0.9) * 4 * u;
+    this.disc(dx2, dy2, 2.2 * u, 1.8 * u, "hsl(48,95%,60%)"); this.px(dx2 + 1.8 * u, dy2 - 0.6 * u, 1.6 * u, 1.2 * u, "hsl(40,90%,52%)"); this.px(dx2 - 0.4 * u, dy2 - 0.6 * u, 0.7 * u, 0.7 * u, "hsl(0,0%,10%)");
+    this.floater(W * 0.2, H * 0.45, u, t, "hsl(8,75%,56%)", 0);
+    this.floater(W * 0.36, H * 0.66, u, t, "hsl(190,70%,52%)", 2.1);
+    this.floater(W * 0.5, H * 0.5, u, t, "hsl(140,60%,50%)", 4.0);
+    const bobY = Math.sin(t * 0.9) * 2 * u;
+    this.djBooth(W * 0.5, H * 0.99 + bobY, u, t, beat, kick, {
+      skin: "hsl(26,42%,54%)", jacket: "hsl(270,40%,44%)", jacketHi: "hsl(270,46%,56%)", jacketSh: "hsl(270,40%,28%)",
+      hat: "hsl(200,30%,40%)", glow: "hsl(275,90%,64%)", booth: "hsl(255,18%,20%)", boothHi: "hsl(255,24%,30%)", boothSh: "hsl(255,18%,10%)",
+    });
+    this.alienCameo(t);
   }
 
   // ── CAFÉ (morning) — cozy coffee shop, a producer chilling with a laptop ────
