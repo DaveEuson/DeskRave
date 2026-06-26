@@ -54,20 +54,25 @@ export class Presence {
 
   // Prefer the native on-device detector (jetson/presence_service.py) if it's
   // running; otherwise fall back to in-browser detection on the given <video>.
+  // Retries the service check briefly to dodge a startup race.
   async start(video: HTMLVideoElement): Promise<"native" | "browser" | "none"> {
-    try {
-      const d = await fetch("/api/presence", { cache: "no-store" }).then((r) => r.json());
-      if (d && typeof d.ts === "number" && Date.now() / 1000 - d.ts < 5) {
-        this.startNative();
-        return "native";
+    for (let i = 0; i < 4; i++) {
+      try {
+        const d = await fetch("/api/presence", { cache: "no-store" }).then((r) => r.json());
+        if (d && typeof d.ts === "number" && Date.now() / 1000 - d.ts < 6) {
+          this.startNative();
+          return "native";
+        }
+      } catch {
+        break; // endpoint not there at all → no service
       }
-    } catch {
-      /* no service — use the browser */
+      await new Promise((r) => setTimeout(r, 300));
     }
     return (await this.startCamera(video)) ? "browser" : "none";
   }
 
-  private startNative(): void {
+  startNative(): void {
+    if (this.running) return;
     this.running = true;
     this.native = true;
     const poll = async (): Promise<void> => {

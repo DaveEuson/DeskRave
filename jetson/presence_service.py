@@ -65,7 +65,9 @@ def main():
 
         small = cv2.resize(frame, (320, 240))
         gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
-        faces = cascade.detectMultiScale(gray, 1.2, 5, minSize=(40, 40))
+        # conservative: more neighbours + a larger min size kills background false
+        # positives (you sit close at a desk, so your face is big in frame)
+        faces = cascade.detectMultiScale(gray, 1.15, 8, minSize=(64, 64))
         count = len(faces)
         now = time.time()
         if count > 0:
