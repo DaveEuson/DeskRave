@@ -80,8 +80,8 @@ export const VENUES: Record<VenueId, VenueMeta> = {
   studio: { id: "studio", name: "After Hours Studio", label: "AFTER HOURS", accent: "#8a8cff", genre: "lofi", price: 80, dark: true },
   openhero: { id: "openhero", name: "Opening for Your Hero", label: "WARM-UP SLOT", accent: "#ffd24a", genre: "house", price: 90, crowd: true },
   // bigger rooms + outdoors
-  rooftop: { id: "rooftop", name: "Rooftop", label: "GOLDEN HOUR", accent: "#ff9e5e", genre: "house", price: 120, crowd: true },
-  beach: { id: "beach", name: "Sunset Shore", label: "SUNSET SHORE", accent: "#ffb27a", genre: "chill", price: 120, crowd: true },
+  rooftop: { id: "rooftop", name: "Rooftop", label: "GOLDEN HOUR", accent: "#ff9e5e", genre: "house", price: 120, crowd: true, ported: true },
+  beach: { id: "beach", name: "Sunset Shore", label: "SUNSET SHORE", accent: "#ffb27a", genre: "chill", price: 120, crowd: true, ported: true },
   houseparty: { id: "houseparty", name: "House Party", label: "HOUSE PARTY", accent: "#ffb84a", genre: "pop", price: 120, crowd: true },
   radio: { id: "radio", name: "Radio Booth", label: "ON AIR", accent: "#ff6a5e", genre: "downtempo", price: 120, dark: true },
   arcade: { id: "arcade", name: "Barcade", label: "INSERT COIN", accent: "#62e0ff", genre: "synthwave", price: 140, dark: true, crowd: true },
