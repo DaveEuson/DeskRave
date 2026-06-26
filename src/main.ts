@@ -68,11 +68,13 @@ presence.onChange = (st) => {
 // ── "what the camera sees" privacy preview ──────────────────────────────────
 const camPreview = $("camPreview");
 const camVideo = $<HTMLVideoElement>("camVideo");
+const camSnap = $<HTMLImageElement>("camSnap");
 const camBoxes = $<HTMLCanvasElement>("camBoxes");
 const camStatus = $("camStatus");
+let snapTimer = 0;
 $("camHide").onclick = () => { camPreview.hidden = true; };
 function drawCam(): void {
-  if (camPreview.hidden || !presence.active) return;
+  if (camPreview.hidden || !presence.active || presence.isNative) return; // native bakes the box into the snapshot
   const ctx = camBoxes.getContext("2d")!;
   ctx.clearRect(0, 0, camBoxes.width, camBoxes.height);
   ctx.strokeStyle = presence.current.present ? "#34d399" : "#f59e0b";
@@ -83,21 +85,28 @@ function drawCam(): void {
 async function setCamera(on: boolean): Promise<void> {
   if (on) {
     camPreview.hidden = false; // show it first so the <video> actually decodes frames
-    const ok = await presence.startCamera(camVideo); // detect on the visible preview video
-    if (!ok) {
+    const mode = await presence.start(camVideo); // native service if running, else in-browser
+    if (mode === "none") {
       camPreview.hidden = true;
       profile.settings.camera = false;
       controls.setProfile(profile);
       toast("📷 " + (presence.lastError || "camera unavailable"));
     } else {
       presenceDrives = true;
-      toast("👁 Presence on — the DJ plays when it sees you");
+      const onDevice = mode === "native";
+      camVideo.hidden = onDevice;
+      camSnap.hidden = !onDevice;
+      clearInterval(snapTimer);
+      if (onDevice) snapTimer = window.setInterval(() => { camSnap.src = "/api/presence-frame?t=" + Date.now(); }, 500);
+      toast(`👁 Presence on${onDevice ? " (on-device)" : ""} — the DJ plays when it sees you`);
     }
   } else {
     presenceDrives = false; // set before stop() so the resulting "absent" doesn't pause your music
     presence.stop();
+    clearInterval(snapTimer);
     camPreview.hidden = true;
     camVideo.srcObject = null;
+    camSnap.removeAttribute("src");
   }
   persist();
 }
