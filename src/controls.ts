@@ -50,17 +50,21 @@ export class Controls {
         </div>
         <div class="sheet-body"></div>
       </div>
-      <div class="dock" data-act="toggle">
+      <div class="dock">
+        <button class="dock-btn" data-act="prev" title="previous">⏮</button>
         <button class="dock-pp" data-act="pp" title="play / pause">▶</button>
-        <div class="dock-now"><b class="dock-title">—</b><span class="dock-sub">tap to open</span></div>
-        <div class="dock-eq">${"<i></i>".repeat(7)}</div>
-        <button class="dock-toggle" data-act="toggle">▴</button>
+        <button class="dock-btn" data-act="next" title="next">⏭</button>
+        <div class="dock-now" data-act="toggle"><b class="dock-title">—</b><span class="dock-sub">tap for stations & options</span></div>
+        <div class="dock-eq" data-act="toggle">${"<i></i>".repeat(6)}</div>
+        <button class="dock-toggle" data-act="toggle" title="more">▴</button>
       </div>`;
     this.sheetBody = $(root, ".sheet-body");
 
     root.addEventListener("click", (e) => {
       const act = (e.target as HTMLElement).closest("[data-act]")?.getAttribute("data-act");
       if (act === "pp") { e.stopPropagation(); this.cb.onPlayPause(); return; }
+      if (act === "prev") { e.stopPropagation(); this.cb.onPrev(); return; }
+      if (act === "next") { e.stopPropagation(); this.cb.onNext(); return; }
       if (act === "toggle") this.setOpen(!this.open);
       else if (act === "close") this.setOpen(false);
     });

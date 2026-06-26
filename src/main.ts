@@ -56,12 +56,18 @@ const controls = new Controls($("controls"), profile, {
 
 // ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
 let presenceDrives = false; // does presence control playback right now?
+let awayPauseTimer = 0;
+const AWAY_PAUSE_MS = 6000; // forgive a brief glance away before stopping the music
 presence.onChange = (st) => {
   scene.setPresence(st.count);
   if (presenceDrives) {
-    // arrive → start the set; leave → wind down (autoplay needs the kiosk flag or a prior gesture)
-    if (st.present && !audio.playing && audio.current) void audio.play();
-    else if (!st.present && audio.playing) audio.pause();
+    if (st.present) {
+      clearTimeout(awayPauseTimer);
+      if (!audio.playing && audio.current) void audio.play(); // you're back → resume
+    } else if (audio.playing) {
+      clearTimeout(awayPauseTimer);
+      awayPauseTimer = window.setTimeout(() => audio.pause(), AWAY_PAUSE_MS); // gone a while → wind down
+    }
   }
   syncScene();
 };

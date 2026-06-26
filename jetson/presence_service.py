@@ -9,6 +9,7 @@ The Vite middleware serves both at /api/presence and /api/presence-frame; the
 web app polls them. All on-device — no frames leave the box.
 """
 import cv2, time, json, os
+import numpy as np
 
 DATA = os.path.expanduser("~/pixel-rave/.data")
 os.makedirs(DATA, exist_ok=True)
@@ -72,12 +73,17 @@ def main():
         present = (now - last_seen) < GRACE
         write_presence(present, count if present else 0)
 
-        # annotated snapshot for the "what the camera sees" preview
-        prev = cv2.resize(frame, (160, 120))
+        # stylized "what it sees" preview: pixelate + neon duotone (not a plain selfie)
+        tiny = cv2.resize(frame, (80, 60), interpolation=cv2.INTER_AREA)
+        g = cv2.cvtColor(tiny, cv2.COLOR_BGR2GRAY).astype("float32") / 255.0
+        lo = np.array([70, 20, 50], dtype="float32")    # BGR dark violet
+        hi = np.array([255, 180, 90], dtype="float32")  # BGR bright teal
+        duo = (lo + (hi - lo) * g[..., None]).astype("uint8")
+        prev = cv2.resize(duo, (160, 120), interpolation=cv2.INTER_NEAREST)  # chunky pixels
         sx, sy = 160 / 320.0, 120 / 240.0
         for (x, y, w, h) in faces:
-            cv2.rectangle(prev, (int(x * sx), int(y * sy)), (int((x + w) * sx), int((y + h) * sy)), (120, 220, 52), 2)
-        cv2.imwrite(FRAME, prev, [cv2.IMWRITE_JPEG_QUALITY, 70])
+            cv2.rectangle(prev, (int(x * sx), int(y * sy)), (int((x + w) * sx), int((y + h) * sy)), (120, 240, 80), 2)
+        cv2.imwrite(FRAME, prev, [cv2.IMWRITE_JPEG_QUALITY, 75])
         time.sleep(0.18)  # ~5 Hz
 
 
