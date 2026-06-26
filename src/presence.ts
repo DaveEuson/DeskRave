@@ -18,12 +18,18 @@ export class Presence {
   private lastSeen = 0;
   private graceMs = 2500; // stay "present" briefly after the last sighting (anti-flicker)
   private lastBoxes: { x: number; y: number; w: number; h: number }[] = [];
+  private nativeFaces: { x: number; y: number; s: number }[] = [];
   private native = false;
   lastError = "";
   onChange?: (s: PresenceState) => void;
 
   get isNative(): boolean {
     return this.native;
+  }
+  // detected face centers (normalized, mirrored) from the native service — used to
+  // draw the abstract stick-figure preview
+  get faces(): { x: number; y: number; s: number }[] {
+    return this.nativeFaces;
   }
 
   get current(): PresenceState {
@@ -80,11 +86,13 @@ export class Presence {
       try {
         const d = await fetch("/api/presence", { cache: "no-store" }).then((r) => r.json());
         const fresh = Date.now() / 1000 - (d.ts ?? 0) < 5;
+        this.nativeFaces = fresh && Array.isArray(d.faces) ? d.faces : [];
         this.set(fresh && !!d.present, fresh ? (d.count ?? 0) : 0);
       } catch {
+        this.nativeFaces = [];
         this.set(false, 0);
       }
-      setTimeout(poll, 600);
+      setTimeout(poll, 300);
     };
     void poll();
   }
