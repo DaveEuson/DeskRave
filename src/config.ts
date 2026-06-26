@@ -74,7 +74,7 @@ export const VENUES: Record<VenueId, VenueMeta> = {
   club: { id: "club", name: "Neon Club", label: "● LIVE TONIGHT ●", accent: "#d24fe0", genre: "techno", price: 0, dark: true, crowd: true, ported: true },
   // everyday spots
   bedroom: { id: "bedroom", name: "BFF's Bedroom", label: "BEST FRIENDS", accent: "#a98cff", genre: "pop", price: 60, crowd: true },
-  diner: { id: "diner", name: "Night Owl Diner", label: "THE NIGHT OWL", accent: "#ff5e8a", genre: "rock", price: 60, crowd: true },
+  diner: { id: "diner", name: "Night Owl Diner", label: "THE NIGHT OWL", accent: "#ff5e8a", genre: "rock", price: 60, crowd: true, ported: true },
   recordshop: { id: "recordshop", name: "Record Shop", label: "CRATE DIGGING", accent: "#e8a23c", genre: "funk", price: 60 },
   car: { id: "car", name: "In Your Car", label: "WINDOWS DOWN", accent: "#ff5e8a", genre: "hiphop", price: 60 },
   studio: { id: "studio", name: "After Hours Studio", label: "AFTER HOURS", accent: "#8a8cff", genre: "lofi", price: 80, dark: true },
@@ -84,9 +84,9 @@ export const VENUES: Record<VenueId, VenueMeta> = {
   beach: { id: "beach", name: "Sunset Shore", label: "SUNSET SHORE", accent: "#ffb27a", genre: "chill", price: 120, crowd: true, ported: true },
   houseparty: { id: "houseparty", name: "House Party", label: "HOUSE PARTY", accent: "#ffb84a", genre: "pop", price: 120, crowd: true },
   radio: { id: "radio", name: "Radio Booth", label: "ON AIR", accent: "#ff6a5e", genre: "downtempo", price: 120, dark: true },
-  arcade: { id: "arcade", name: "Barcade", label: "INSERT COIN", accent: "#62e0ff", genre: "synthwave", price: 140, dark: true, crowd: true },
+  arcade: { id: "arcade", name: "Barcade", label: "INSERT COIN", accent: "#62e0ff", genre: "synthwave", price: 140, dark: true, crowd: true, ported: true },
   laundromat: { id: "laundromat", name: "Laundromat", label: "SPIN CYCLE", accent: "#5fd0e0", genre: "hardcore", price: 140, dark: true, crowd: true },
-  subway: { id: "subway", name: "Subway Platform", label: "LAST TRAIN", accent: "#5fd0c8", genre: "lofi", price: 140, dark: true, crowd: true },
+  subway: { id: "subway", name: "Subway Platform", label: "LAST TRAIN", accent: "#5fd0c8", genre: "lofi", price: 140, dark: true, crowd: true, ported: true },
   tavern: { id: "tavern", name: "Medieval Tavern", label: "YE OLDE DROP", accent: "#ffae4a", genre: "world", price: 160, crowd: true },
   // shows + novelty
   prom: { id: "prom", name: "School Prom", label: "PROM NIGHT", accent: "#9a8cff", genre: "pop", price: 200, dark: true, crowd: true },

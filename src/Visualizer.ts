@@ -24,7 +24,7 @@ interface SeatedColors { jacket: string; jacketHi: string; jacketSh: string; ski
 interface SeatedOpts { laptop?: boolean; cup?: boolean; beat?: number; lean?: number; phase?: number; }
 interface LoungerColors { shirt: string; shirtSh: string; legs?: string; skin: string; hair: string; }
 interface DancerColors { shirt: string; shirtSh: string; legs: string; skin: string; hair: string; }
-interface BoothOpts { skin: string; skinSh?: string; jacket: string; jacketHi: string; jacketSh: string; hat?: string; cap?: boolean; hair?: string; glow: string; booth?: string; boothHi?: string; boothSh?: string; }
+interface BoothOpts { skin: string; skinSh?: string; jacket: string; jacketHi: string; jacketSh: string; hat?: string; cap?: boolean; hair?: string; glow: string; booth?: string; boothHi?: string; boothSh?: string; riser?: string; riserHi?: string; scale?: number; }
 
 // The Pixel DJ desk scene. Low-res backbuffer + additive bloom. Driven by the live
 // AnalyserNode while a track plays; falls back to a real-clock idle "closing time"
@@ -77,6 +77,9 @@ export class Visualizer {
       rink: (u, t) => this.renderRink(u, t),
       rooftop: (u, t) => this.renderRooftop(u, t),
       beach: (u, t) => this.renderBeach(u, t),
+      subway: (u, t) => this.renderSubway(u, t),
+      arcade: (u, t) => this.renderArcade(u, t),
+      diner: (u, t) => this.renderDiner(u, t),
     };
   }
 
@@ -765,6 +768,279 @@ export class Visualizer {
       skin: "hsl(26,46%,62%)", jacket: "hsl(176,42%,46%)", jacketHi: "hsl(176,46%,58%)", jacketSh: "hsl(176,42%,32%)",
       hair: "hsl(24,30%,18%)", glow: "hsl(28,95%,62%)", booth: "hsl(34,40%,42%)", boothHi: "hsl(36,46%,54%)", boothSh: "hsl(30,38%,28%)",
     });
+  }
+
+  // ── SUBWAY — platform busker, a train rushes through, uninterested commuters ─
+  private renderSubway(u: number, t: number): void {
+    const W = this.w, H = this.h;
+    const { kick, beat } = this.pulse(t, 124);
+    const platY = Math.round(H * 0.66);
+    const tunnelTop = Math.round(platY - 26 * u);
+    this.g.fillStyle = "hsl(40,12%,82%)"; this.g.fillRect(0, 0, W, tunnelTop);
+    for (let y = 0; y < tunnelTop; y += 5 * u) {
+      this.px(0, y + 4.6 * u, W, 0.5 * u, "hsl(40,10%,70%)");
+      const off = ((y / (5 * u)) % 2) * 4 * u;
+      for (let x = -off; x < W; x += 8 * u) this.px(x, y, 0.5 * u, 5 * u, "hsl(40,10%,70%)");
+    }
+    const tg = this.g.createLinearGradient(0, tunnelTop, 0, platY);
+    tg.addColorStop(0, "hsl(220,16%,12%)"); tg.addColorStop(1, "hsl(222,18%,5%)");
+    this.g.fillStyle = tg; this.g.fillRect(0, tunnelTop, W, platY - tunnelTop);
+    this.px(0, tunnelTop, W, 1.4 * u, "hsl(40,10%,46%)");
+    this.px(0, tunnelTop + 1.4 * u, W, 1 * u, "hsla(0,0%,0%,0.4)");
+    for (let x = 14 * u; x < W; x += 30 * u) this.px(x, tunnelTop + 5 * u, 1.4 * u, 1.4 * u, "hsla(40,80%,60%,0.5)");
+    this.px(0, platY - 3 * u, W, 0.8 * u, "hsla(200,30%,60%,0.35)");
+    this.px(0, platY - 1.4 * u, W, 0.8 * u, "hsla(200,30%,60%,0.25)");
+    this.subwayTrain(W, u, t, tunnelTop, platY);
+    this.px(0, 0, W, 3 * u, "hsl(220,8%,28%)");
+    for (let x = 6 * u; x < W; x += 26 * u) {
+      this.px(x, 1 * u, 16 * u, 1.6 * u, "hsl(54,40%,92%)");
+      this.px(x, 1 * u, 16 * u, 1.6 * u, "hsla(54,80%,90%,0.5)", this.glow);
+    }
+    const rx = W * 0.16, ry = 13 * u;
+    this.disc(rx, ry, 9 * u, 9 * u, "hsl(2,70%,48%)");
+    this.disc(rx, ry, 6 * u, 6 * u, "hsl(40,12%,90%)");
+    this.px(rx - 11 * u, ry - 2 * u, 22 * u, 4 * u, "hsl(214,60%,40%)");
+    this.px(rx - 2.2 * u, ry - 2.4 * u, 4.4 * u, 5 * u, "hsl(214,60%,40%)");
+    this.px(W * 0.62, 6 * u, 30 * u, 9 * u, "hsl(220,14%,12%)");
+    for (let i = 0; i < 2; i++) {
+      this.px(W * 0.62 + 1.5 * u, 8 * u + i * 3.4 * u, (16 + (i * 6)) * u, 1.4 * u, i === 0 ? "hsl(38,90%,58%)" : "hsl(150,70%,50%)");
+      this.px(W * 0.62 + 25 * u, 8 * u + i * 3.4 * u, 3 * u, 1.4 * u, "hsl(38,90%,58%)");
+    }
+    this.g.fillStyle = "hsl(30,8%,46%)"; this.g.fillRect(0, platY, W, H - platY);
+    for (let py = platY + 5 * u; py < H; py += 7 * u) this.px(0, py, W, 1, "hsl(30,8%,38%)");
+    this.px(0, platY + 1.5 * u, W, 1.8 * u, "hsl(45,90%,55%)");
+    this.px(0, platY, W, 1.5 * u, "hsl(30,10%,56%)");
+    this.commuter(W * 0.08, platY + 16 * u, u, t, "hsl(220,20%,34%)", 0.4, "phone");
+    this.commuter(W * 0.9, platY + 18 * u, u, t, "hsl(160,18%,34%)", 1.7, "watch");
+    this.commuter(W * 0.72, platY + 10 * u, u, t, "hsl(8,30%,40%)", 2.6, "ignore");
+    this.parkDancer(W * 0.62, platY + 22 * u, u, beat, kick * 0.6, { shirt: "hsl(280,30%,50%)", shirtSh: "hsl(280,28%,36%)", legs: "hsl(220,16%,26%)", skin: "hsl(26,44%,60%)", hair: "hsl(20,30%,16%)" }, 0.5);
+    this.djBooth(W * 0.36, platY + 24 * u, u, t, beat, kick, {
+      skin: "hsl(26,46%,62%)", jacket: "hsl(206,16%,30%)", jacketHi: "hsl(206,18%,42%)", jacketSh: "hsl(206,16%,20%)",
+      hat: "hsl(2,55%,46%)", glow: "hsl(184,90%,56%)", booth: "hsl(26,30%,30%)", boothHi: "hsl(28,34%,40%)", boothSh: "hsl(24,28%,18%)",
+    });
+    this.parkNotes(W * 0.36, platY + 13 * u, u, t);
+  }
+
+  private subwayTrain(W: number, u: number, t: number, tunnelTop: number, platY: number): void {
+    const s = u;
+    const cycle = 21;
+    const ph = t % cycle;
+    const dur = 4.6;
+    const trainH = (platY - tunnelTop) - 3 * s;
+    const ty = tunnelTop + 2 * s;
+    const trainLen = W * 1.7;
+    const approach = cycle - dur - 2.2;
+    if (ph >= approach && ph < cycle - dur) {
+      const g = (ph - approach) / 2.2;
+      this.disc(6 * s, ty + trainH * 0.5, (6 + g * 10) * s, (4 + g * 6) * s, `hsla(48,100%,72%,${0.25 + g * 0.4})`, this.glow);
+    }
+    if (ph < cycle - dur) return;
+    const prog = (ph - (cycle - dur)) / dur;
+    const leadX = prog * (W + trainLen) - trainLen;
+    const speed = 1 - Math.abs(prog - 0.5) * 0.5;
+    for (let i = 0; i < 7; i++) {
+      const sy = ty + 2 * s + i * (trainH - 3 * s) / 6;
+      this.px(Math.max(0, leadX - 30 * s), sy, Math.min(W, leadX + trainLen) - Math.max(0, leadX - 30 * s), 0.8 * s, `hsla(200,30%,80%,${0.06 + 0.05 * speed})`);
+    }
+    const bodyTop = ty, bodyH = trainH;
+    this.px(leadX, bodyTop, trainLen, bodyH, "hsl(210,8%,62%)");
+    this.px(leadX, bodyTop, trainLen, 1.6 * s, "hsl(210,10%,74%)");
+    this.px(leadX, bodyTop + bodyH - 2.4 * s, trainLen, 2.4 * s, "hsl(214,12%,30%)");
+    this.px(leadX, bodyTop + bodyH * 0.5 - 1 * s, trainLen, 2 * s, "hsl(184,70%,46%)");
+    this.px(leadX, bodyTop + bodyH * 0.5 - 1 * s, trainLen, 0.7 * s, "hsl(184,80%,62%)");
+    for (let wx = leadX + 3 * s; wx < leadX + trainLen - 4 * s; wx += 6.5 * s) {
+      if (wx + 5 * s < 0 || wx > W) continue;
+      const isDoor = (Math.round((wx - leadX) / 6.5 / s) % 4) === 0;
+      if (isDoor) {
+        this.px(wx, bodyTop + 2 * s, 5 * s, bodyH * 0.5 - 1 * s, "hsl(214,12%,40%)");
+        this.px(wx + 2.2 * s, bodyTop + 2 * s, 0.6 * s, bodyH * 0.5 - 1 * s, "hsl(214,12%,24%)");
+      } else {
+        this.px(wx, bodyTop + 2.4 * s, 5 * s, 3.6 * s, "hsl(48,90%,80%)");
+        this.px(wx, bodyTop + 2.4 * s, 5 * s, 3.6 * s, "hsla(48,95%,82%,0.4)", this.glow);
+        if (((wx * 13) | 0) % 3 === 0) this.px(wx + 1.4 * s, bodyTop + 2.8 * s, 2.4 * s, 3 * s, "hsla(220,20%,25%,0.7)");
+      }
+    }
+    const noseX = leadX + trainLen - 1 * s;
+    if (noseX > -10 * s && noseX < W + 10 * s) {
+      this.px(noseX - 8 * s, bodyTop + 1.6 * s, 6 * s, 4 * s, "hsl(214,14%,22%)");
+      this.px(noseX - 2.4 * s, bodyTop + bodyH - 5 * s, 2.4 * s, 2.4 * s, "hsl(54,100%,86%)");
+      this.disc(noseX, bodyTop + bodyH - 4 * s, 5 * s, 4 * s, "hsla(50,100%,80%,0.5)", this.glow);
+    }
+    if (Math.sin(t * 40) > 0.6) {
+      const spx = leadX + Math.abs(Math.sin(t * 7)) * trainLen;
+      if (spx > 0 && spx < W) this.px(spx, platY - 2 * s, 1.4 * s, 1.4 * s, "hsla(190,100%,80%,0.9)", this.glow);
+    }
+  }
+
+  private commuter(cx: number, feetY: number, u: number, t: number, coat: string, ph: number, mode: string): void {
+    const s = u;
+    const bob = Math.sin(t * 1.1 + ph) * 0.4 * s;
+    const shoulderY = feetY - 13 * s + bob;
+    const headR = 2.3 * s;
+    const headCY = shoulderY - headR - 1 * s;
+    this.px(cx - 2.4 * s, feetY - 5 * s, 2 * s, 5 * s, "hsl(220,12%,20%)");
+    this.px(cx + 0.4 * s, feetY - 5 * s, 2 * s, 5 * s, "hsl(220,12%,20%)");
+    this.block(cx - 3.4 * s, shoulderY, 6.8 * s, 9 * s, coat, "hsla(0,0%,100%,0.12)", "hsla(0,0%,0%,0.25)");
+    if (mode === "phone") {
+      this.limb(cx + 2.4 * s, shoulderY + 2 * s, cx + 2.6 * s, shoulderY + 5 * s, 1.4 * s, coat);
+      this.px(cx + 1.6 * s, shoulderY + 4.4 * s, 2.2 * s, 2.8 * s, "hsl(210,30%,18%)");
+      this.px(cx + 1.8 * s, shoulderY + 4.8 * s, 1.8 * s, 1.6 * s, "hsl(200,72%,72%)");
+      this.px(cx + 1.8 * s, shoulderY + 4.8 * s, 1.8 * s, 1.6 * s, "hsla(200,80%,76%,0.6)", this.glow);
+    } else if (mode === "watch") {
+      this.limb(cx - 2.4 * s, shoulderY + 2 * s, cx - 1.4 * s, shoulderY + 4 * s, 1.4 * s, coat);
+      this.px(cx - 2 * s, shoulderY + 3.4 * s, 1.6 * s, 1.2 * s, "hsl(45,40%,40%)");
+    }
+    const turn = mode === "ignore" ? 0.8 * s : 0;
+    this.block(cx - headR + turn, headCY - headR, headR * 2, headR * 2, "hsl(26,42%,60%)", null, "hsl(26,38%,46%)");
+    this.px(cx - headR + turn, headCY - headR - 1 * s, headR * 2, 1.8 * s, "hsl(24,28%,20%)");
+    if (mode === "phone") this.px(cx - headR + 0.4 * s, headCY + 1 * s, headR * 2 - 0.8 * s, 1 * s, "hsla(200,70%,70%,0.4)");
+  }
+
+  private raisedStage(cx: number, stageTopY: number, halfW: number, u: number, t: number, beat: number, kick: number, o: BoothOpts): void {
+    const s = u, H = this.h;
+    const scale = o.scale || 1;
+    this.px(cx - halfW, stageTopY, halfW * 2, H - stageTopY, o.riser || "hsl(220,10%,16%)");
+    this.px(cx - halfW, stageTopY, halfW * 2, 1.4 * s, o.riserHi || "hsl(220,12%,26%)");
+    this.px(cx - halfW, stageTopY + 1.4 * s, halfW * 2, 1 * s, o.glow, this.glow);
+    for (let x = cx - halfW + 4 * s; x < cx + halfW - 2 * s; x += 6 * s) this.px(x, stageTopY + 4 * s, 1, H - stageTopY - 6 * s, "hsla(0,0%,0%,0.25)");
+    this.djBooth(cx, stageTopY + 2 * s * scale, u * scale, t, beat, kick, o);
+  }
+
+  // ── ARCADE — barcade, neon cabinets, DJ on a riser, screen-lit crowd ────────
+  private renderArcade(u: number, t: number): void {
+    const W = this.w, H = this.h;
+    const { kick, beat } = this.pulse(t, 130);
+    const floorY = Math.round(H * 0.66);
+    this.g.fillStyle = "hsl(250,30%,9%)"; this.g.fillRect(0, 0, W, H);
+    const glow = 0.6 + 0.4 * Math.sin(beat * Math.PI * 2);
+    this.px(W * 0.5 - 18 * u, 4 * u, 36 * u, 6 * u, "hsl(250,24%,14%)");
+    this.px(W * 0.5 - 16 * u, 5.4 * u, 32 * u, 3 * u, `hsl(320,90%,${50 + glow * 16}%)`);
+    this.px(W * 0.5 - 16 * u, 5.4 * u, 32 * u, 3 * u, `hsla(320,95%,64%,${glow * 0.5})`, this.glow);
+    const cabHues = [190, 320, 50, 150, 270, 0];
+    const n = 6, cw = W / n;
+    for (let i = 0; i < n; i++) {
+      const cx0 = i * cw + cw * 0.5, cabW = cw * 0.72, top = floorY - 30 * u;
+      this.px(cx0 - cabW / 2, top, cabW, 30 * u, "hsl(250,18%,16%)");
+      this.px(cx0 - cabW / 2, top, cabW, 1.2 * u, "hsl(250,18%,26%)");
+      this.px(cx0 - cabW / 2 + 1 * u, top + 1.4 * u, cabW - 2 * u, 3 * u, `hsl(${cabHues[i]},80%,52%)`);
+      this.px(cx0 - cabW / 2 + 1 * u, top + 1.4 * u, cabW - 2 * u, 3 * u, `hsla(${cabHues[i]},85%,60%,0.5)`, this.glow);
+      const scx = cx0 - cabW / 2 + 1.6 * u, scy = top + 6 * u, scw = cabW - 3.2 * u, sch = 9 * u;
+      this.px(scx, scy, scw, sch, "hsl(230,40%,8%)");
+      for (let b = 0; b < 5; b++) { const bx = scx + ((b * 3.1 + t * (6 + i)) % (scw - 2 * u)); this.px(bx, scy + 1 * u + ((b * 2 + i) % 3) * 2.4 * u, 2 * u, 1.6 * u, `hsl(${(cabHues[i] + b * 40) % 360},85%,62%)`); }
+      this.px(scx, scy, scw, sch, `hsla(${cabHues[i]},80%,60%,0.10)`, this.glow);
+      this.px(scx, scy + sch + 1 * u, scw, 4 * u, "hsl(250,16%,12%)");
+      this.px(cx0 - 0.8 * u, scy + sch + 1.6 * u, 1.6 * u, 1.6 * u, `hsl(${cabHues[i]},85%,58%)`);
+      this.disc(cx0, floorY + 3 * u, cabW * 0.5, 3 * u, `hsla(${cabHues[i]},80%,55%,0.12)`, this.glow);
+    }
+    this.g.fillStyle = "hsl(250,24%,7%)"; this.g.fillRect(0, floorY, W, H - floorY);
+    this.px(0, floorY, W, 1, "hsl(300,60%,30%)");
+    this.raisedStage(W * 0.5, H * 0.58, 12 * u, u, t, beat, kick, {
+      skin: "hsl(26,44%,58%)", jacket: "hsl(270,36%,40%)", jacketHi: "hsl(270,42%,52%)", jacketSh: "hsl(270,36%,26%)",
+      hat: "hsl(190,70%,46%)", glow: "hsl(190,90%,58%)", booth: "hsl(250,24%,18%)", boothHi: "hsl(252,30%,28%)", boothSh: "hsl(250,24%,10%)",
+      riser: "hsl(265,40%,22%)", riserHi: "hsl(300,80%,58%)", scale: 0.7,
+    });
+    this.crowdBand(H * 1.02, u, t, beat, kick, { rows: 5, hue: 252, maxL: 8, handsHue: 300 });
+  }
+
+  // ── DINER — 24hr night owl, neon, flipping cook, sliding root beer ──────────
+  private renderDiner(u: number, t: number): void {
+    const W = this.w, H = this.h;
+    const { kick, beat } = this.pulse(t, 98);
+    const counterY = Math.round(H * 0.62), floorY = Math.round(H * 0.74);
+    this.g.fillStyle = "hsl(190,16%,24%)"; this.g.fillRect(0, 0, W, floorY);
+    this.px(0, floorY - 10 * u, W, 1.4 * u, "hsl(2,60%,50%)");
+    this.px(0, floorY - 8.6 * u, W, 1 * u, "hsl(190,12%,18%)");
+    const wx = W * 0.62, wy = 6 * u, ww = W * 0.32, wh = 24 * u;
+    this.px(wx - 2 * u, wy - 2 * u, ww + 4 * u, wh + 4 * u, "hsl(190,14%,16%)");
+    this.g.fillStyle = "hsl(225,34%,14%)"; this.g.fillRect(wx, wy, ww, wh);
+    for (let i = 0; i < 10; i++) this.px(wx + ((i * 53) % 1) * ww, wy + ((i * 31) % 1) * wh, 1.2 * u, 1.2 * u, "hsla(45,90%,70%,0.6)");
+    const glow = 0.55 + 0.45 * Math.sin(beat * Math.PI * 2);
+    this.px(W * 0.1, 8 * u, 22 * u, 7 * u, "hsl(190,16%,12%)");
+    this.px(W * 0.1 + 2 * u, 9.6 * u, 18 * u, 3.6 * u, `hsl(330,90%,${52 + glow * 14}%)`);
+    this.px(W * 0.1 + 2 * u, 9.6 * u, 18 * u, 3.6 * u, `hsla(330,95%,64%,${glow * 0.55})`, this.glow);
+    this.disc(W * 0.1 + 11 * u, 11.4 * u, 16 * u, 8 * u, "hsla(330,90%,60%,0.08)", this.glow);
+    this.px(0, counterY, W, 4 * u, "hsl(2,50%,46%)");
+    this.px(0, counterY, W, 1 * u, "hsl(2,56%,60%)");
+    this.px(0, counterY + 4 * u, W, floorY - counterY - 4 * u, "hsl(40,12%,82%)");
+    for (let x = 6 * u; x < W; x += 10 * u) this.px(x, counterY + 5 * u, 0.6 * u, floorY - counterY - 6 * u, "hsl(40,10%,68%)");
+    for (let i = 0; i < 4; i++) { const sx2 = W * 0.1 + i * 14 * u; this.px(sx2 - 0.8 * u, floorY - 1 * u, 1.6 * u, H - floorY, "hsl(220,8%,30%)"); this.disc(sx2, floorY - 2 * u, 3 * u, 1.4 * u, "hsl(2,55%,48%)"); }
+    this.g.fillStyle = "hsl(200,10%,16%)"; this.g.fillRect(0, floorY, W, H - floorY);
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 18; c++) if ((r + c) % 2 === 0) this.px(c * (W / 18), floorY + r * ((H - floorY) / 4), W / 18 + 0.5, (H - floorY) / 4 + 0.5, "hsl(200,8%,24%)");
+    this.dinerCook(W * 0.78, counterY, u, t, beat);
+    const mugX = this.slideBarDrinks(W * 0.7, W * 0.1, counterY, u, t);
+    this.dinerPatron(W * 0.1, floorY - 2 * u, u, t, beat, kick, { shirt: "hsl(210,40%,46%)", shirtSh: "hsl(210,38%,32%)", skin: "hsl(28,44%,62%)", hair: "hsl(24,30%,22%)", into: true }, mugX, counterY);
+    this.dinerPatron(W * 0.24, floorY - 2 * u, u, t, beat, kick, { shirt: "hsl(30,16%,40%)", shirtSh: "hsl(30,16%,28%)", skin: "hsl(26,42%,58%)", hair: "hsl(0,0%,72%)", into: false }, null, counterY);
+    this.dinerPatron(W * 0.38, floorY - 2 * u, u, t, beat, kick, { shirt: "hsl(150,30%,42%)", shirtSh: "hsl(150,30%,28%)", skin: "hsl(28,46%,64%)", hair: "hsl(20,30%,16%)", into: true }, null, counterY);
+    this.djBooth(W * 0.26, H * 0.97, u * 0.92, t, beat, kick, {
+      skin: "hsl(26,44%,60%)", jacket: "hsl(330,40%,44%)", jacketHi: "hsl(330,46%,56%)", jacketSh: "hsl(330,40%,30%)",
+      hat: "hsl(190,60%,46%)", glow: "hsl(330,90%,62%)", booth: "hsl(190,16%,20%)", boothHi: "hsl(190,22%,30%)", boothSh: "hsl(190,16%,12%)",
+    });
+  }
+
+  private dinerPatron(cx: number, seatY: number, u: number, t: number, beat: number, kick: number, c: { shirt: string; shirtSh: string; skin: string; hair: string; into: boolean }, mugX: number | null, counterY: number): void {
+    const s = u;
+    const into = c.into;
+    const bob = into ? Math.abs(Math.sin(beat * Math.PI * 2)) * (1 + kick) * 1.4 * s : Math.sin(t * 0.7 + cx) * 0.4 * s;
+    const shoulderY = seatY - 12 * s - bob;
+    const headR = 2.4 * s, hcy = shoulderY - headR - 1 * s;
+    this.px(cx - 1.4 * s, seatY - 4 * s, 2.8 * s, 4 * s, c.shirtSh);
+    this.block(cx - 3.6 * s, shoulderY, 7.2 * s, 9 * s, c.shirt, "hsla(0,0%,100%,0.12)", c.shirtSh);
+    const catching = mugX != null && Math.abs(mugX - cx) < 6 * s;
+    if (catching) {
+      this.limb(cx + 2.6 * s, shoulderY + 2 * s, mugX!, counterY - 4 * s, 1.6 * s, c.shirt);
+      this.px(mugX! - 1 * s, counterY - 5 * s, 2.4 * s, 1.8 * s, c.skin);
+    } else if (into) {
+      const a = Math.sin(beat * Math.PI * 2) * 2 * s;
+      this.limb(cx - 2.6 * s, shoulderY + 1 * s, cx - 4 * s, shoulderY - 3 * s + a, 1.5 * s, c.shirt);
+      this.limb(cx + 2.6 * s, shoulderY + 1 * s, cx + 4 * s, shoulderY - 3 * s - a, 1.5 * s, c.shirt);
+    } else {
+      this.limb(cx + 2.4 * s, shoulderY + 2 * s, cx + 3.4 * s, counterY - 5 * s, 1.5 * s, c.shirt);
+    }
+    this.block(cx - headR, hcy - headR, headR * 2, headR * 2, c.skin, null, "hsl(26,40%,46%)");
+    this.px(cx - headR, hcy - headR - 1 * s, headR * 2, 2 * s, c.hair);
+    this.px(cx - headR + 0.5 * s, hcy - headR + 0.5 * s, headR * 2 - 1 * s, 1.4 * s, c.hair);
+  }
+
+  private dinerCook(cx: number, counterY: number, u: number, t: number, beat: number): void {
+    const s = u, bp = beat * Math.PI * 2;
+    const bob = Math.abs(Math.sin(bp)) * 1.3 * s;
+    const shoulderY = counterY - 13 * s - bob, headR = 2.4 * s, hcy = shoulderY - headR - 1 * s;
+    this.block(cx - 3.6 * s, shoulderY, 7.2 * s, 13 * s, "hsl(0,0%,90%)", "hsl(0,0%,100%)", "hsl(0,0%,76%)");
+    this.px(cx - 1.6 * s, shoulderY + 1 * s, 3.2 * s, 7 * s, "hsl(2,40%,52%)");
+    this.block(cx - headR, hcy - headR, headR * 2, headR * 2, "hsl(26,44%,60%)", null, "hsl(26,40%,46%)");
+    this.px(cx - headR - 0.5 * s, hcy - headR - 1.4 * s, headR * 2 + 1 * s, 2.4 * s, "hsl(0,0%,94%)");
+    this.px(cx - headR - 0.2 * s, hcy - headR - 3 * s, headR * 2 + 0.4 * s, 1.8 * s, "hsl(0,0%,99%)");
+    const panX = cx - 6.5 * s, panY = counterY - 4 * s - bob;
+    this.limb(cx - 3 * s, shoulderY + 2 * s, panX + 1.5 * s, panY, 1.8 * s, "hsl(0,0%,86%)");
+    this.px(panX - 2.6 * s, panY, 5.4 * s, 1.4 * s, "hsl(0,0%,16%)");
+    this.px(panX - 5 * s, panY + 0.2 * s, 2.4 * s, 1 * s, "hsl(0,0%,12%)");
+    const flip = Math.max(0, Math.sin(bp)) * 8 * s;
+    this.px(panX - 1 * s + Math.sin(t * 3) * 1 * s, panY - 2 * s - flip, 2.4 * s, 1.4 * s, "hsl(26,55%,44%)");
+    if (flip > 4 * s) this.px(panX - 0.4 * s, panY - 2.6 * s - flip, 1 * s, 0.8 * s, "hsl(28,60%,56%)");
+    for (let k = 0; k < 4; k++) { const sy = panY - 2 * s - k * 1.5 * s; this.px(panX + Math.sin(t * 4 + k) * 1.2 * s, sy, 1, 1 * s, `hsla(0,0%,100%,${Math.max(0, 0.32 - k * 0.06)})`, this.glow); }
+    const chop = Math.abs(Math.sin(bp + Math.PI)) * 1.6 * s;
+    this.limb(cx + 3 * s, shoulderY + 2 * s, cx + 5.4 * s, counterY - 2.5 * s - chop, 1.6 * s, "hsl(0,0%,86%)");
+    this.px(cx + 4.4 * s, counterY - 3.6 * s - chop, 2 * s, 1.4 * s, "hsl(26,44%,62%)");
+    this.px(cx + 5.6 * s, counterY - 3.8 * s - chop, 0.8 * s, 2 * s, "hsl(0,0%,80%)");
+    this.px(cx + 3.4 * s, counterY - 1.4 * s, 4.4 * s, 1 * s, "hsl(28,30%,40%)");
+  }
+
+  private slideBarDrinks(xFrom: number, xTo: number, counterY: number, u: number, t: number): number | null {
+    const s = u, period = 11, dur = 2.3;
+    const local = t % period;
+    if (local > dur) return null;
+    const ph = local / dur;
+    const x = xFrom + (xTo - xFrom) * ph;
+    const topY = counterY - 0.5 * s;
+    const slosh = Math.sin(t * 12) * 0.4 * s;
+    this.px(x + 3 * s, topY - 3 * s, 3 * s, 1 * s, "hsla(36,60%,82%,0.25)");
+    this.px(x + 5 * s, topY - 2.6 * s, 2 * s, 0.8 * s, "hsla(36,60%,82%,0.15)");
+    this.px(x - 2 * s, topY - 5 * s, 4 * s, 5 * s, "hsl(28,55%,40%)");
+    this.px(x - 2 * s, topY - 5 * s, 4 * s, 1.4 * s + slosh, "hsl(36,72%,82%)");
+    this.px(x - 2 * s, topY - 5 * s, 1 * s, 5 * s, "hsla(0,0%,100%,0.25)");
+    this.px(x + 2 * s, topY - 4 * s, 1.2 * s, 2.4 * s, "hsl(28,50%,34%)");
+    this.px(x - 2.4 * s, topY, 5 * s, 0.8 * s, "hsla(0,0%,100%,0.18)");
+    return x;
   }
 
   // ── CAFÉ (morning) — cozy coffee shop, a producer chilling with a laptop ────
