@@ -1,4 +1,4 @@
-import { AVATARS, JACKET_HUES, PALETTES, VENUES, VENUE_ORDER, type AvatarId, type VenueId, type VibeName } from "./config";
+import { AVATARS, JACKET_HUES, PALETTES, PRIZES, VENUES, VENUE_ORDER, type AvatarId, type VenueId, type VibeName } from "./config";
 import { minutesForLevel } from "./xp";
 import { deskTotals, fmtSpan, type Profile } from "./profile";
 import type { Track } from "./tracks";
@@ -18,12 +18,14 @@ export interface ControlsCallbacks {
   onAvatar(a: AvatarId): void;
   onJacket(hue: number): void;
   onVenue(v: VenueId): void;
+  onBuyVenue(id: VenueId): void;
+  onBuyPrize(id: string): void;
   onSettings(patch: Partial<Profile["settings"]>): void;
   onSelectTrack(i: number): void;
   onAddFiles(): void;
 }
 
-type View = "music" | "dj" | "options";
+type View = "music" | "dj" | "store" | "options";
 const $ = <T extends HTMLElement>(r: HTMLElement, sel: string) => r.querySelector(sel) as T;
 
 export class Controls {
@@ -46,6 +48,7 @@ export class Controls {
         <div class="sheet-nav">
           <button data-view="music" class="on">♪ Music</button>
           <button data-view="dj">🎧 DJ</button>
+          <button data-view="store">🛒 Store</button>
           <button data-view="options" class="nav-gear" title="options">⚙</button>
         </div>
         <div class="sheet-body"></div>
@@ -117,6 +120,7 @@ export class Controls {
   private renderBody(): void {
     if (this.view === "music") this.renderMusic();
     else if (this.view === "dj") this.renderDJ();
+    else if (this.view === "store") this.renderStore();
     else this.renderOptions();
     this.renderDock();
   }
@@ -153,9 +157,11 @@ export class Controls {
   private renderDJ(): void {
     const need = minutesForLevel(this.p.level);
     const venue = VENUES[this.p.venue];
+    const jacketHues = [...JACKET_HUES, ...PRIZES.filter((p) => p.kind === "jacket" && this.p.unlocks.includes(p.id)).map((p) => p.hue)];
+    const palettes = [...PALETTES, ...PRIZES.filter((p) => p.kind === "palette" && this.p.unlocks.includes(p.id)).map((p) => ({ name: p.name, hue: p.hue }))];
     this.sheetBody.innerHTML = `
       <div class="cv-level">
-        <div class="cv-lvlrow"><b>Level ${this.p.level}</b><span>${venue.name}</span></div>
+        <div class="cv-lvlrow"><b>Level ${this.p.level}</b><span>${esc(venue.name)} · ◈ <b class="cv-cred-val">${Math.floor(this.p.cred)}</b></span></div>
         <div class="cv-bar"><i style="width:${Math.round(this.p.xp * 100)}%"></i></div>
         <small>${this.p.listenedMinutes} min listened · next level in ~${Math.max(0, Math.round(need - need * this.p.xp))} min of play</small>
       </div>
@@ -173,10 +179,10 @@ export class Controls {
         return `<button data-av="${a}" class="${this.p.avatar === a ? "on" : ""} ${locked ? "locked" : ""}" ${locked ? "disabled" : ""}>${AVATARS[a].name}${locked ? ` · Lv${AVATARS[a].unlockLevel}` : ""}</button>`;
       }).join("")}</div>
       <span class="cv-label">Jacket</span>
-      <div class="cv-swatches">${JACKET_HUES.map((h) => `<button data-jh="${h}" style="--c:hsl(${h},65%,55%)" class="${this.p.jacketHue === h ? "on" : ""}"></button>`).join("")}</div>
+      <div class="cv-swatches">${jacketHues.map((h) => `<button data-jh="${h}" style="--c:hsl(${h},65%,55%)" class="${this.p.jacketHue === h ? "on" : ""}"></button>`).join("")}</div>
       <span class="cv-label">Club lights</span>
-      <div class="cv-swatches">${PALETTES.map((p) => `<button data-hue="${p.hue}" style="--c:hsl(${p.hue},80%,55%)" class="${this.p.palette === p.hue ? "on" : ""}" title="${p.name}"></button>`).join("")}</div>
-      <span class="cv-label">Venue (${this.p.unlocks.filter((u) => u in VENUES).length}/${VENUE_ORDER.length} unlocked)</span>
+      <div class="cv-swatches">${palettes.map((p) => `<button data-hue="${p.hue}" style="--c:hsl(${p.hue},80%,55%)" class="${this.p.palette === p.hue ? "on" : ""}" title="${esc(p.name)}"></button>`).join("")}</div>
+      <span class="cv-label">Venue (${this.p.unlocks.filter((u) => u in VENUES).length}/${VENUE_ORDER.length} · buy more in 🛒 Store)</span>
       <div class="cv-pills">${VENUE_ORDER.map((id) => {
         const m = VENUES[id];
         const locked = !this.p.unlocks.includes(id);
@@ -189,6 +195,38 @@ export class Controls {
     this.sheetBody.querySelectorAll<HTMLButtonElement>("[data-jh]").forEach((b) => (b.onclick = () => this.cb.onJacket(Number(b.dataset.jh))));
     this.sheetBody.querySelectorAll<HTMLButtonElement>("[data-hue]").forEach((b) => (b.onclick = () => this.cb.onPalette(Number(b.dataset.hue))));
     this.sheetBody.querySelectorAll<HTMLButtonElement>("[data-venue]").forEach((b) => (b.onclick = () => { if (!b.disabled) this.cb.onVenue(b.dataset.venue as VenueId); }));
+  }
+
+  // Live-update just the Cred numbers (cheap; called every second from main).
+  setCred(cred: number): void {
+    this.root.querySelectorAll<HTMLElement>(".cv-cred-val").forEach((e) => (e.textContent = String(Math.floor(cred))));
+  }
+
+  private renderStore(): void {
+    const cred = Math.floor(this.p.cred);
+    const owned = (id: string) => this.p.unlocks.includes(id);
+    const lockedVenues = VENUE_ORDER.filter((id) => !owned(id)).sort((a, b) => VENUES[a].price - VENUES[b].price);
+    const venueCard = (id: VenueId) => {
+      const m = VENUES[id], afford = this.p.cred >= m.price;
+      return `<button class="cv-buy ${afford ? "" : "cant"}" data-buy-venue="${id}">
+        <span class="cv-buy-name">${esc(m.name)}${m.ported ? "" : " · soon"}</span>
+        <span class="cv-buy-price">◈ ${m.price}</span></button>`;
+    };
+    const prizeCard = (p: (typeof PRIZES)[number]) => {
+      const has = owned(p.id), afford = this.p.cred >= p.price;
+      return `<button class="cv-buy ${has ? "owned" : afford ? "" : "cant"}" data-buy-prize="${p.id}" ${has ? "disabled" : ""}>
+        <span class="cv-buy-sw" style="--c:hsl(${p.hue},80%,55%)"></span>
+        <span class="cv-buy-name">${esc(p.name)}</span>
+        <span class="cv-buy-price">${has ? "✓" : `◈ ${p.price}`}</span></button>`;
+    };
+    this.sheetBody.innerHTML = `
+      <div class="cv-credbar">◈ <b class="cv-cred-val">${cred}</b> Cred <small>earned at your desk</small></div>
+      <span class="cv-label">Venues — ${lockedVenues.length} left to unlock</span>
+      <div class="cv-buylist">${lockedVenues.map(venueCard).join("") || `<div class="cv-allset">Every venue unlocked! 🎉</div>`}</div>
+      <span class="cv-label">Prizes</span>
+      <div class="cv-buylist">${PRIZES.map(prizeCard).join("")}</div>`;
+    this.sheetBody.querySelectorAll<HTMLButtonElement>("[data-buy-venue]").forEach((b) => (b.onclick = () => this.cb.onBuyVenue(b.dataset.buyVenue as VenueId)));
+    this.sheetBody.querySelectorAll<HTMLButtonElement>("[data-buy-prize]").forEach((b) => (b.onclick = () => { if (!b.disabled) this.cb.onBuyPrize(b.dataset.buyPrize!); }));
   }
 
   private renderOptions(): void {

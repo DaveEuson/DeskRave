@@ -82,6 +82,21 @@
 .cv-stats > div { background: #170f28; border: 1px solid var(--line); border-radius: 12px; padding: 10px 4px; text-align: center; }
 .cv-stats b { display: block; font-family: "Press Start 2P", monospace; font-size: 12px; color: #9fe0c0; }
 .cv-stats small { display: block; margin-top: 5px; color: #8a7fae; font-size: 11px; }
+
+/* store */
+.cv-credbar { display: flex; align-items: center; gap: 6px; background: #170f28; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; font-size: 14px; color: #cdbff0; }
+.cv-credbar b { font-family: "Press Start 2P", monospace; font-size: 13px; color: #ffd86a; }
+.cv-credbar small { margin-left: auto; color: #8a7fae; font-size: 11px; }
+.cv-buylist { display: flex; flex-direction: column; gap: 6px; }
+.cv-buy { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: #160e26; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; color: #e7def6; cursor: pointer; font: inherit; }
+.cv-buy:hover { border-color: var(--mag); }
+.cv-buy.cant, .cv-buy.owned { opacity: .5; cursor: default; }
+.cv-buy.cant:hover, .cv-buy.owned:hover { border-color: var(--line); }
+.cv-buy-name { flex: 1; }
+.cv-buy-price { font-family: "Press Start 2P", monospace; font-size: 10px; color: #ffd86a; white-space: nowrap; }
+.cv-buy.cant .cv-buy-price { color: #9a7fb0; }
+.cv-buy-sw { width: 14px; height: 14px; border-radius: 4px; background: var(--c); border: 1px solid rgba(255, 255, 255, .25); flex: 0 0 auto; }
+.cv-allset { color: #9fe0c0; text-align: center; padding: 14px; font-size: 13px; }
 .cv-name { width: 100%; background: #160e26; border: 1px solid var(--line); border-radius: 10px; padding: 12px; color: #fff; font-family: "Press Start 2P", monospace; font-size: 12px; }
 .cv-pills { display: flex; flex-wrap: wrap; gap: 7px; }
 .cv-pills button { min-height: 40px; background: #170f28; border: 1px solid var(--line); color: #e7e0f5; padding: 8px 12px; border-radius: 12px; cursor: pointer; font-size: 13px; }
