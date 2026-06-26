@@ -186,7 +186,7 @@ export class Controls {
     const st = this.p.settings;
     const toggle = (k: keyof Profile["settings"], label: string) =>
       `<label class="cv-opt"><span>${label}</span><input type="checkbox" data-set="${k}" ${st[k] ? "checked" : ""}/></label>`;
-    this.sheetBody.innerHTML = `${toggle("camera", "👁 Camera presence — DJ wakes when it sees you")}${toggle("showClock", "Desk clock")}${toggle("showDate", "Show date")}${toggle("clock24", "24-hour time")}${toggle("scanlines", "CRT scanlines")}`;
+    this.sheetBody.innerHTML = `${toggle("camera", "👁 Camera presence — DJ wakes when it sees you")}${toggle("sound", "🔊 Muffled kick (through the wall)")}${toggle("showClock", "Desk clock")}${toggle("showDate", "Show date")}${toggle("clock24", "24-hour time")}${toggle("scanlines", "CRT scanlines")}`;
     this.sheetBody.querySelectorAll<HTMLInputElement>("input[data-set]").forEach((i) =>
       (i.onchange = () => this.cb.onSettings({ [i.dataset.set as string]: i.checked } as Partial<Profile["settings"]>)));
   }

@@ -26,6 +26,11 @@ export class Visualizer {
   private g: CanvasRenderingContext2D;
   private glowCanvas: HTMLCanvasElement;
   private glow: CanvasRenderingContext2D;
+  private bloomCanvas: HTMLCanvasElement;
+  private bloom: CanvasRenderingContext2D;
+  private frameN = 0;
+  private momentT = 0; // seconds; "the crowd goes wild" banner shows until this
+  private lastMomentT = -99;
   private w = 0;
   private h = 0;
   private dancers: Dancer[] = [];
@@ -45,6 +50,8 @@ export class Visualizer {
     this.g = canvas.getContext("2d")!;
     this.glowCanvas = document.createElement("canvas");
     this.glow = this.glowCanvas.getContext("2d")!;
+    this.bloomCanvas = document.createElement("canvas");
+    this.bloom = this.bloomCanvas.getContext("2d")!;
     this.resize();
     addEventListener("resize", () => this.resize());
   }
@@ -62,6 +69,8 @@ export class Visualizer {
     this.canvas.height = this.h;
     this.glowCanvas.width = this.w;
     this.glowCanvas.height = this.h;
+    this.bloomCanvas.width = this.w;
+    this.bloomCanvas.height = this.h;
     this.g.imageSmoothingEnabled = false;
     this.glow.imageSmoothingEnabled = false;
   }
@@ -107,33 +116,46 @@ export class Visualizer {
     const hue = this.s.hue;
     const stageTopY = Math.round(H * 0.6);
 
+    // "the crowd goes wild" on a drop (club only): high energy + a strong kick, cooldown'd
+    if (this.s.setting === "club" && this.s.live && this.energy > 0.7 && this.kick > 0.6 && t - this.lastMomentT > 8) {
+      this.momentT = t + 2.2;
+      this.lastMomentT = t;
+    }
+    const moment = this.s.setting === "club" && t < this.momentT;
+
     this.glow.clearRect(0, 0, W, H);
     if (this.s.setting === "cafe") this.renderCafe(u, t);
     else if (this.s.setting === "park") this.renderPark(u, t);
-    else this.renderClub(u, t, V, vibe, hue, stageTopY);
+    else this.renderClub(u, t, V, vibe, hue, stageTopY, moment);
     this.marquee(stageTopY, u);
+    if (moment) this.drawMoment(stageTopY, u);
 
-    // bloom
+    // bloom — the blur is the heaviest op, so refresh the cache every other frame
+    this.frameN++;
+    if (this.frameN % 2 === 0) {
+      this.bloom.clearRect(0, 0, W, H);
+      this.bloom.filter = "blur(2px)";
+      this.bloom.drawImage(this.glowCanvas, 0, 0);
+      this.bloom.filter = "none";
+    }
     this.g.save();
     this.g.globalCompositeOperation = "lighter";
     this.g.globalAlpha = 0.9;
-    this.g.filter = "blur(2px)";
-    this.g.drawImage(this.glowCanvas, 0, 0);
-    this.g.filter = "none";
+    this.g.drawImage(this.bloomCanvas, 0, 0);
     this.g.restore();
 
     if (this.s.showClock) this.clock(now, u);
   }
 
   // ── CLUB (evening/night) — the original reactive nightclub ──────────────────
-  private renderClub(u: number, t: number, V: VenueConfig, vibe: VibeProfile, hue: number, stageTopY: number): void {
+  private renderClub(u: number, t: number, V: VenueConfig, vibe: VibeProfile, hue: number, stageTopY: number, moment: boolean): void {
     const W = this.w, H = this.h;
     this.sky(V.sky, hue, t);
     this.rig(V, hue, stageTopY, u);
     if (V.speakers) this.speakers(stageTopY, u, hue);
     this.eqWall(stageTopY, u, hue);
     this.stageDeck(stageTopY, u, hue);
-    this.dj((W * 0.5) | 0, stageTopY, u, t, vibe.djIntensity);
+    this.dj((W * 0.5) | 0, stageTopY, u, t, vibe.djIntensity, moment);
     this.floorGlow(stageTopY + 10 * u, hue);
     this.crowd(Math.round(H * 0.95), u, t, vibe, V.crowdScale);
   }
@@ -407,7 +429,7 @@ export class Visualizer {
   }
 
   // ── the DJ: booth + 2 turntables + mixer + avatar + vibe animation ──────────
-  private dj(cx: number, stageY: number, u: number, t: number, intensity: number): void {
+  private dj(cx: number, stageY: number, u: number, t: number, intensity: number, moment = false): void {
     const live = this.liveness;
     const beatBob = (0.6 + this.kick * 4 * intensity) * Math.abs(Math.sin(t * (4 + intensity * 4)));
     const bob = beatBob * live + 0.3 * u;
@@ -459,12 +481,19 @@ export class Visualizer {
     this.px(mx - 2.2 * u, my + 6.4 * u, 4.4 * u, 0.7 * u, "#2a2440"); // crossfader track
     this.px(mx - 0.5 * u + Math.sin(this.beam * 2) * 1.4 * u, my + 6 * u, 1 * u, 1.5 * u, `hsl(${labelHue},90%,66%)`);
 
-    // arms ON the decks (drawn after the booth); rave throws a fist up on the kick
-    const fistUp = this.s.vibe === "rave" && this.kick > 0.5;
-    const scratch = Math.sin(t * (10 + intensity * 10)) * this.kick * 3 * u * intensity;
-    this.limb(cx - 2.5 * u, y - 14 * u, cx - bw / 4 + scratch, pcy, u, skin);
-    if (fistUp) this.limb(cx + 2.5 * u, y - 14 * u, cx + 5 * u, headY - 4 * u, u, skin);
-    else this.limb(cx + 2.5 * u, y - 14 * u, cx + bw / 4, pcy - this.kick * 2 * u, u, skin);
+    // arms: on a "moment" (the drop) the DJ throws BOTH hands up to the crowd;
+    // otherwise works the decks (rave throws one fist up on the kick)
+    if (moment) {
+      const raise = headY - 4 * u - Math.abs(Math.sin(t * 12)) * 2 * u;
+      this.limb(cx - 2.5 * u, y - 14 * u, cx - 5 * u, raise, u, skin);
+      this.limb(cx + 2.5 * u, y - 14 * u, cx + 5 * u, raise, u, skin);
+    } else {
+      const fistUp = this.s.vibe === "rave" && this.kick > 0.5;
+      const scratch = Math.sin(t * (10 + intensity * 10)) * this.kick * 3 * u * intensity;
+      this.limb(cx - 2.5 * u, y - 14 * u, cx - bw / 4 + scratch, pcy, u, skin);
+      if (fistUp) this.limb(cx + 2.5 * u, y - 14 * u, cx + 5 * u, headY - 4 * u, u, skin);
+      else this.limb(cx + 2.5 * u, y - 14 * u, cx + bw / 4, pcy - this.kick * 2 * u, u, skin);
+    }
   }
 
   private avatarHat(cx: number, headY: number, u: number): void {
@@ -561,6 +590,23 @@ export class Visualizer {
         this.px(x + 1.2 * s - hands, bodyTop + 2.6 * s, 0.9 * s, 0.9 * s, handC);
       }
     }
+  }
+
+  // ── "the crowd goes wild" banner over the stage during a drop ───────────────
+  private drawMoment(stageY: number, u: number): void {
+    const g = this.g;
+    const text = "THE CROWD GOES WILD!";
+    const size = Math.max(5, Math.round(4.5 * u));
+    g.font = `${size}px "Press Start 2P", monospace`;
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    const y = stageY - 38 * u;
+    const w = g.measureText(text).width;
+    const flash = 0.5 + 0.5 * Math.sin(performance.now() / 70);
+    g.fillStyle = `rgba(255,70,40,${0.8 + flash * 0.2})`;
+    g.fillRect(this.w / 2 - w / 2 - 6, y - size, w + 12, size * 2);
+    g.fillStyle = `hsl(${45 + flash * 15},100%,${68 + flash * 20}%)`;
+    g.fillText(text, this.w / 2, y);
   }
 
   // ── marquee ("● LIVE TONIGHT ●" idle / DJ name live) ────────────────────────

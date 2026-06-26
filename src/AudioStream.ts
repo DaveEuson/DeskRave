@@ -171,6 +171,27 @@ export class AudioStream {
     return this.mutedState;
   }
 
+  // a low-passed "kick through the wall" thump — called on each detected beat when
+  // the optional sound setting is on (very quiet, atmospheric)
+  muffledKick(): void {
+    if (this.mutedState) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const lp = this.ctx.createBiquadFilter();
+    const g = this.ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(95, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
+    lp.type = "lowpass";
+    lp.frequency.value = 120;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.05, now + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+    osc.connect(lp).connect(g).connect(this.master);
+    osc.start(now);
+    osc.stop(now + 0.2);
+  }
+
   // Read the analyser and reduce the spectrum to a few useful numbers + a beat flag.
   levels(): Levels {
     this.analyser.getByteFrequencyData(this.freq);
