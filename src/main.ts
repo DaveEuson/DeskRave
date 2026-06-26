@@ -235,6 +235,7 @@ function frame(now: number): void {
   if (lv) {
     controls.setEq(lv.spectrum);
     if (profile.auto) classifier.observe(lv, now);
+    if (lv.beat && profile.settings.sound) audio.muffledKick(); // "kick through the wall"
     const crowd = Math.round(lv.level * VENUES[profile.venue].crowdScale * VIBES[profile.vibe].crowd * 1500);
     if (crowd > profile.peakCrowd) profile.peakCrowd = crowd;
   }
