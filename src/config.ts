@@ -90,9 +90,9 @@ export const VENUES: Record<VenueId, VenueMeta> = {
   tavern: { id: "tavern", name: "Medieval Tavern", label: "YE OLDE DROP", accent: "#ffae4a", genre: "world", price: 160, crowd: true },
   // shows + novelty
   prom: { id: "prom", name: "School Prom", label: "PROM NIGHT", accent: "#9a8cff", genre: "pop", price: 200, dark: true, crowd: true },
-  wedding: { id: "wedding", name: "The Reception", label: "THE RECEPTION", accent: "#ff9ec4", genre: "pop", price: 200, crowd: true },
-  silent: { id: "silent", name: "Silent Disco", label: "SILENT DISCO", accent: "#4ce0c0", genre: "house", price: 200, dark: true, crowd: true },
-  rink: { id: "rink", name: "Roller Rink", label: "ROLLER DISCO", accent: "#ff5fae", genre: "funk", price: 200, dark: true, crowd: true },
+  wedding: { id: "wedding", name: "The Reception", label: "THE RECEPTION", accent: "#ff9ec4", genre: "pop", price: 200, crowd: true, ported: true },
+  silent: { id: "silent", name: "Silent Disco", label: "SILENT DISCO", accent: "#4ce0c0", genre: "house", price: 200, dark: true, crowd: true, ported: true },
+  rink: { id: "rink", name: "Roller Rink", label: "ROLLER DISCO", accent: "#ff5fae", genre: "funk", price: 200, dark: true, crowd: true, ported: true },
   skilodge: { id: "skilodge", name: "Ski Lodge", label: "APRÈS-SKI", accent: "#9ed2ff", genre: "house", price: 220, crowd: true },
   boat: { id: "boat", name: "Sunset Cruise", label: "ON DECK", accent: "#ff8f6a", genre: "chill", price: 220, crowd: true },
   forest: { id: "forest", name: "Forest Rave", label: "DEEP WOODS", accent: "#7fe04a", genre: "techno", price: 240, crowd: true },
@@ -100,8 +100,8 @@ export const VENUES: Record<VenueId, VenueMeta> = {
   bakersfield: { id: "bakersfield", name: "Bakersfield Rave", label: "DESERT BASS", accent: "#ffc23c", genre: "country", price: 240, crowd: true },
   bigroom: { id: "bigroom", name: "Early Doors", label: "THE BIG ROOM", accent: "#6fd0e0", genre: "techno", price: 260, dark: true, crowd: true },
   // big stages + spectacle
-  warehouse: { id: "warehouse", name: "Warehouse", label: "WAREHOUSE", accent: "#d24fe0", genre: "techno", price: 320, dark: true, crowd: true },
-  festival: { id: "festival", name: "Main Stage", label: "MAIN STAGE", accent: "#ffd24a", genre: "techno", price: 360, crowd: true },
+  warehouse: { id: "warehouse", name: "Warehouse", label: "WAREHOUSE", accent: "#d24fe0", genre: "techno", price: 320, dark: true, crowd: true, ported: true },
+  festival: { id: "festival", name: "Main Stage", label: "MAIN STAGE", accent: "#ffd24a", genre: "techno", price: 360, crowd: true, ported: true },
   balloon: { id: "balloon", name: "Hot Air Balloon", label: "ABOVE IT ALL", accent: "#ff8f4a", genre: "ambient", price: 320 },
   airport: { id: "airport", name: "Departures Lounge", label: "GATE 13", accent: "#7fb0e8", genre: "ambient", price: 320, crowd: true },
   aquarium: { id: "aquarium", name: "Aquarium", label: "DEEP CUTS", accent: "#4ec0ff", genre: "ambient", price: 320, dark: true, crowd: true },
