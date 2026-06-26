@@ -22,11 +22,39 @@ let profile: Profile = loadProfileSync(); // instant boot from the mirror
 const forcedVenue = new URLSearchParams(location.search).get("venue") as VenueId | null;
 const currentVenue = (): VenueId => (forcedVenue && forcedVenue in VENUES ? forcedVenue : profile.venue);
 
+// ?weather=rain|snow|haze|clear forces the atmosphere (testing / manual)
+type WeatherKind = "clear" | "rain" | "snow" | "haze";
+const isWeather = (w: unknown): w is WeatherKind => w === "clear" || w === "rain" || w === "snow" || w === "haze";
+const forcedWeather = new URLSearchParams(location.search).get("weather");
+const currentWeather = (): WeatherKind => (isWeather(forcedWeather) ? forcedWeather : profile.settings.weather);
+
+// Pull live conditions from the server (IP-located or the manual city) and drive
+// the scene atmosphere. No-op (stays clear) when the user turns live weather off.
+async function refreshWeather(): Promise<void> {
+  if (forcedWeather) { syncScene(); return; } // a URL override wins; skip the fetch
+  if (!profile.settings.weatherAuto) {
+    if (profile.settings.weather !== "clear") { profile.settings.weather = "clear"; persist(); }
+    syncScene();
+    return;
+  }
+  try {
+    const r = await fetch(`/api/weather?city=${encodeURIComponent(profile.settings.weatherCity || "")}`);
+    const d = (await r.json()) as { weather?: string };
+    if (isWeather(d.weather) && d.weather !== profile.settings.weather) {
+      profile.settings.weather = d.weather;
+      persist();
+      syncScene();
+    }
+  } catch {
+    /* offline — leave the current atmosphere as-is */
+  }
+}
+
 // ── reflect the whole profile into the scene ────────────────────────────────
 function syncScene(): void {
   scene.setState({
     hue: profile.palette, jacketHue: profile.jacketHue, venue: currentVenue(),
-    vibe: profile.vibe, avatar: profile.avatar, djName: profile.djName,
+    vibe: profile.vibe, avatar: profile.avatar, djName: profile.djName, weather: currentWeather(),
     showClock: profile.settings.showClock, showDate: profile.settings.showDate,
     clock24: profile.settings.clock24, live: audio.playing,
   });
@@ -47,7 +75,7 @@ const controls = new Controls($("controls"), profile, {
   onAvatar: (a: AvatarId) => { profile.avatar = a; persist(); controls.setProfile(profile); syncScene(); },
   onJacket: (hue) => { profile.jacketHue = hue; persist(); controls.setProfile(profile); syncScene(); },
   onVenue: (v: VenueId) => { profile.venue = v; persist(); controls.setProfile(profile); syncScene(); },
-  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); if ("camera" in patch) void setCamera(!!patch.camera); },
+  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); if ("camera" in patch) void setCamera(!!patch.camera); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); },
   onSelectTrack: (i) => void audio.select(i),
   onAddFiles: () => fileInput.click(),
 });
@@ -298,6 +326,8 @@ syncScene();
 controls.setProfile(profile);
 toast("👆 Tap the screen to open controls & pick a station");
 if (profile.settings.camera) void setCamera(true); // resume presence if it was on
+void refreshWeather(); // pull live weather now, then keep it fresh
+setInterval(() => void refreshWeather(), 15 * 60_000);
 let lastT = performance.now();
 let frames = 0;
 function frame(now: number): void {

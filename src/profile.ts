@@ -7,6 +7,8 @@ function normalize(p: Profile): Profile {
   if (!Array.isArray(p.unlocks)) p.unlocks = [];
   for (const v of STARTER_VENUES) if (!p.unlocks.includes(v)) p.unlocks.push(v);
   if (typeof p.deskLog !== "object" || p.deskLog === null) p.deskLog = {};
+  // settings merge is shallow, so backfill any keys a stale saved profile lacks
+  p.settings = { ...defaultProfile().settings, ...(p.settings ?? {}) };
   return p;
 }
 
@@ -19,7 +21,9 @@ export interface Settings {
   scanlines: boolean;
   sound: boolean;
   camera: boolean; // presence detection — DJ wakes when it sees you
-  weather: "clear" | "rain" | "snow" | "haze";
+  weather: "clear" | "rain" | "snow" | "haze"; // active atmosphere (set by the live feed)
+  weatherAuto: boolean; // pull real weather from /api/weather
+  weatherCity: string; // manual city override; "" = auto-locate from IP
 }
 
 export interface Profile {
@@ -109,7 +113,7 @@ export function defaultProfile(): Profile {
     peakCrowd: 0,
     history: [],
     deskLog: {},
-    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, camera: false, weather: "clear" },
+    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, camera: false, weather: "clear", weatherAuto: true, weatherCity: "" },
     lastSeen: new Date().toISOString(),
   };
 }

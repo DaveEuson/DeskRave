@@ -32,6 +32,43 @@ function readBody(req: Connect.IncomingMessage): Promise<string> {
   });
 }
 
+// ── real weather: approximate location from the server's public IP (or a manual
+// city), current conditions from Open-Meteo, mapped to our 4 atmosphere kinds.
+// Cached ~15 min so we never hammer the free services. All server-side — no
+// browser geolocation prompt; only a city name ever leaves the box, never an IP.
+const weatherCache: Record<string, { data: unknown; ts: number }> = {};
+
+function wmoToKind(code: number): "clear" | "rain" | "snow" | "haze" {
+  if (code === 45 || code === 48) return "haze"; // fog
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "snow";
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || (code >= 95 && code <= 99)) return "rain";
+  return "clear"; // 0-3 clear/cloudy
+}
+
+async function fetchWeather(city: string): Promise<{ weather: string; city: string | null; temp: number | null; code: number | null }> {
+  try {
+    let lat: number, lon: number, name: string | null;
+    if (city) {
+      const gr = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
+      const gj = (await gr.json()) as { results?: { latitude: number; longitude: number; name: string }[] };
+      const hit = gj.results?.[0];
+      if (!hit) return { weather: "clear", city: null, temp: null, code: null };
+      lat = hit.latitude; lon = hit.longitude; name = hit.name;
+    } else {
+      const ir = await fetch("http://ip-api.com/json/?fields=status,lat,lon,city");
+      const ij = (await ir.json()) as { status: string; lat: number; lon: number; city: string };
+      if (ij.status !== "success") return { weather: "clear", city: null, temp: null, code: null };
+      lat = ij.lat; lon = ij.lon; name = ij.city;
+    }
+    const wr = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code`);
+    const wj = (await wr.json()) as { current?: { temperature_2m: number; weather_code: number } };
+    const code = wj.current?.weather_code ?? 0;
+    return { weather: wmoToKind(code), city: name, temp: wj.current?.temperature_2m ?? null, code };
+  } catch {
+    return { weather: "clear", city: null, temp: null, code: null };
+  }
+}
+
 function lanUrl(port: number): string {
   for (const list of Object.values(networkInterfaces())) {
     for (const ni of list ?? []) {
@@ -97,6 +134,18 @@ const mediaApi = (port: number): Connect.NextHandleFunction => {
     if (req.method === "GET" && url.startsWith("/api/info")) {
       res.setHeader("content-type", "application/json");
       return res.end(JSON.stringify({ host: lanUrl(port) }));
+    }
+
+    if (req.method === "GET" && url.startsWith("/api/weather")) {
+      const city = (new URL(url, "http://x").searchParams.get("city") || "").trim();
+      const key = city.toLowerCase() || "__ip__";
+      const cached = weatherCache[key];
+      if (!cached || Date.now() - cached.ts > 15 * 60_000) {
+        weatherCache[key] = { data: await fetchWeather(city), ts: Date.now() };
+      }
+      res.setHeader("content-type", "application/json");
+      res.setHeader("cache-control", "no-store");
+      return res.end(JSON.stringify(weatherCache[key].data));
     }
 
     // ── native presence (written by jetson/presence_service.py) ─────────────

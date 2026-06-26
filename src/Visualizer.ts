@@ -9,6 +9,7 @@ export interface SceneState {
   avatar: AvatarId;
   live: boolean;
   djName: string;
+  weather: "clear" | "rain" | "snow" | "haze";
   showClock: boolean;
   showDate: boolean;
   clock24: boolean;
@@ -54,8 +55,10 @@ export class Visualizer {
 
   private s: SceneState = {
     hue: 288, jacketHue: 288, venue: "club", vibe: "groove", avatar: "beanie",
-    live: false, djName: "DJ NOVA", showClock: true, showDate: true, clock24: false,
+    live: false, djName: "DJ NOVA", weather: "clear", showClock: true, showDate: true, clock24: false,
   };
+  private rainDrops?: { x: number; y: number; len: number; spd: number }[];
+  private snowFlakes?: { x: number; y: number; r: number; spd: number; drift: number }[];
 
   constructor(private canvas: HTMLCanvasElement) {
     this.g = canvas.getContext("2d")!;
@@ -217,7 +220,45 @@ export class Visualizer {
     this.g.drawImage(this.bloomCanvas, 0, 0);
     this.g.restore();
 
+    if (this.s.weather !== "clear") this.drawWeather();
     if (this.s.showClock) this.clock(now, u);
+  }
+
+  // real-weather atmosphere overlaid on any scene (driven by /api/weather)
+  private drawWeather(): void {
+    const W = this.w, H = this.h, g = this.g, w = this.s.weather;
+    if (w === "haze") {
+      g.fillStyle = "rgba(206,210,220,0.14)"; g.fillRect(0, 0, W, H);
+      for (let i = 0; i < 4; i++) {
+        const fy = H * (0.16 + i * 0.2) + Math.sin(this.beam * 0.3 + i) * 4;
+        g.fillStyle = "rgba(214,218,228,0.05)"; g.fillRect(0, fy, W, H * 0.13);
+      }
+      return;
+    }
+    if (w === "rain") {
+      if (!this.rainDrops) this.rainDrops = Array.from({ length: 90 }, () => ({ x: Math.random() * W, y: Math.random() * H, len: 4 + Math.random() * 5, spd: 3 + Math.random() * 3 }));
+      g.fillStyle = "rgba(40,58,86,0.10)"; g.fillRect(0, 0, W, H); // cool wash
+      g.strokeStyle = "rgba(176,196,224,0.5)"; g.lineWidth = 1; g.beginPath();
+      for (const d of this.rainDrops) {
+        d.y += d.spd; d.x -= d.spd * 0.4;
+        if (d.y > H) { d.y = -4; d.x = Math.random() * W; }
+        if (d.x < 0) d.x += W;
+        g.moveTo(d.x, d.y); g.lineTo(d.x - d.len * 0.4, d.y + d.len);
+      }
+      g.stroke();
+      return;
+    }
+    if (w === "snow") {
+      if (!this.snowFlakes) this.snowFlakes = Array.from({ length: 70 }, () => ({ x: Math.random() * W, y: Math.random() * H, r: 0.6 + Math.random() * 1.4, spd: 0.4 + Math.random() * 0.8, drift: Math.random() * Math.PI * 2 }));
+      g.fillStyle = "rgba(186,202,230,0.06)"; g.fillRect(0, 0, W, H);
+      for (const f of this.snowFlakes) {
+        f.y += f.spd; f.drift += 0.02; f.x += Math.sin(f.drift) * 0.4;
+        if (f.y > H) { f.y = -2; f.x = Math.random() * W; }
+        g.fillStyle = "rgba(240,245,255,0.88)";
+        g.fillRect(Math.round(f.x), Math.round(f.y), Math.max(1, Math.round(f.r)), Math.max(1, Math.round(f.r)));
+      }
+      return;
+    }
   }
 
   private isNight(now: Date): boolean {
