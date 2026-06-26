@@ -88,10 +88,13 @@ function drawCam(): void {
   for (const b of presence.boxes) ctx.strokeRect(b.x * camBoxes.width, b.y * camBoxes.height, b.w * camBoxes.width, b.h * camBoxes.height);
 }
 
+const forceNative = new URLSearchParams(location.search).get("presence") === "native";
 async function setCamera(on: boolean): Promise<void> {
   if (on) {
     camPreview.hidden = false; // show it first so the <video> actually decodes frames
-    const mode = await presence.start(camVideo); // native service if running, else in-browser
+    let mode: "native" | "browser" | "none";
+    if (forceNative) { presence.startNative(); mode = "native"; } // kiosk: on-device only, never touch the camera
+    else mode = await presence.start(camVideo); // native service if running, else in-browser
     if (mode === "none") {
       camPreview.hidden = true;
       profile.settings.camera = false;
