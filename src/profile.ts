@@ -1,4 +1,14 @@
-import { type AvatarId, type VenueId, type VibeName } from "./config";
+import { VENUES, STARTER_VENUES, type AvatarId, type VenueId, type VibeName } from "./config";
+
+// Coerce legacy/invalid data forward: an unknown saved venue (e.g. a retired id)
+// would crash the venue dispatch, so snap it to the club and guarantee starters.
+function normalize(p: Profile): Profile {
+  if (!p.venue || !(p.venue in VENUES)) p.venue = "club";
+  if (!Array.isArray(p.unlocks)) p.unlocks = [];
+  for (const v of STARTER_VENUES) if (!p.unlocks.includes(v)) p.unlocks.push(v);
+  if (typeof p.deskLog !== "object" || p.deskLog === null) p.deskLog = {};
+  return p;
+}
 
 // The server-authoritative profile (schema pinned by the handoff README).
 // localStorage is an offline mirror, not the source of truth.
@@ -91,11 +101,11 @@ export function defaultProfile(): Profile {
     xp: 0,
     listenedMinutes: 0,
     uniqueTracks: [],
-    venue: "backyard",
+    venue: "club",
     vibe: "groove",
     auto: true,
     palette: 288,
-    unlocks: ["backyard", "beanie", "snapback"],
+    unlocks: ["soundcheck", "cafe", "park", "club", "beanie", "snapback"],
     peakCrowd: 0,
     history: [],
     deskLog: {},
@@ -110,7 +120,7 @@ export function loadProfileSync(): Profile {
   const id = deviceId();
   try {
     const cached = localStorage.getItem(LS_KEY);
-    if (cached) return { ...defaultProfile(), ...JSON.parse(cached), id };
+    if (cached) return normalize({ ...defaultProfile(), ...JSON.parse(cached), id });
   } catch {
     /* ignore */
   }
@@ -125,7 +135,7 @@ export async function loadProfile(): Promise<Profile> {
     if (res.ok) {
       const server = await res.json();
       if (server && typeof server === "object") {
-        const merged = { ...defaultProfile(), ...server, id };
+        const merged = normalize({ ...defaultProfile(), ...server, id });
         localStorage.setItem(LS_KEY, JSON.stringify(merged));
         return merged;
       }
@@ -135,7 +145,7 @@ export async function loadProfile(): Promise<Profile> {
   }
   try {
     const cached = localStorage.getItem(LS_KEY);
-    if (cached) return { ...defaultProfile(), ...JSON.parse(cached), id };
+    if (cached) return normalize({ ...defaultProfile(), ...JSON.parse(cached), id });
   } catch {
     /* ignore */
   }

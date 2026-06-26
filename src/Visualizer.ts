@@ -1,5 +1,5 @@
 import type { Levels } from "./AudioStream";
-import { SETTING_LABEL, VENUES, VIBES, clockAmbient, type AvatarId, type Setting, type VenueConfig, type VenueId, type VibeName, type VibeProfile } from "./config";
+import { CLUB_LOOK, VENUES, VIBES, clockAmbient, type AvatarId, type ClubLook, type VenueId, type VenueMeta, type VibeName, type VibeProfile } from "./config";
 
 export interface SceneState {
   hue: number; // club palette base
@@ -9,7 +9,6 @@ export interface SceneState {
   avatar: AvatarId;
   live: boolean;
   djName: string;
-  setting: Setting; // cafe (morning) / park (afternoon) / club (night) — from the clock
   showClock: boolean;
   showDate: boolean;
   clock24: boolean;
@@ -52,7 +51,7 @@ export class Visualizer {
 
   private s: SceneState = {
     hue: 288, jacketHue: 288, venue: "club", vibe: "groove", avatar: "beanie",
-    live: false, djName: "DJ NOVA", setting: "club", showClock: true, showDate: true, clock24: false,
+    live: false, djName: "DJ NOVA", showClock: true, showDate: true, clock24: false,
   };
 
   constructor(private canvas: HTMLCanvasElement) {
@@ -135,22 +134,24 @@ export class Visualizer {
     this.beam += 0.01 + this.energy * 0.05;
 
     const W = this.w, H = this.h, u = H / 100;
-    const V = VENUES[this.s.venue];
+    const meta = VENUES[this.s.venue];
     const vibe = VIBES[this.s.vibe];
     const hue = this.s.hue;
     const stageTopY = Math.round(H * 0.6);
 
-    // "the crowd goes wild" on a drop (club only): high energy + a strong kick, cooldown'd
-    if (this.s.setting === "club" && this.s.live && this.energy > 0.7 && this.kick > 0.6 && t - this.lastMomentT > 8) {
+    // "the crowd goes wild" on a drop — crowd venues only: high energy + strong kick, cooldown'd
+    if (meta.crowd && this.s.live && this.energy > 0.7 && this.kick > 0.6 && t - this.lastMomentT > 8) {
       this.momentT = t + 2.2;
       this.lastMomentT = t;
     }
-    const moment = this.s.setting === "club" && t < this.momentT;
+    const moment = !!meta.crowd && t < this.momentT;
 
+    // venue drives the scene; the real clock only grades it (day/night)
     this.glow.clearRect(0, 0, W, H);
-    if (this.s.setting === "cafe") this.renderCafe(u, t);
-    else if (this.s.setting === "park") this.renderPark(u, t);
-    else this.renderClub(u, t, V, vibe, hue, stageTopY, moment);
+    if (this.s.venue === "cafe") this.renderCafe(u, t);
+    else if (this.s.venue === "park") this.renderPark(u, t);
+    else if (this.s.venue === "club") this.renderClub(u, t, vibe, hue, stageTopY, moment);
+    else this.comingSoon(u, t, meta);
     this.marquee(stageTopY, u);
     if (moment) this.drawMoment(stageTopY, u);
 
@@ -183,7 +184,7 @@ export class Visualizer {
   // a global colour grade keyed off the real clock — applies to any venue except
   // ones that are already dark / lit by their own interior (the club).
   private applyTimeGrade(now: Date): void {
-    if (this.s.setting === "club") return; // the nightclub supplies its own night
+    if (VENUES[this.s.venue].dark) return; // interior / already-dark venues light themselves
     const W = this.w, H = this.h, g = this.g;
     g.save();
     if (this.isNight(now)) {
@@ -207,8 +208,8 @@ export class Visualizer {
   }
 
   // ── CLUB (evening/night) — the original reactive nightclub ──────────────────
-  private renderClub(u: number, t: number, V: VenueConfig, vibe: VibeProfile, hue: number, stageTopY: number, moment: boolean): void {
-    const W = this.w, H = this.h;
+  private renderClub(u: number, t: number, vibe: VibeProfile, hue: number, stageTopY: number, moment: boolean): void {
+    const W = this.w, H = this.h, V = CLUB_LOOK;
     this.sky(V.sky, hue, t);
     this.rig(V, hue, stageTopY, u);
     if (V.speakers) this.speakers(stageTopY, u, hue);
@@ -217,6 +218,34 @@ export class Visualizer {
     this.dj((W * 0.5) | 0, stageTopY, u, t, vibe.djIntensity, moment);
     this.floorGlow(stageTopY + 10 * u, hue);
     this.crowd(Math.round(H * 0.95), u, t, vibe, V.crowdScale);
+  }
+
+  // ── COMING SOON — venues not yet ported keep the DJ grooving on a lit stage ──
+  private comingSoon(u: number, t: number, meta: VenueMeta): void {
+    const W = this.w, H = this.h, g = this.g;
+    const { beat, kick } = this.pulse(t, 110);
+    const grd = g.createLinearGradient(0, 0, 0, H);
+    grd.addColorStop(0, "#0c0a16");
+    grd.addColorStop(1, meta.accent + "44");
+    g.fillStyle = grd; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 32; i++) {
+      const sx = (Math.sin(i * 91.7) * 0.5 + 0.5) * W;
+      const sy = (Math.sin(i * 47.3) * 0.5 + 0.5) * H * 0.62;
+      this.px(sx, sy, 1, 1, `hsla(0,0%,100%,${0.18 + 0.32 * Math.sin(t * 2 + i)})`, this.glow);
+    }
+    const groundY = Math.round(H * 0.9);
+    this.px(0, groundY, W, H - groundY, "#15121c");
+    this.px(0, groundY, W, 1.4 * u, meta.accent);
+    this.px(0, groundY, W, 1.4 * u, meta.accent, this.glow);
+    this.djBooth(W * 0.5, groundY, u, t, beat, kick, {
+      skin: "hsl(26,46%,62%)", jacket: `hsl(${this.s.jacketHue},60%,52%)`, jacketHi: `hsl(${this.s.jacketHue},66%,62%)`, jacketSh: `hsl(${this.s.jacketHue},56%,36%)`,
+      hat: meta.accent, cap: true, glow: meta.accent,
+    });
+    g.fillStyle = "#cdbff0";
+    g.font = `${Math.max(4, Math.round(4 * u))}px "Press Start 2P", monospace`;
+    g.textAlign = "center";
+    g.fillText("SCENE COMING SOON", W / 2, H * 0.42);
+    g.textAlign = "left";
   }
 
   // ── CAFÉ (morning) — cozy coffee shop, a producer chilling with a laptop ────
@@ -806,7 +835,7 @@ export class Visualizer {
   }
 
   // ── lighting rig per venue ──────────────────────────────────────────────────
-  private rig(V: VenueConfig, hue: number, stageY: number, u: number): void {
+  private rig(V: ClubLook, hue: number, stageY: number, u: number): void {
     const W = this.w, k = this.kick;
     if (V.rig === "string") {
       // sagging warm string lights (catenary) + wooden fence
@@ -1104,7 +1133,7 @@ export class Visualizer {
 
   // ── marquee ("● LIVE TONIGHT ●" idle / DJ name live) ────────────────────────
   private marquee(stageY: number, u: number): void {
-    const text = this.liveness > 0.5 ? this.s.djName : SETTING_LABEL[this.s.setting];
+    const text = this.liveness > 0.5 ? this.s.djName : VENUES[this.s.venue].label;
     const g = this.g;
     const size = Math.max(5, Math.round(5 * u));
     g.font = `${size}px "Press Start 2P", monospace`;
