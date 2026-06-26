@@ -113,6 +113,22 @@ export const AMBIENT = {
   peakEnergy: 0.5, // idle ceiling at peak hour
 };
 
+// ── Time-of-day setting: café (morning) → park (afternoon) → club (night) ─────
+// The scene follows the real clock so the toy moves through the day with you.
+export type Setting = "cafe" | "park" | "club";
+
+export function settingForHour(h: number): Setting {
+  if (h >= 6 && h < 11) return "cafe"; // morning coffee
+  if (h >= 11 && h < 17) return "park"; // afternoon outdoors
+  return "club"; // evening through late night
+}
+
+export const SETTING_LABEL: Record<Setting, string> = {
+  cafe: "☕ MORNING CAFÉ",
+  park: "🌳 AFTERNOON PARK",
+  club: "● LIVE TONIGHT ●",
+};
+
 // Idle energy from the real clock: a cosine peaking at AMBIENT.peakHour.
 export function clockAmbient(date = new Date()): number {
   const h = date.getHours() + date.getMinutes() / 60;
