@@ -87,7 +87,7 @@ export const VENUES: Record<VenueId, VenueMeta> = {
   arcade: { id: "arcade", name: "Barcade", label: "INSERT COIN", accent: "#62e0ff", genre: "synthwave", price: 140, dark: true, crowd: true, ported: true },
   laundromat: { id: "laundromat", name: "Laundromat", label: "SPIN CYCLE", accent: "#5fd0e0", genre: "hardcore", price: 140, dark: true, crowd: true, ported: true },
   subway: { id: "subway", name: "Subway Platform", label: "LAST TRAIN", accent: "#5fd0c8", genre: "lofi", price: 140, dark: true, crowd: true, ported: true },
-  tavern: { id: "tavern", name: "Medieval Tavern", label: "YE OLDE DROP", accent: "#ffae4a", genre: "world", price: 160, crowd: true },
+  tavern: { id: "tavern", name: "Medieval Tavern", label: "YE OLDE DROP", accent: "#ffae4a", genre: "world", price: 160, crowd: true, ported: true },
   // shows + novelty
   prom: { id: "prom", name: "School Prom", label: "PROM NIGHT", accent: "#9a8cff", genre: "pop", price: 200, dark: true, crowd: true },
   wedding: { id: "wedding", name: "The Reception", label: "THE RECEPTION", accent: "#ff9ec4", genre: "pop", price: 200, crowd: true, ported: true },
@@ -105,7 +105,7 @@ export const VENUES: Record<VenueId, VenueMeta> = {
   balloon: { id: "balloon", name: "Hot Air Balloon", label: "ABOVE IT ALL", accent: "#ff8f4a", genre: "ambient", price: 320 },
   airport: { id: "airport", name: "Departures Lounge", label: "GATE 13", accent: "#7fb0e8", genre: "ambient", price: 320, crowd: true, ported: true },
   aquarium: { id: "aquarium", name: "Aquarium", label: "DEEP CUTS", accent: "#4ec0ff", genre: "ambient", price: 320, dark: true, crowd: true, ported: true },
-  dmv: { id: "dmv", name: "The DMV", label: "NOW SERVING", accent: "#9bd14a", genre: "jazz", price: 280, dark: true, crowd: true },
+  dmv: { id: "dmv", name: "The DMV", label: "NOW SERVING", accent: "#9bd14a", genre: "jazz", price: 280, dark: true, crowd: true, ported: true },
   // destination / legendary
   space: { id: "space", name: "Space Station", label: "ZERO-G", accent: "#b08cff", genre: "ambient", price: 500, dark: true, crowd: true, ported: true },
   whitehouse: { id: "whitehouse", name: "The White House", label: "HAIL TO THE BEAT", accent: "#6f9fe0", genre: "funk", price: 500, crowd: true },
