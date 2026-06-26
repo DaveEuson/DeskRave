@@ -9,7 +9,6 @@ The Vite middleware serves both at /api/presence and /api/presence-frame; the
 web app polls them. All on-device — no frames leave the box.
 """
 import cv2, time, json, os
-import numpy as np
 
 DATA = os.path.expanduser("~/pixel-rave/.data")
 os.makedirs(DATA, exist_ok=True)
@@ -37,10 +36,10 @@ def open_cam():
     return cap
 
 
-def write_presence(present, count):
+def write_presence(present, count, faces):
     tmp = PRESENCE + ".tmp"
     with open(tmp, "w") as f:
-        json.dump({"present": bool(present), "count": int(count), "ts": time.time()}, f)
+        json.dump({"present": bool(present), "count": int(count), "ts": time.time(), "faces": faces}, f)
     os.replace(tmp, PRESENCE)
 
 
@@ -54,7 +53,7 @@ def main():
                 cap.release()
             cap = open_cam()
             if not cap or not cap.isOpened():
-                write_presence(False, 0)  # camera unavailable (e.g. the browser has it)
+                write_presence(False, 0, [])  # camera unavailable (e.g. the browser has it)
                 time.sleep(2)
                 continue
         ok, frame = cap.read()
@@ -73,20 +72,17 @@ def main():
         if count > 0:
             last_seen = now
         present = (now - last_seen) < GRACE
-        write_presence(present, count if present else 0)
-
-        # stylized "what it sees" preview: pixelate + neon duotone (not a plain selfie)
-        tiny = cv2.resize(frame, (80, 60), interpolation=cv2.INTER_AREA)
-        g = cv2.cvtColor(tiny, cv2.COLOR_BGR2GRAY).astype("float32") / 255.0
-        lo = np.array([70, 20, 50], dtype="float32")    # BGR dark violet
-        hi = np.array([255, 180, 90], dtype="float32")  # BGR bright teal
-        duo = (lo + (hi - lo) * g[..., None]).astype("uint8")
-        prev = cv2.resize(duo, (160, 120), interpolation=cv2.INTER_NEAREST)  # chunky pixels
-        sx, sy = 160 / 320.0, 120 / 240.0
-        for (x, y, w, h) in faces:
-            cv2.rectangle(prev, (int(x * sx), int(y * sy)), (int((x + w) * sx), int((y + h) * sy)), (120, 240, 80), 2)
-        cv2.imwrite(FRAME, prev, [cv2.IMWRITE_JPEG_QUALITY, 75])
-        time.sleep(0.18)  # ~5 Hz
+        # normalized, mirrored-x face centers (selfie view). The browser draws an
+        # abstract stick figure from these — no image ever leaves the camera, and
+        # it's far lighter than streaming a JPEG.
+        norm = []
+        if present:
+            for (x, y, w, h) in faces:
+                norm.append({"x": round(1.0 - (x + w / 2) / 320.0, 3),
+                             "y": round((y + h / 2) / 240.0, 3),
+                             "s": round(w / 320.0, 3)})
+        write_presence(present, count if present else 0, norm)
+        time.sleep(0.12)  # ~8 Hz (cheap now — no image encode)
 
 
 if __name__ == "__main__":

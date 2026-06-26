@@ -77,15 +77,44 @@ const camVideo = $<HTMLVideoElement>("camVideo");
 const camSnap = $<HTMLImageElement>("camSnap");
 const camBoxes = $<HTMLCanvasElement>("camBoxes");
 const camStatus = $("camStatus");
-let snapTimer = 0;
 $("camHide").onclick = () => { camPreview.hidden = true; };
+function drawStick(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number, hue: number, t: number): void {
+  ctx.strokeStyle = `hsl(${hue},75%,62%)`;
+  ctx.lineWidth = Math.max(2, s * 0.5);
+  ctx.lineCap = "round";
+  const head = s * 0.9;
+  ctx.beginPath(); ctx.arc(cx, cy, head, 0, Math.PI * 2); ctx.stroke(); // head
+  const shY = cy + head + s * 0.6;
+  const hipY = cy + head + s * 2.4;
+  ctx.beginPath(); ctx.moveTo(cx, cy + head); ctx.lineTo(cx, hipY); ctx.stroke(); // spine
+  const sway = Math.sin(t / 320) * s * 0.6;
+  ctx.beginPath();
+  ctx.moveTo(cx, shY); ctx.lineTo(cx - s * 1.4, shY + s * 0.8 + sway);
+  ctx.moveTo(cx, shY); ctx.lineTo(cx + s * 1.4, shY + s * 0.8 - sway); // arms
+  ctx.moveTo(cx, hipY); ctx.lineTo(cx - s * 0.9, hipY + s * 2);
+  ctx.moveTo(cx, hipY); ctx.lineTo(cx + s * 0.9, hipY + s * 2); // legs
+  ctx.stroke();
+}
+
 function drawCam(): void {
-  if (camPreview.hidden || !presence.active || presence.isNative) return; // native bakes the box into the snapshot
+  if (camPreview.hidden || !presence.active) return;
   const ctx = camBoxes.getContext("2d")!;
-  ctx.clearRect(0, 0, camBoxes.width, camBoxes.height);
+  const W = camBoxes.width, H = camBoxes.height;
+  if (presence.isNative) {
+    // abstract stick figure(s) on a dark club-tinted backdrop — no camera image, ever
+    ctx.fillStyle = "#0c0a16";
+    ctx.fillRect(0, 0, W, H);
+    const t = performance.now();
+    for (const f of presence.faces) {
+      const s = Math.max(5, Math.min(20, f.s * W * 0.7));
+      drawStick(ctx, f.x * W, f.y * H + s * 0.4, s, profile.palette, t);
+    }
+    return;
+  }
+  ctx.clearRect(0, 0, W, H); // browser mode: boxes over the live video
   ctx.strokeStyle = presence.current.present ? "#34d399" : "#f59e0b";
   ctx.lineWidth = 2;
-  for (const b of presence.boxes) ctx.strokeRect(b.x * camBoxes.width, b.y * camBoxes.height, b.w * camBoxes.width, b.h * camBoxes.height);
+  for (const b of presence.boxes) ctx.strokeRect(b.x * W, b.y * H, b.w * W, b.h * H);
 }
 
 const forceNative = new URLSearchParams(location.search).get("presence") === "native";
@@ -103,19 +132,15 @@ async function setCamera(on: boolean): Promise<void> {
     } else {
       presenceDrives = true;
       const onDevice = mode === "native";
-      camVideo.hidden = onDevice;
-      camSnap.hidden = !onDevice;
-      clearInterval(snapTimer);
-      if (onDevice) snapTimer = window.setInterval(() => { camSnap.src = "/api/presence-frame?t=" + Date.now(); }, 500);
+      camVideo.hidden = onDevice; // native: hide the video; we draw an abstract stick figure
+      camSnap.hidden = true; // snapshot image no longer used
       toast(`👁 Presence on${onDevice ? " (on-device)" : ""} — the DJ plays when it sees you`);
     }
   } else {
     presenceDrives = false; // set before stop() so the resulting "absent" doesn't pause your music
     presence.stop();
-    clearInterval(snapTimer);
     camPreview.hidden = true;
     camVideo.srcObject = null;
-    camSnap.removeAttribute("src");
   }
   persist();
 }
