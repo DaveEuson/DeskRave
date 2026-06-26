@@ -483,7 +483,8 @@ export class Visualizer {
     this.px(mx - 1.9 * u, my + 1.5 * u + this.kick * 2.2 * u, 1.1 * u, 0.8 * u, `hsl(${this.s.hue},90%,62%)`);
     this.px(mx + 0.8 * u, my + 3 * u - this.kick * 2.2 * u, 1.1 * u, 0.8 * u, `hsl(${this.s.hue},90%,62%)`);
     this.px(mx - 2.2 * u, my + 6.4 * u, 4.4 * u, 0.7 * u, "#2a2440"); // crossfader track
-    this.px(mx - 0.5 * u + Math.sin(this.beam * 2) * 1.4 * u, my + 6 * u, 1 * u, 1.5 * u, `hsl(${labelHue},90%,66%)`);
+    // rests centred; nudges on the beat (a cut), instead of sliding back and forth
+    this.px(mx - 0.5 * u + this.kick * 1.7 * u, my + 6 * u, 1 * u, 1.5 * u, `hsl(${labelHue},90%,66%)`);
 
     // arms: on a "moment" (the drop) the DJ throws BOTH hands up to the crowd;
     // otherwise works the decks (rave throws one fist up on the kick)
