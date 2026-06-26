@@ -282,11 +282,10 @@ addEventListener("pagehide", () => { flushDesk(); persist(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden) { flushDesk(); persist(); } });
 setInterval(() => {
   scene.setState({ setting: currentSetting() }); // café → park → club as the day moves
-  const here = presence.current.present || audio.playing;
   flushDesk();
   if (++persistTick >= 20) { persistTick = 0; persist(); } // checkpoint the log ~every 20s
   const todayMs = deskTotals(profile).today * 1000;
-  deskTimer.classList.toggle("on", here);
+  deskTimer.classList.toggle("on", presence.current.present); // show only while it can see you
   deskTimer.innerHTML =
     `<span class="dt-main">👤 ${fmtDuration(sessionMs)} <em>this session</em></span>` +
     `<span class="dt-sub">total today · ${fmtDuration(todayMs)}</span>`;
