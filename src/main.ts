@@ -41,7 +41,7 @@ const controls = new Controls($("controls"), profile, {
   onPrev: () => void audio.prev(),
   onNext: () => void audio.next(),
   onMute: () => { audio.toggleMute(); controls.setTransport(audio.playing, audio.muted); },
-  onVolume: (v) => audio.setVolume(v),
+  onVolume: (v) => { audio.setVolume(v); updateFader(v); },
   onVibe: (v: VibeName) => { profile.vibe = v; profile.auto = false; persist(); controls.setProfile(profile); syncScene(); },
   onAuto: (on: boolean) => { profile.auto = on; persist(); controls.setProfile(profile); },
   onPalette: (hue) => { profile.palette = hue; persist(); controls.setProfile(profile); syncScene(); },
@@ -183,6 +183,31 @@ addEventListener("dragenter", (e) => { if (e.dataTransfer?.types.includes("Files
 addEventListener("dragover", (e) => { if (e.dataTransfer?.types.includes("Files")) e.preventDefault(); });
 addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; stageEl.classList.remove("dragging"); } });
 addEventListener("drop", (e) => { e.preventDefault(); dragDepth = 0; stageEl.classList.remove("dragging"); ingest(e.dataTransfer?.files ?? null); });
+
+// ── always-visible volume fader (right edge) ────────────────────────────────
+const volFader = $("volFader");
+const vfFill = volFader.querySelector(".vf-fill") as HTMLElement;
+const vfKnob = volFader.querySelector(".vf-knob") as HTMLElement;
+const VF_TOP = 6, VF_BOT = 20, VF_KNOB = 12;
+function updateFader(v: number): void {
+  const h = volFader.clientHeight || 156;
+  const trackH = h - VF_TOP - VF_BOT;
+  vfKnob.style.top = `${VF_TOP + (1 - v) * (trackH - VF_KNOB)}px`;
+  vfFill.style.height = `${Math.round(v * 100)}%`;
+}
+function faderFromY(clientY: number): void {
+  const r = volFader.getBoundingClientRect();
+  const top = r.top + VF_TOP, bottom = r.bottom - VF_BOT;
+  const v = Math.max(0, Math.min(1, 1 - (clientY - top) / (bottom - top)));
+  audio.setVolume(v);
+  updateFader(v);
+}
+let faderDrag = false;
+volFader.addEventListener("pointerdown", (e) => { faderDrag = true; volFader.setPointerCapture(e.pointerId); faderFromY(e.clientY); });
+volFader.addEventListener("pointermove", (e) => { if (faderDrag) faderFromY(e.clientY); });
+volFader.addEventListener("pointerup", () => { faderDrag = false; });
+volFader.addEventListener("pointercancel", () => { faderDrag = false; });
+updateFader(0.8); // matches AudioStream's default volume
 
 // ── persistence (debounced inside saveProfile) ──────────────────────────────
 function persist(): void { saveProfile(profile); }
