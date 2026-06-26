@@ -33,7 +33,6 @@ export function recomputeProgress(p: Profile): LevelUpResult {
     if (remaining >= need) {
       remaining -= need;
       level++;
-      for (const id of LEVEL_UNLOCKS[level]?.venues ?? []) if (!p.unlocks.includes(id)) (p.unlocks.push(id), unlocked.push(id));
       for (const id of LEVEL_UNLOCKS[level]?.avatars ?? []) if (!p.unlocks.includes(id)) (p.unlocks.push(id), unlocked.push(id));
     } else break;
   }

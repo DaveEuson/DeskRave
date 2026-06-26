@@ -6,7 +6,7 @@ import { Classifier } from "./classifier";
 import { Controls } from "./controls";
 import { loadProfile, loadProfileSync, saveProfile, dayKey, deskTotals, type Profile } from "./profile";
 import { accrue, unlockLabel } from "./xp";
-import { VENUES, VIBES, settingForHour, type AvatarId, type Setting, type VenueId, type VibeName } from "./config";
+import { VENUES, VIBES, type AvatarId, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, uploadFile } from "./library";
 import { Presence } from "./presence";
 
@@ -18,17 +18,15 @@ const classifier = new Classifier();
 const presence = new Presence();
 let profile: Profile = loadProfileSync(); // instant boot from the mirror
 
-// time-of-day scene (café morning / park afternoon / club night); ?setting= forces one
-const forcedSetting = new URLSearchParams(location.search).get("setting") as Setting | null;
-const currentSetting = (): Setting =>
-  forcedSetting && ["cafe", "park", "club"].includes(forcedSetting) ? forcedSetting : settingForHour(new Date().getHours());
+// venue drives the scene; the real clock only grades it (day/night). ?venue= forces one for testing
+const forcedVenue = new URLSearchParams(location.search).get("venue") as VenueId | null;
+const currentVenue = (): VenueId => (forcedVenue && forcedVenue in VENUES ? forcedVenue : profile.venue);
 
 // ── reflect the whole profile into the scene ────────────────────────────────
 function syncScene(): void {
   scene.setState({
-    hue: profile.palette, jacketHue: profile.jacketHue, venue: profile.venue,
+    hue: profile.palette, jacketHue: profile.jacketHue, venue: currentVenue(),
     vibe: profile.vibe, avatar: profile.avatar, djName: profile.djName,
-    setting: currentSetting(),
     showClock: profile.settings.showClock, showDate: profile.settings.showDate,
     clock24: profile.settings.clock24, live: audio.playing,
   });
@@ -281,7 +279,7 @@ function flushDesk(): void {
 addEventListener("pagehide", () => { flushDesk(); persist(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden) { flushDesk(); persist(); } });
 setInterval(() => {
-  scene.setState({ setting: currentSetting() }); // café → park → club as the day moves
+  scene.setState({ venue: currentVenue() }); // keep the scene synced (honours ?venue=)
   flushDesk();
   if (++persistTick >= 20) { persistTick = 0; persist(); } // checkpoint the log ~every 20s
   const todayMs = deskTotals(profile).today * 1000;
@@ -316,7 +314,7 @@ function frame(now: number): void {
     controls.setEq(lv.spectrum);
     if (profile.auto) classifier.observe(lv, now);
     if (lv.beat && profile.settings.sound) audio.muffledKick(); // "kick through the wall"
-    const crowd = Math.round(lv.level * VENUES[profile.venue].crowdScale * VIBES[profile.vibe].crowd * 1500);
+    const crowd = Math.round(lv.level * (VENUES[profile.venue].crowd ? 1 : 0.4) * VIBES[profile.vibe].crowd * 1500);
     if (crowd > profile.peakCrowd) profile.peakCrowd = crowd;
   }
   tickProgress(dt);

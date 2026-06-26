@@ -6,8 +6,9 @@ dist
 # server-side profile store
 .data
 
-# design-handoff zip (the extracted folder is committed instead)
+# design-handoff package (kept locally as the wave-2 porting reference, not committed)
 *.zip
+_design_handoff/
 
 # debug screenshots pulled off devices
 jetson-shot*.png

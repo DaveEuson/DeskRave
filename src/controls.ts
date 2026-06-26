@@ -176,10 +176,12 @@ export class Controls {
       <div class="cv-swatches">${JACKET_HUES.map((h) => `<button data-jh="${h}" style="--c:hsl(${h},65%,55%)" class="${this.p.jacketHue === h ? "on" : ""}"></button>`).join("")}</div>
       <span class="cv-label">Club lights</span>
       <div class="cv-swatches">${PALETTES.map((p) => `<button data-hue="${p.hue}" style="--c:hsl(${p.hue},80%,55%)" class="${this.p.palette === p.hue ? "on" : ""}" title="${p.name}"></button>`).join("")}</div>
-      <span class="cv-label">Venue (unlocks as you level)</span>
+      <span class="cv-label">Venue (${this.p.unlocks.filter((u) => u in VENUES).length}/${VENUE_ORDER.length} unlocked)</span>
       <div class="cv-pills">${VENUE_ORDER.map((id) => {
+        const m = VENUES[id];
         const locked = !this.p.unlocks.includes(id);
-        return `<button data-venue="${id}" class="${this.p.venue === id ? "on" : ""} ${locked ? "locked" : ""}" ${locked ? "disabled" : ""}>${VENUES[id].name}${locked ? ` · Lv${VENUES[id].unlockLevel}` : ""}</button>`;
+        const tag = locked ? ` 🔒 ◈${m.price}` : (m.ported ? "" : " · soon");
+        return `<button data-venue="${id}" class="${this.p.venue === id ? "on" : ""} ${locked ? "locked" : ""}" ${locked ? "disabled" : ""}>${m.name}${tag}</button>`;
       }).join("")}</div>`;
     const name = $<HTMLInputElement>(this.sheetBody, ".cv-name");
     name.oninput = () => this.cb.onName(name.value);
