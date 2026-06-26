@@ -48,6 +48,9 @@ export class Visualizer {
   private liveness = 0; // eased 0..1 for smooth idle↔live wind-down
   private spectrum: number[] = [];
   private presenceCount = 0; // real people the camera sees → guarantees some crowd
+  private _moment = false; // "crowd goes wild" active this frame (read by club)
+  // venue → scene renderer; venues absent here fall back to the "coming soon" card
+  private renderers: Partial<Record<VenueId, (u: number, t: number) => void>> = {};
 
   private s: SceneState = {
     hue: 288, jacketHue: 288, venue: "club", vibe: "groove", avatar: "beanie",
@@ -62,6 +65,17 @@ export class Visualizer {
     this.bloom = this.bloomCanvas.getContext("2d")!;
     this.resize();
     addEventListener("resize", () => this.resize());
+    // ported venue scenes (everything else → comingSoon). One line per venue.
+    this.renderers = {
+      cafe: (u, t) => this.renderCafe(u, t),
+      park: (u, t) => this.renderPark(u, t),
+      club: (u, t) => this.renderClub(u, t),
+      warehouse: (u, t) => this.renderWarehouse(u, t),
+      festival: (u, t) => this.renderFestival(u, t),
+      silent: (u, t) => this.renderSilent(u, t),
+      wedding: (u, t) => this.renderWedding(u, t),
+      rink: (u, t) => this.renderRink(u, t),
+    };
   }
 
   resize(): void {
@@ -135,8 +149,6 @@ export class Visualizer {
 
     const W = this.w, H = this.h, u = H / 100;
     const meta = VENUES[this.s.venue];
-    const vibe = VIBES[this.s.vibe];
-    const hue = this.s.hue;
     const stageTopY = Math.round(H * 0.6);
 
     // "the crowd goes wild" on a drop — crowd venues only: high energy + strong kick, cooldown'd
@@ -145,12 +157,12 @@ export class Visualizer {
       this.lastMomentT = t;
     }
     const moment = !!meta.crowd && t < this.momentT;
+    this._moment = moment;
 
     // venue drives the scene; the real clock only grades it (day/night)
     this.glow.clearRect(0, 0, W, H);
-    if (this.s.venue === "cafe") this.renderCafe(u, t);
-    else if (this.s.venue === "park") this.renderPark(u, t);
-    else if (this.s.venue === "club") this.renderClub(u, t, vibe, hue, stageTopY, moment);
+    const renderer = this.renderers[this.s.venue];
+    if (renderer) renderer(u, t);
     else this.comingSoon(u, t, meta);
     this.marquee(stageTopY, u);
     if (moment) this.drawMoment(stageTopY, u);
@@ -208,14 +220,15 @@ export class Visualizer {
   }
 
   // ── CLUB (evening/night) — the original reactive nightclub ──────────────────
-  private renderClub(u: number, t: number, vibe: VibeProfile, hue: number, stageTopY: number, moment: boolean): void {
+  private renderClub(u: number, t: number): void {
     const W = this.w, H = this.h, V = CLUB_LOOK;
+    const vibe = VIBES[this.s.vibe], hue = this.s.hue, stageTopY = Math.round(H * 0.6);
     this.sky(V.sky, hue, t);
     this.rig(V, hue, stageTopY, u);
     if (V.speakers) this.speakers(stageTopY, u, hue);
     this.eqWall(stageTopY, u, hue);
     this.stageDeck(stageTopY, u, hue);
-    this.dj((W * 0.5) | 0, stageTopY, u, t, vibe.djIntensity, moment);
+    this.dj((W * 0.5) | 0, stageTopY, u, t, vibe.djIntensity, this._moment);
     this.floorGlow(stageTopY + 10 * u, hue);
     this.crowd(Math.round(H * 0.95), u, t, vibe, V.crowdScale);
   }
@@ -246,6 +259,381 @@ export class Visualizer {
     g.textAlign = "center";
     g.fillText("SCENE COMING SOON", W / 2, H * 0.42);
     g.textAlign = "left";
+  }
+
+  // ── shared crowd / stage blocks (reused across the big venues) ──────────────
+  private crowdBand(baseY: number, u: number, t: number, beat: number, kick: number, opt: { rows?: number; color?: string; hue?: number; maxL?: number; handsHue?: number }): void {
+    const W = this.w, s = u;
+    const rows = opt.rows || 4;
+    for (let r = 0; r < rows; r++) {
+      const depth = rows === 1 ? 1 : r / (rows - 1);
+      const sc = 0.55 + depth * 0.7;
+      const y = baseY - (rows - 1 - r) * 5.5 * s;
+      const L = 5 + depth * (opt.maxL || 9);
+      const col = opt.color || `hsl(${opt.hue != null ? opt.hue : 240},${8 + depth * 6}%,${L}%)`;
+      const spacing = 7 * s * sc;
+      for (let i = 0, x = (r % 2) * spacing * 0.5 - spacing; x < W + spacing; x += spacing, i++) {
+        const px = x + Math.sin(i * 1.7 + r) * 1 * s;
+        const bob = Math.abs(Math.sin(beat * Math.PI * 2 + i * 0.7 + r)) * (1 + kick) * 1.3 * s * sc;
+        const hy = y - bob, hr = 2.1 * s * sc;
+        this.disc(px, hy, hr, hr, col);
+        this.px(px - 3.1 * s * sc, hy + hr, 6.2 * s * sc, 7 * s * sc, col);
+        if ((i * 7 + r * 3) % 3 === 0) {
+          this.limb(px - 2 * s * sc, hy + hr, px - 3.2 * s * sc - Math.sin(t * 3 + i) * 1 * s, hy - 3.4 * s * sc, 1.3 * s * sc, col);
+          this.limb(px + 2 * s * sc, hy + hr, px + 3.2 * s * sc + Math.sin(t * 3 + i + 1) * 1 * s, hy - 3.4 * s * sc, 1.3 * s * sc, col);
+          if (opt.handsHue != null) {
+            const hc = `hsl(${(opt.handsHue + i * 47) % 360},88%,66%)`;
+            this.px(px + 3 * s * sc, hy - 4 * s * sc, 1.5 * s * sc, 1.5 * s * sc, hc);
+            this.px(px + 3 * s * sc, hy - 4 * s * sc, 1.5 * s * sc, 1.5 * s * sc, hc, this.glow);
+          }
+        }
+      }
+    }
+  }
+
+  private speakerStack(cx: number, baseY: number, u: number, kick: number, tall: boolean): void {
+    const s = u, w = 9 * s, rows = tall ? 4 : 3, cellH = 7 * s;
+    const top = baseY - rows * cellH;
+    this.px(cx - w / 2 - 1 * s, top - 1 * s, w + 2 * s, rows * cellH + 2 * s, "hsl(220,8%,8%)");
+    for (let r = 0; r < rows; r++) {
+      const cy = top + r * cellH;
+      this.px(cx - w / 2, cy, w, cellH - 0.6 * s, "hsl(220,8%,16%)");
+      this.px(cx - w / 2, cy, w, 1 * s, "hsl(220,8%,24%)");
+      const pr = (2.6 + kick * 1.1) * s;
+      this.disc(cx, cy + cellH * 0.5, 3 * s, 3 * s, "hsl(220,8%,6%)");
+      this.disc(cx, cy + cellH * 0.5, pr, pr, "hsl(220,8%,20%)");
+      this.disc(cx, cy + cellH * 0.5, pr * 0.4, pr * 0.4, "hsl(220,8%,12%)");
+    }
+    this.px(cx - 2 * s, top - 2 * s, 4 * s, 2 * s, "hsl(220,8%,22%)");
+    if (kick > 0.5) this.disc(cx, top + rows * cellH * 0.5, w, rows * cellH * 0.5, `hsla(45,80%,60%,${0.05 * kick})`, this.glow);
+  }
+
+  private palm(cx: number, baseY: number, u: number, t: number): void {
+    const s = u, sway = Math.sin(t * 0.8) * 2 * s;
+    for (let i = 0; i < 9; i++) {
+      const ty = baseY - i * 3 * s;
+      const tx = cx + Math.sin(i * 0.3) * 2 * s + (i / 9) * sway;
+      this.px(tx - 1.4 * s, ty, 2.8 * s, 3 * s, "hsl(30,40%,38%)");
+      this.px(tx - 1.4 * s, ty, 1 * s, 3 * s, "hsl(32,44%,48%)");
+    }
+    const topX = cx + Math.sin(8 * 0.3) * 2 * s + sway, topY = baseY - 26 * s;
+    for (let f = 0; f < 7; f++) {
+      const a = (f / 7) * Math.PI * 2;
+      const ex = topX + Math.cos(a) * 11 * s, ey = topY + Math.sin(a) * 7 * s + 3 * s;
+      this.limb(topX, topY, ex, ey, 1.6 * s, "hsl(132,46%,36%)");
+      this.px(ex - 1 * s, ey - 1 * s, 2 * s, 2 * s, "hsl(120,50%,46%)");
+    }
+    this.disc(topX, topY, 2.4 * s, 2.4 * s, "hsl(30,40%,36%)");
+  }
+
+  // ── WAREHOUSE — after-dark techno, lasers + fog + strobe ────────────────────
+  private renderWarehouse(u: number, t: number): void {
+    const W = this.w, H = this.h;
+    const { kick, energy, beat } = this.pulse(t, 134);
+    const stageY = Math.round(H * 0.62);
+    const rg = this.g.createLinearGradient(0, 0, 0, H);
+    rg.addColorStop(0, "hsl(278,22%,12%)"); rg.addColorStop(0.6, "hsl(276,24%,8%)"); rg.addColorStop(1, "hsl(276,22%,5%)");
+    this.g.fillStyle = rg; this.g.fillRect(0, 0, W, H);
+    for (let y = 4 * u; y < stageY - 4 * u; y += 4 * u) {
+      this.px(0, y, W, 0.5 * u, "hsla(280,16%,4%,0.6)");
+      const off = ((y / (4 * u)) % 2) * 6 * u;
+      for (let x = -off; x < W; x += 12 * u) this.px(x, y, 0.5 * u, 4 * u, "hsla(280,16%,4%,0.5)");
+    }
+    this.px(0, 5 * u, W, 2.2 * u, "hsl(280,8%,18%)");
+    for (let x = 4 * u; x < W; x += 7 * u) this.limb(x, 5 * u, x + 3.5 * u, 7.2 * u, 0.7 * u, "hsl(280,8%,12%)");
+    for (let x = 8 * u; x < W; x += 16 * u) {
+      this.px(x - 1.4 * u, 7.2 * u, 2.8 * u, 2.4 * u, "hsl(280,8%,14%)");
+      const on = (Math.floor(beat + x) % 2) === 0;
+      this.px(x - 1 * u, 9.2 * u, 2 * u, 1 * u, on ? "hsl(300,80%,62%)" : "hsl(280,20%,20%)");
+    }
+    const origins = [W * 0.3, W * 0.7];
+    const laserHues = [305, 265, 190];
+    for (let k = 0; k < origins.length; k++) {
+      for (let j = 0; j < 3; j++) {
+        const ang = Math.PI / 2 + Math.sin(t * (0.7 + j * 0.3) + k * 2 + j) * 0.8;
+        const ex = origins[k] + Math.cos(ang) * H, ey = 9 * u + Math.sin(ang) * H;
+        this.limb(origins[k], 9 * u, ex, ey, 0.8 * u, `hsla(${laserHues[j]},90%,60%,${0.22 + 0.15 * energy})`, this.glow);
+      }
+      this.disc(origins[k], 9 * u, 2 * u, 2 * u, "hsla(300,90%,70%,0.5)", this.glow);
+    }
+    this.px(W * 0.5 - 18 * u, stageY + 2 * u, 36 * u, 5 * u, "hsl(280,16%,10%)");
+    this.px(W * 0.5 - 18 * u, stageY + 2 * u, 36 * u, 1 * u, "hsl(290,30%,22%)");
+    this.djBooth(W * 0.5, stageY + 2 * u, u * 0.7, t, beat, kick, {
+      skin: "hsl(26,40%,56%)", jacket: "hsl(282,28%,30%)", jacketHi: "hsl(282,34%,42%)", jacketSh: "hsl(282,28%,18%)",
+      hat: "hsl(300,40%,40%)", glow: "hsl(304,90%,60%)", booth: "hsl(280,20%,18%)", boothHi: "hsl(286,28%,28%)", boothSh: "hsl(278,20%,10%)",
+    });
+    this.crowdBand(H * 1.02, u, t, beat, kick, { rows: 6, hue: 278, maxL: 7, handsHue: 280 });
+    for (let i = 0; i < 5; i++) {
+      const fx = ((t * (5 + i * 2) + i * 80) % (W + 60 * u)) - 30 * u;
+      this.disc(fx, stageY + 10 * u + (i % 2) * 6 * u, 22 * u, 5 * u, "hsla(290,40%,60%,0.06)", this.glow);
+    }
+    if (kick > 0.7) { this.g.fillStyle = `hsla(300,40%,92%,${(kick - 0.7) * 0.5})`; this.g.fillRect(0, 0, W, H); }
+  }
+
+  // ── FESTIVAL — main stage, auto-advancing day→dusk→night, LED wall + crowd ──
+  private renderFestival(u: number, t: number): void {
+    const W = this.w, H = this.h;
+    const { kick, energy, beat } = this.pulse(t, 128);
+    const stageY = Math.round(H * 0.52);
+    const lvl = Math.floor(t / 22) % 3;
+    const night = lvl === 2, dusk = lvl === 1;
+    const sg = this.g.createLinearGradient(0, 0, 0, stageY);
+    if (night) { sg.addColorStop(0, "hsl(244,52%,12%)"); sg.addColorStop(1, "hsl(270,40%,26%)"); }
+    else if (dusk) { sg.addColorStop(0, "hsl(258,46%,40%)"); sg.addColorStop(0.5, "hsl(18,72%,60%)"); sg.addColorStop(1, "hsl(38,86%,72%)"); }
+    else { sg.addColorStop(0, "hsl(210,72%,60%)"); sg.addColorStop(1, "hsl(40,80%,76%)"); }
+    this.g.fillStyle = sg; this.g.fillRect(0, 0, W, stageY);
+    if (night) {
+      for (let i = 0; i < 36; i++) this.px(((i * 73.7) % 1) * W, ((i * 41.3) % 1) * stageY * 0.8, 1, 1, `hsla(210,40%,92%,${0.4 + 0.5 * Math.abs(Math.sin(t + i))})`);
+      this.disc(W * 0.18, stageY * 0.3, 5 * u, 5 * u, "hsl(210,30%,90%)");
+    } else {
+      const sunY = dusk ? stageY * 0.82 : stageY * 0.5;
+      this.disc(W * 0.5, sunY, dusk ? 12 * u : 16 * u, dusk ? 12 * u : 16 * u, dusk ? "hsl(40,100%,76%)" : "hsla(46,100%,80%,0.25)", this.glow);
+      if (dusk) this.disc(W * 0.5, sunY, 8 * u, 8 * u, "hsl(44,100%,82%)");
+    }
+    const lvlName = ["DOORS OPEN", "SUNSET SET", "HEADLINE"][lvl];
+    for (let i = 0; i < lvlName.length; i++) this.px(W * 0.5 - lvlName.length * 1.6 * u + i * 3.2 * u, stageY - 1 * u, 2.2 * u, 2.2 * u, `hsla(45,90%,${night ? 70 : 30}%,0.5)`);
+    this.g.fillStyle = night ? "hsl(120,20%,18%)" : "hsl(96,34%,34%)";
+    this.g.fillRect(0, stageY, W, H - stageY);
+    const wallX = W * 0.22, wallW = W * 0.56, wallY = 8 * u, wallH = stageY - 12 * u;
+    this.px(wallX - 2 * u, wallY - 2 * u, wallW + 4 * u, wallH + 4 * u, "hsl(220,12%,10%)");
+    this.px(wallX, wallY, wallW, wallH, "hsl(222,30%,8%)");
+    const cols = 18, cw = wallW / cols;
+    for (let c = 0; c < cols; c++) {
+      const bh = (0.25 + 0.75 * Math.abs(Math.sin(t * 3 + c * 0.6) * (0.6 + energy))) * (wallH - 4 * u);
+      const hue = (c * 18 + t * 30) % 360;
+      this.px(wallX + c * cw + 0.6 * u, wallY + wallH - 2 * u - bh, cw - 1.2 * u, bh, `hsl(${hue},80%,58%)`);
+      this.px(wallX + c * cw + 0.6 * u, wallY + wallH - 2 * u - bh, cw - 1.2 * u, 1.4 * u, `hsl(${hue},90%,72%)`);
+    }
+    this.px(wallX, wallY, wallW, wallH, "hsla(0,0%,100%,0.04)", this.glow);
+    for (const tx of [wallX - 8 * u, wallX + wallW + 8 * u]) {
+      this.px(tx - 2 * u, wallY - 6 * u, 4 * u, wallH + 12 * u, "hsl(220,8%,16%)");
+      for (let y = wallY - 4 * u; y < stageY; y += 4 * u) this.limb(tx - 2 * u, y, tx + 2 * u, y + 4 * u, 0.6 * u, "hsl(220,8%,26%)");
+      const beams = night ? 3 : 1;
+      for (let bx = 0; bx < beams; bx++) { const ang = Math.sin(t * 1.2 + tx + bx * 2) * 0.7; this.limb(tx, wallY - 6 * u, tx + Math.cos(Math.PI / 2 + ang) * 34 * u, wallY - 6 * u + Math.sin(Math.PI / 2 + ang) * 34 * u, 1.4 * u, `hsla(${(tx * 3 + bx * 80) % 360},85%,65%,${night ? 0.4 : 0.25})`, this.glow); }
+    }
+    this.speakerStack(wallX - 16 * u, stageY + 2 * u, u, kick, true);
+    this.speakerStack(wallX + wallW + 16 * u, stageY + 2 * u, u, kick, true);
+    this.px(wallX - 12 * u, stageY - 3 * u, wallW + 24 * u, 5 * u, "hsl(220,10%,14%)");
+    this.djBooth(W * 0.5, stageY + 1 * u, u * 0.78, t, beat, kick, {
+      skin: "hsl(26,44%,60%)", jacket: "hsl(45,75%,52%)", jacketHi: "hsl(48,82%,64%)", jacketSh: "hsl(42,68%,38%)",
+      hat: "hsl(0,0%,12%)", cap: true, glow: "hsl(45,95%,60%)", booth: "hsl(220,12%,18%)", boothHi: "hsl(220,16%,28%)", boothSh: "hsl(220,12%,10%)",
+    });
+    this.crowdBand(H * 1.0, u, t, beat, kick, { rows: 6, hue: 28, maxL: 10, handsHue: 40 });
+    for (const [fx, fy, hue] of [[W * 0.12, H * 0.78, 320], [W * 0.84, H * 0.8, 190], [W * 0.66, H * 0.74, 50]]) {
+      const sway = Math.sin(t * 1.5 + fx) * 2 * u;
+      this.px(fx - 0.6 * u, fy, 1.2 * u, 16 * u, "hsl(28,20%,20%)");
+      this.px(fx + sway, fy - 4 * u, 9 * u, 6 * u, `hsl(${hue},70%,55%)`);
+      this.px(fx + sway, fy - 4 * u, 9 * u, 1.4 * u, `hsl(${hue},80%,70%)`);
+    }
+    for (let i = 0; i < 30; i++) {
+      const cx2 = ((i * 61.3) % 1) * W;
+      const cy2 = ((t * (8 + (i % 5) * 3) + i * 33) % (H * 0.9));
+      this.px(cx2 + Math.sin(t * 3 + i) * 2 * u, cy2, 1.4 * u, 1.4 * u, `hsl(${(i * 53) % 360},85%,64%)`);
+    }
+  }
+
+  // ── SILENT DISCO — moonlit beach, three glowing headphone channels ──────────
+  private renderSilent(u: number, t: number): void {
+    const W = this.w, H = this.h;
+    const { kick, beat } = this.pulse(t, 120);
+    const chan = ["hsl(0,85%,58%)", "hsl(140,80%,52%)", "hsl(210,90%,60%)"];
+    const seaY = Math.round(H * 0.5), sandY = Math.round(H * 0.62);
+    const sky = this.g.createLinearGradient(0, 0, 0, seaY);
+    sky.addColorStop(0, "hsl(238,46%,12%)"); sky.addColorStop(1, "hsl(220,42%,26%)");
+    this.g.fillStyle = sky; this.g.fillRect(0, 0, W, seaY);
+    for (let i = 0; i < 40; i++) { const sx = ((i * 73.7) % 1) * W, sy = ((i * 41.3) % 1) * seaY * 0.85; this.px(sx, sy, 1, 1, `hsla(210,40%,92%,${0.4 + 0.5 * Math.abs(Math.sin(t * 1.3 + i))})`); }
+    const moonX = W * 0.78, moonY = seaY * 0.34;
+    this.disc(moonX, moonY, 6 * u, 6 * u, "hsl(210,30%,90%)");
+    this.disc(moonX, moonY, 9 * u, 9 * u, "hsla(210,40%,86%,0.18)", this.glow);
+    const seaG = this.g.createLinearGradient(0, seaY, 0, sandY);
+    seaG.addColorStop(0, "hsl(212,44%,24%)"); seaG.addColorStop(1, "hsl(214,40%,16%)");
+    this.g.fillStyle = seaG; this.g.fillRect(0, seaY, W, sandY - seaY);
+    for (let y = seaY; y < sandY; y += 1.4 * u) { const wob = Math.sin(y * 0.5 + t * 2) * 3 * u; this.px(moonX - 3 * u + wob, y, 6 * u, 0.8 * u, "hsla(210,50%,82%,0.4)"); }
+    this.px(0, sandY - 1.4 * u, W, 1.4 * u, "hsla(200,40%,80%,0.4)");
+    const sandG = this.g.createLinearGradient(0, sandY, 0, H);
+    sandG.addColorStop(0, "hsl(36,24%,30%)"); sandG.addColorStop(1, "hsl(34,22%,22%)");
+    this.g.fillStyle = sandG; this.g.fillRect(0, sandY, W, H - sandY);
+    this.palm(W * 0.08, sandY + 4 * u, u * 0.8, t); this.palm(W * 0.95, sandY + 2 * u, u * 0.9, t);
+    for (let i = 0; i < 3; i++) {
+      const gx = W * (0.3 + 0.2 * i) + Math.sin(t * 0.5 + i) * 10 * u;
+      this.disc(gx, H * 0.42, 22 * u, 14 * u, chan[i].replace("hsl", "hsla").replace(")", ",0.06)"), this.glow);
+    }
+    const stageY = sandY + 4 * u;
+    this.djBooth(W * 0.5, stageY + 4 * u, u, t, beat, kick, {
+      skin: "hsl(26,44%,58%)", jacket: "hsl(220,16%,26%)", jacketHi: "hsl(220,20%,36%)", jacketSh: "hsl(220,16%,16%)",
+      hair: "hsl(24,28%,18%)", glow: "hsl(180,80%,55%)", booth: "hsl(220,14%,16%)", boothHi: "hsl(220,18%,26%)", boothSh: "hsl(220,14%,9%)",
+    });
+    for (let i = 0; i < 3; i++) {
+      const lit = (Math.floor(beat) % 3) === i;
+      this.px(W * 0.5 - 5 * u + i * 4 * u, stageY - 6 * u, 2.6 * u, 2.6 * u, lit ? chan[i] : "hsl(220,12%,22%)");
+      if (lit) this.px(W * 0.5 - 5 * u + i * 4 * u, stageY - 6 * u, 2.6 * u, 2.6 * u, chan[i], this.glow);
+    }
+    this.silentCrowd(H * 0.99, u, t, beat, kick, chan);
+  }
+
+  private silentCrowd(baseY: number, u: number, t: number, beat: number, kick: number, chan: string[]): void {
+    const W = this.w, s = u, rows = 5;
+    for (let r = 0; r < rows; r++) {
+      const depth = r / (rows - 1), sc = 0.55 + depth * 0.7;
+      const y = baseY - (rows - 1 - r) * 5.5 * s;
+      const body = `hsl(222,12%,${6 + depth * 7}%)`;
+      const spacing = 7.5 * s * sc;
+      for (let i = 0, x = (r % 2) * spacing * 0.5 - spacing; x < W + spacing; x += spacing, i++) {
+        const ch = Math.floor((t * 0.4 + i * 1.3 + r) % 3);
+        const bob = Math.abs(Math.sin(beat * Math.PI * 2 + i * 0.8 + r)) * (1 + kick) * 1.3 * s * sc;
+        const sway = Math.sin(t * 1.5 + i) * 1.4 * s * sc;
+        const px = x + sway, hy = y - bob, hr = 2.1 * s * sc;
+        this.disc(px, hy, hr, hr, body);
+        this.px(px - 3 * s * sc, hy + hr, 6 * s * sc, 7 * s * sc, body);
+        const c = chan[ch];
+        this.px(px - hr - 1.4 * s * sc, hy - 0.6 * s * sc, 1.6 * s * sc, 2.4 * s * sc, c);
+        this.px(px + hr - 0.2 * s * sc, hy - 0.6 * s * sc, 1.6 * s * sc, 2.4 * s * sc, c);
+        this.px(px - hr - 1.4 * s * sc, hy - 0.6 * s * sc, 1.6 * s * sc, 2.4 * s * sc, c, this.glow);
+        this.px(px + hr - 0.2 * s * sc, hy - 0.6 * s * sc, 1.6 * s * sc, 2.4 * s * sc, c, this.glow);
+        if ((i * 5 + r) % 3 === 0) this.limb(px + 2 * s * sc, hy + hr, px + 3.4 * s * sc, hy - 3.4 * s * sc, 1.3 * s * sc, body);
+      }
+    }
+  }
+
+  // ── WEDDING — warm reception, fairy lights, checkerboard floor, first dance ──
+  private renderWedding(u: number, t: number): void {
+    const W = this.w, H = this.h;
+    const { kick, beat } = this.pulse(t, 76);
+    const floorBack = Math.round(H * 0.5);
+    const rg = this.g.createLinearGradient(0, 0, 0, H);
+    rg.addColorStop(0, "hsl(282,24%,22%)"); rg.addColorStop(1, "hsl(286,22%,12%)");
+    this.g.fillStyle = rg; this.g.fillRect(0, 0, W, floorBack);
+    for (let i = 0; i < 9; i++) {
+      const dx = (i / 8) * W;
+      this.px(dx - 0.6 * u, 0, 1.2 * u, floorBack * 0.5, "hsla(320,20%,40%,0.4)");
+      this.disc(dx, floorBack * 0.5, 4 * u, 2 * u, "hsla(320,20%,46%,0.3)");
+    }
+    for (let row = 0; row < 3; row++) {
+      const topY = (2 + row * 3) * u, sag = (7 + row * 2) * u;
+      const n = 16;
+      let pxp = 0, pyp = topY;
+      for (let i = 0; i <= n; i++) {
+        const fx = (i / n) * W, fy = topY + Math.sin((i / n) * Math.PI) * sag;
+        if (i > 0) this.limb(pxp, pyp, fx, fy, 0.6 * u, "hsla(30,20%,30%,0.6)");
+        pxp = fx; pyp = fy;
+        const tw = 0.7 + 0.3 * Math.sin(beat * 1.2 + i + row);
+        this.px(fx - 0.5 * u, fy, 1 * u, 1 * u, `hsl(42,95%,${66 + tw * 16}%)`);
+        this.disc(fx, fy, 1.6 * u, 1.6 * u, `hsla(44,98%,74%,${0.4 * tw})`, this.glow);
+      }
+    }
+    const rows = 7;
+    for (let r = 0; r < rows; r++) {
+      const depth = r / rows;
+      const y = floorBack + depth * (H - floorBack);
+      const rh = (H - floorBack) * (0.07 + depth * 0.16);
+      const halfW = W * (0.22 + depth * 0.32);
+      const cells = 8;
+      for (let c = 0; c < cells; c++) {
+        const cx0 = W / 2 - halfW + (c / cells) * halfW * 2;
+        const cw = (halfW * 2) / cells;
+        const on = (r + c) % 2 === 0;
+        const hue = (t * 40 + r * 30 + c * 12) % 360;
+        this.px(cx0, y, cw + 0.5, rh + 0.5, on ? `hsl(${hue},60%,${30 + depth * 18}%)` : "hsl(286,16%,14%)");
+        if (on) this.px(cx0, y, cw + 0.5, rh + 0.5, `hsla(${hue},70%,60%,${0.12 + depth * 0.12})`, this.glow);
+      }
+    }
+    this.weddingCouple(W * 0.5, H * 0.9, u, t);
+    this.barStaff(W * 0.13, H * 0.94, u * 0.92, t, {
+      shirt: "hsl(0,0%,90%)", shirtHi: "hsl(0,0%,100%)", shirtSh: "hsl(0,0%,74%)",
+      skin: "hsl(26,44%,62%)", hair: "hsl(24,30%,18%)", machine: "bottles",
+      counter: "hsl(300,16%,30%)", counterHi: "hsl(300,22%,42%)", counterW: 22,
+    });
+    this.djBooth(W * 0.84, H * 0.96, u * 0.9, t, beat, kick, {
+      skin: "hsl(26,44%,60%)", jacket: "hsl(280,20%,32%)", jacketHi: "hsl(280,26%,44%)", jacketSh: "hsl(280,20%,20%)",
+      hair: "hsl(24,28%,18%)", glow: "hsl(330,80%,64%)", booth: "hsl(300,18%,24%)", boothHi: "hsl(300,24%,34%)", boothSh: "hsl(300,18%,14%)",
+    });
+  }
+
+  private weddingCouple(cx: number, feetY: number, u: number, t: number): void {
+    const s = u;
+    const sway = Math.sin(t * 0.8) * 2 * s;
+    const spin = Math.sin(t * 0.4);
+    const ax = cx - 3 * s + sway;
+    this.px(ax - 2.4 * s, feetY - 7 * s, 5 * s, 7 * s, "hsl(222,16%,18%)");
+    this.block(ax - 3 * s, feetY - 16 * s, 6 * s, 10 * s, "hsl(222,18%,24%)", "hsla(0,0%,100%,0.1)", "hsl(222,18%,14%)");
+    this.px(ax - 0.6 * s, feetY - 16 * s, 1.2 * s, 8 * s, "hsl(0,0%,92%)");
+    const ahr = 2.4 * s;
+    this.block(ax - ahr, feetY - 21 * s, ahr * 2, ahr * 2, "hsl(26,44%,60%)", null, "hsl(26,40%,46%)");
+    this.px(ax - ahr, feetY - 22.5 * s, ahr * 2, 1.8 * s, "hsl(24,30%,18%)");
+    const bx = cx + 3 * s + sway;
+    this.px(bx - 4 * s - spin * s, feetY - 9 * s, 8 * s + spin * 2 * s, 9 * s, "hsl(320,30%,72%)");
+    this.px(bx - 4 * s - spin * s, feetY - 1 * s, 8 * s + spin * 2 * s, 1.4 * s, "hsla(320,40%,84%,0.6)");
+    this.block(bx - 2.6 * s, feetY - 17 * s, 5.2 * s, 8 * s, "hsl(320,32%,76%)", "hsla(0,0%,100%,0.2)", "hsl(320,30%,60%)");
+    const bhr = 2.3 * s;
+    this.block(bx - bhr, feetY - 21.5 * s, bhr * 2, bhr * 2, "hsl(26,46%,64%)", null, "hsl(26,40%,50%)");
+    this.px(bx - bhr - 0.4 * s, feetY - 23.5 * s, bhr * 2 + 0.8 * s, 2.4 * s, "hsl(30,40%,30%)");
+    this.limb(ax + 2.4 * s, feetY - 14 * s, bx - 2 * s, feetY - 13 * s, 1.6 * s, "hsl(26,44%,60%)");
+    this.limb(bx - 2.4 * s, feetY - 15 * s, ax + 2 * s, feetY - 17 * s, 1.5 * s, "hsl(26,46%,64%)");
+    for (let i = 0; i < 3; i++) {
+      const hy = feetY - 24 * s - ((t * 6 + i * 9) % 16) * s;
+      const a = Math.max(0, 1 - ((t * 6 + i * 9) % 16) / 16);
+      this.px(cx - 0.7 * s + Math.sin(t + i) * 3 * s, hy, 1.6 * s, 1.4 * s, `hsla(336,80%,68%,${a})`);
+    }
+  }
+
+  // ── ROLLER RINK — neon grid, disco ball, skaters gliding ────────────────────
+  private renderRink(u: number, t: number): void {
+    const W = this.w, H = this.h;
+    const { kick, beat } = this.pulse(t, 116);
+    const horizon = Math.round(H * 0.42);
+    this.g.fillStyle = "hsl(265,40%,9%)"; this.g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 4; i++) {
+      const y = 6 * u + i * 4 * u;
+      const hue = [320, 280, 190, 50][i];
+      this.px(0, y, W, 1.4 * u, `hsl(${hue},85%,58%)`);
+      this.px(0, y, W, 1.4 * u, `hsla(${hue},90%,64%,0.4)`, this.glow);
+    }
+    const vpx = W * 0.5;
+    this.g.fillStyle = "hsl(266,42%,7%)"; this.g.fillRect(0, horizon, W, H - horizon);
+    for (let i = -8; i <= 8; i++) { const fx = vpx + (i / 8) * W * 0.9; this.limb(vpx, horizon, fx, H, 0.6 * u, "hsla(300,90%,60%,0.5)"); }
+    for (let r = 0; r < 9; r++) { const y = horizon + Math.pow(r / 9, 1.8) * (H - horizon); this.px(0, y, W, 0.7 * u, "hsla(190,90%,60%,0.45)"); }
+    this.px(0, horizon, W, 1 * u, "hsl(320,90%,62%)");
+    this.px(0, horizon, W, 1 * u, "hsl(320,90%,62%)", this.glow);
+    const bx = W * 0.5, by = 6 * u;
+    this.px(bx - 0.5 * u, 0, 1, by - 3 * u, "hsl(0,0%,30%)");
+    this.disc(bx, by, 4 * u, 4 * u, "hsl(220,12%,60%)");
+    for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 + t; this.px(bx + Math.cos(a) * 3 * u, by + Math.sin(a) * 3 * u, 1 * u, 1 * u, (i % 2) ? "hsl(0,0%,90%)" : "hsl(220,20%,40%)"); }
+    this.disc(bx, by, 6 * u, 6 * u, "hsla(0,0%,100%,0.12)", this.glow);
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2 + t * 0.6;
+      const rr = (10 + (i % 3) * 8) * u;
+      const sx = bx + Math.cos(a) * rr * 2, sy = horizon + 6 * u + Math.abs(Math.sin(a)) * (H - horizon) * 0.5;
+      this.px(sx, sy, 1.4 * u, 1.4 * u, `hsla(${(i * 40 + t * 60) % 360},85%,70%,0.5)`, this.glow);
+    }
+    this.skater(W * 0.24, H * 0.74, u, t, { shirt: "hsl(320,75%,60%)", legs: "hsl(280,40%,40%)", skin: "hsl(28,46%,64%)", hair: "hsl(30,40%,24%)" }, 0);
+    this.skater(W * 0.7, H * 0.82, u, t, { shirt: "hsl(190,75%,55%)", legs: "hsl(220,30%,36%)", skin: "hsl(26,44%,58%)", hair: "hsl(20,30%,16%)" }, 2.0);
+    this.skater(W * 0.84, H * 0.68, u, t, { shirt: "hsl(50,85%,60%)", legs: "hsl(330,40%,42%)", skin: "hsl(28,46%,66%)", hair: "hsl(24,34%,28%)" }, 4.0);
+    this.djBooth(W * 0.42, H * 0.96, u, t, beat, kick, {
+      skin: "hsl(26,44%,60%)", jacket: "hsl(300,40%,40%)", jacketHi: "hsl(300,46%,52%)", jacketSh: "hsl(300,40%,26%)",
+      hat: "hsl(190,70%,46%)", glow: "hsl(320,90%,62%)", booth: "hsl(270,30%,20%)", boothHi: "hsl(280,36%,30%)", boothSh: "hsl(266,28%,12%)",
+    });
+  }
+
+  private skater(cx: number, feetY: number, u: number, t: number, c: { shirt: string; legs: string; skin: string; hair: string }, ph: number): void {
+    const s = u;
+    const glide = Math.sin(t * 1.2 + ph) * 8 * s;
+    const x = cx + glide;
+    const lean = Math.sin(t * 1.2 + ph) * 1.5 * s;
+    const hipY = feetY - 9 * s;
+    const shoulderY = hipY - 9 * s;
+    const headR = 2.3 * s, headCY = shoulderY - headR - 0.5 * s;
+    this.limb(x - 0.5 * s, hipY, x - 3 * s + lean, feetY - 1 * s, 1.8 * s, c.legs);
+    this.limb(x + 0.5 * s, hipY, x + 3.5 * s + lean, feetY, 1.8 * s, c.legs);
+    for (const [fx, fy] of [[x - 3 * s + lean, feetY - 1 * s], [x + 3.5 * s + lean, feetY]]) {
+      this.px(fx - 2 * s, fy, 4.4 * s, 1.4 * s, "hsl(0,0%,92%)");
+      this.px(fx - 1.6 * s, fy + 1.4 * s, 1.2 * s, 1.2 * s, "hsl(48,90%,58%)");
+      this.px(fx + 1 * s, fy + 1.4 * s, 1.2 * s, 1.2 * s, "hsl(48,90%,58%)");
+    }
+    this.block(x - 3 * s + lean * 0.5, shoulderY, 6 * s, 9 * s, c.shirt, "hsla(0,0%,100%,0.2)", `hsl(${c.shirt.match(/\d+/)![0]},60%,36%)`);
+    this.block(x - headR + lean * 0.6, headCY - headR, headR * 2, headR * 2, c.skin, null, "hsl(26,40%,48%)");
+    this.px(x - headR + lean * 0.6, headCY - headR - 1 * s, headR * 2, 1.8 * s, c.hair);
+    this.limb(x - 2.6 * s + lean * 0.5, shoulderY + 2 * s, x - 6 * s, shoulderY + 4 * s, 1.5 * s, c.shirt);
+    this.limb(x + 2.6 * s + lean * 0.5, shoulderY + 2 * s, x + 6 * s, shoulderY - 1 * s, 1.5 * s, c.shirt);
   }
 
   // ── CAFÉ (morning) — cozy coffee shop, a producer chilling with a laptop ────
@@ -446,6 +834,12 @@ export class Visualizer {
       this.px(cx - cw / 2 + 3 * s, counterY - 0.6 * s, 1 * s, 1.4 * s, "hsl(0,0%,40%)");
       for (let k = 0; k < 5; k++) { const sy2 = counterY - 6 * s - k * 1.6 * s; this.px(cx - cw / 2 + 3.4 * s + Math.sin(t * 2.4 + k) * 1 * s, sy2, 1, 1.2 * s, `hsla(0,0%,100%,${Math.max(0, 0.42 - k * 0.07)})`, this.glow); }
       this.px(cx + cw / 2 - 4 * s, counterY - 2.4 * s, 2.6 * s, 2.4 * s, "hsl(0,0%,96%)");
+    } else if (o.machine === "bottles") {
+      const bh = [150, 30, 330, 200, 48];
+      for (let b = 0; b < 5; b++) this.px(cx - cw / 2 + 1.6 * s + b * 2.6 * s, counterY - 5 * s, 1.6 * s, 5 * s, `hsl(${bh[b]},48%,44%)`);
+      this.px(cx + 4.4 * s, counterY - 4 * s + armPh, 2 * s, 3 * s, "hsl(0,0%,80%)");
+    } else if (o.machine === "taps") {
+      for (let b = 0; b < 3; b++) { this.px(cx - 3 * s + b * 3 * s, counterY - 3.4 * s, 0.8 * s, 3.4 * s, "hsl(40,50%,52%)"); this.px(cx - 3.4 * s + b * 3 * s, counterY - 3.6 * s, 1.6 * s, 1 * s, "hsl(40,60%,62%)"); }
     }
   }
 
