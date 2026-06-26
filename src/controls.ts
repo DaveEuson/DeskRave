@@ -54,6 +54,7 @@ export class Controls {
         <button class="dock-btn" data-act="prev" title="previous">⏮</button>
         <button class="dock-pp" data-act="pp" title="play / pause">▶</button>
         <button class="dock-btn" data-act="next" title="next">⏭</button>
+        <button class="dock-btn" data-act="mute" title="mute">🔊</button>
         <div class="dock-now" data-act="toggle"><b class="dock-title">—</b><span class="dock-sub">tap for stations & options</span></div>
         <div class="dock-eq" data-act="toggle">${"<i></i>".repeat(6)}</div>
         <button class="dock-toggle" data-act="toggle" title="more">▴</button>
@@ -65,6 +66,7 @@ export class Controls {
       if (act === "pp") { e.stopPropagation(); this.cb.onPlayPause(); return; }
       if (act === "prev") { e.stopPropagation(); this.cb.onPrev(); return; }
       if (act === "next") { e.stopPropagation(); this.cb.onNext(); return; }
+      if (act === "mute") { e.stopPropagation(); this.cb.onMute(); return; }
       if (act === "toggle") this.setOpen(!this.open);
       else if (act === "close") this.setOpen(false);
     });
@@ -93,8 +95,7 @@ export class Controls {
   setTransport(playing: boolean, muted: boolean): void {
     this.playing = playing; this.muted = muted;
     this.root.querySelectorAll<HTMLElement>('[data-act="pp"]').forEach((b) => (b.textContent = playing ? "⏸" : "▶"));
-    const m = this.sheetBody.querySelector<HTMLButtonElement>('[data-act="mute"]');
-    if (m) { m.textContent = muted ? "🔇" : "🔊"; m.classList.toggle("on", muted); }
+    this.root.querySelectorAll<HTMLElement>('[data-act="mute"]').forEach((b) => { b.textContent = muted ? "🔇" : "🔊"; b.classList.toggle("on", muted); });
   }
   setEq(spectrum: number[]): void {
     this.root.querySelectorAll<HTMLElement>(".dock-eq i").forEach((bar, i) => (bar.style.height = `${3 + (spectrum[i * 3] ?? 0) * 18}px`));
