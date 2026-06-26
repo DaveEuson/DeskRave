@@ -68,22 +68,22 @@ export interface VenueMeta {
 }
 export const VENUES: Record<VenueId, VenueMeta> = {
   // free starters (the early career + the everyday work spots + signature club)
-  soundcheck: { id: "soundcheck", name: "Soundcheck", label: "🎚 SOUNDCHECK", accent: "#7ad6b0", genre: "rock", price: 0, crowd: true },
+  soundcheck: { id: "soundcheck", name: "Soundcheck", label: "🎚 SOUNDCHECK", accent: "#7ad6b0", genre: "rock", price: 0, crowd: true, ported: true },
   cafe: { id: "cafe", name: "Morning Café", label: "☕ MORNING CAFÉ", accent: "#f6b352", genre: "lofi", price: 0, ported: true },
   park: { id: "park", name: "Afternoon Park", label: "🌳 AFTERNOON PARK", accent: "#7fd06a", genre: "chill", price: 0, crowd: true, ported: true },
   club: { id: "club", name: "Neon Club", label: "● LIVE TONIGHT ●", accent: "#d24fe0", genre: "techno", price: 0, dark: true, crowd: true, ported: true },
   // everyday spots
-  bedroom: { id: "bedroom", name: "BFF's Bedroom", label: "BEST FRIENDS", accent: "#a98cff", genre: "pop", price: 60, crowd: true },
+  bedroom: { id: "bedroom", name: "BFF's Bedroom", label: "BEST FRIENDS", accent: "#a98cff", genre: "pop", price: 60, crowd: true, ported: true },
   diner: { id: "diner", name: "Night Owl Diner", label: "THE NIGHT OWL", accent: "#ff5e8a", genre: "rock", price: 60, crowd: true, ported: true },
-  recordshop: { id: "recordshop", name: "Record Shop", label: "CRATE DIGGING", accent: "#e8a23c", genre: "funk", price: 60 },
-  car: { id: "car", name: "In Your Car", label: "WINDOWS DOWN", accent: "#ff5e8a", genre: "hiphop", price: 60 },
+  recordshop: { id: "recordshop", name: "Record Shop", label: "CRATE DIGGING", accent: "#e8a23c", genre: "funk", price: 60, ported: true },
+  car: { id: "car", name: "In Your Car", label: "WINDOWS DOWN", accent: "#ff5e8a", genre: "hiphop", price: 60, ported: true },
   studio: { id: "studio", name: "After Hours Studio", label: "AFTER HOURS", accent: "#8a8cff", genre: "lofi", price: 80, dark: true, ported: true },
-  openhero: { id: "openhero", name: "Opening for Your Hero", label: "WARM-UP SLOT", accent: "#ffd24a", genre: "house", price: 90, crowd: true },
+  openhero: { id: "openhero", name: "Opening for Your Hero", label: "WARM-UP SLOT", accent: "#ffd24a", genre: "house", price: 90, crowd: true, ported: true },
   // bigger rooms + outdoors
   rooftop: { id: "rooftop", name: "Rooftop", label: "GOLDEN HOUR", accent: "#ff9e5e", genre: "house", price: 120, crowd: true, ported: true },
   beach: { id: "beach", name: "Sunset Shore", label: "SUNSET SHORE", accent: "#ffb27a", genre: "chill", price: 120, crowd: true, ported: true },
   houseparty: { id: "houseparty", name: "House Party", label: "HOUSE PARTY", accent: "#ffb84a", genre: "pop", price: 120, crowd: true, ported: true },
-  radio: { id: "radio", name: "Radio Booth", label: "ON AIR", accent: "#ff6a5e", genre: "downtempo", price: 120, dark: true },
+  radio: { id: "radio", name: "Radio Booth", label: "ON AIR", accent: "#ff6a5e", genre: "downtempo", price: 120, dark: true, ported: true },
   arcade: { id: "arcade", name: "Barcade", label: "INSERT COIN", accent: "#62e0ff", genre: "synthwave", price: 140, dark: true, crowd: true, ported: true },
   laundromat: { id: "laundromat", name: "Laundromat", label: "SPIN CYCLE", accent: "#5fd0e0", genre: "hardcore", price: 140, dark: true, crowd: true, ported: true },
   subway: { id: "subway", name: "Subway Platform", label: "LAST TRAIN", accent: "#5fd0c8", genre: "lofi", price: 140, dark: true, crowd: true, ported: true },
@@ -98,7 +98,7 @@ export const VENUES: Record<VenueId, VenueMeta> = {
   forest: { id: "forest", name: "Forest Rave", label: "DEEP WOODS", accent: "#7fe04a", genre: "techno", price: 240, crowd: true, ported: true },
   underbridge: { id: "underbridge", name: "Under the Bridge", label: "OVERPASS", accent: "#5fe0c0", genre: "dnb", price: 240, dark: true, crowd: true, ported: true },
   bakersfield: { id: "bakersfield", name: "Bakersfield Rave", label: "DESERT BASS", accent: "#ffc23c", genre: "country", price: 240, crowd: true, ported: true },
-  bigroom: { id: "bigroom", name: "Early Doors", label: "THE BIG ROOM", accent: "#6fd0e0", genre: "techno", price: 260, dark: true, crowd: true },
+  bigroom: { id: "bigroom", name: "Early Doors", label: "THE BIG ROOM", accent: "#6fd0e0", genre: "techno", price: 260, dark: true, crowd: true, ported: true },
   // big stages + spectacle
   warehouse: { id: "warehouse", name: "Warehouse", label: "WAREHOUSE", accent: "#d24fe0", genre: "techno", price: 320, dark: true, crowd: true, ported: true },
   festival: { id: "festival", name: "Main Stage", label: "MAIN STAGE", accent: "#ffd24a", genre: "techno", price: 360, crowd: true, ported: true },
@@ -112,7 +112,7 @@ export const VENUES: Record<VenueId, VenueMeta> = {
   japan: { id: "japan", name: "Sakura Festival", label: "SAKURA SET", accent: "#ff9ec4", genre: "world", price: 460, crowd: true, ported: true },
   india: { id: "india", name: "Holi House", label: "HOLI HOUSE", accent: "#ff9e3c", genre: "world", price: 460, crowd: true, ported: true },
   heaven: { id: "heaven", name: "Heaven", label: "PEARLY GATES", accent: "#ffe9a0", genre: "ambient", price: 600, dark: true, crowd: true, ported: true },
-  headliner: { id: "headliner", name: "Headliner", label: "TOP OF THE BILL", accent: "#ff4ea0", genre: "techno", price: 600, dark: true, crowd: true },
+  headliner: { id: "headliner", name: "Headliner", label: "TOP OF THE BILL", accent: "#ff4ea0", genre: "techno", price: 600, dark: true, crowd: true, ported: true },
 };
 // Browse/career order (matches the package's switcher order, club last).
 export const VENUE_ORDER: VenueId[] = [
