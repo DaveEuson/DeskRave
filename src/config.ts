@@ -138,6 +138,17 @@ export const STARTER_VENUES: VenueId[] = ["soundcheck", "cafe", "park", "club"];
 // a week comfortably buys about two venues and a prize (≈600 Cred/week).
 export const CRED_PER_MIN = 0.25; // ≈15 Cred per hour at the desk
 
+// ── Balance / anti-burnout (Pomodoro) ────────────────────────────────────────
+// A healthy focus block earns full Cred; overstay it and the rate soft-decays to
+// a floor (a nudge, not a punishment); a real break away from the desk resets it.
+export const BALANCE = {
+  focusMin: 50, // a healthy focus block before the "take a break" nudge
+  breakMin: 5, // minutes away from the desk that counts as a real break (resets focus)
+  decayMin: 20, // minutes past the focus block over which the earn rate sinks to the floor
+  decayFloor: 0.3, // earn-rate multiplier while you keep overstaying
+  renagMin: 5, // re-nudge this often while a break is overdue
+};
+
 // Cosmetic prizes (bought with Cred). A palette prize adds a club-light colour to
 // the picker; a jacket prize adds a DJ-jacket colour. Stored in profile.unlocks.
 export interface Prize {

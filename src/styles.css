@@ -30,6 +30,9 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 #deskTimer .dt-main { font: 700 24px ui-monospace, Consolas, monospace; letter-spacing: .5px; }
 #deskTimer .dt-main em { font-size: 13px; font-weight: 400; font-style: normal; opacity: .65; letter-spacing: .5px; }
 #deskTimer .dt-sub { font: 13px ui-monospace, Consolas, monospace; color: #7fc6a6; opacity: .85; letter-spacing: .5px; }
+#deskTimer.break { color: #ffd08a; border-color: #6a5326; background: rgba(46,32,10,0.72); animation: deskBreathe 1.7s ease-in-out infinite; }
+#deskTimer.break .dt-sub { color: #e7b06e; }
+@keyframes deskBreathe { 0%, 100% { opacity: .95; } 50% { opacity: .5; } }
 
 /* "what the camera sees" — privacy preview, mirrored, with the detection box */
 #camPreview { position: absolute; left: 12px; bottom: 12px; width: 160px; height: 120px;
