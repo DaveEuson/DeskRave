@@ -149,12 +149,11 @@ export class Controls {
         <button class="cv-auto ${this.p.auto ? "on" : ""}" data-act="auto">🤖 AUTO</button>
         <div class="cv-seg">${(["chill", "groove", "rave"] as VibeName[]).map((v) => `<button data-vibe="${v}" class="${this.p.vibe === v ? "on" : ""}">${v}</button>`).join("")}</div>
       </div>
-      <div class="cv-row cv-listhead"><span class="cv-label">Stations & files</span><button class="cv-add" data-act="add">＋ Add</button></div>
-      <div class="cv-list">${this.tracks.map((t, i) => `
-        <button class="cv-track ${i === this.currentIndex ? "on" : ""}" data-i="${i}">
-          <span class="cv-k">${t.local ? "♪" : "📻"}</span>
-          <span class="cv-meta"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span>
-        </button>`).join("")}</div>`;
+      <div class="cv-row cv-listhead"><span class="cv-label">Stations &amp; files — bonus for ${esc(VENUES[this.p.venue].name)} on top</span><button class="cv-add" data-act="add">＋ Add</button></div>
+      <div class="cv-list">${this.tracks
+        .map((t, i) => ({ t, i }))
+        .sort((a, b) => (b.t.station ? genreMult(this.p.venue, b.t.genre ?? null).mult : 1) - (a.t.station ? genreMult(this.p.venue, a.t.genre ?? null).mult : 1))
+        .map(({ t, i }) => this.trackRow(t, i)).join("")}</div>`;
     $(this.sheetBody, ".cv-vol").oninput = (e) => this.cb.onVolume(Number((e.target as HTMLInputElement).value) / 100);
     $(this.sheetBody, '[data-act="prev"]').onclick = () => this.cb.onPrev();
     $(this.sheetBody, '[data-act="next"]').onclick = () => this.cb.onNext();
@@ -165,9 +164,22 @@ export class Controls {
     this.sheetBody.querySelectorAll<HTMLButtonElement>(".cv-track").forEach((b) => (b.onclick = () => this.cb.onSelectTrack(Number(b.dataset.i))));
   }
 
+  // one station/file row: genre chip + a ×bonus badge when it pays off at the venue
+  private trackRow(t: Track, i: number): string {
+    const gm = t.station ? genreMult(this.p.venue, t.genre ?? null) : { mult: 1, kind: null as null | "native" | "daily" };
+    const badge = gm.kind === "daily" ? `<span class="cv-btag hot">×3</span>` : gm.kind === "native" ? `<span class="cv-btag">×1.5</span>` : "";
+    const chip = t.station && t.genre ? `<span class="cv-genre" style="--c:hsl(${t.hue},70%,55%)">${esc(t.genre)}</span>` : "";
+    return `<button class="cv-track ${i === this.currentIndex ? "on" : ""} ${gm.kind ?? ""}" data-i="${i}">
+        <span class="cv-k">${t.local ? "♪" : "📻"}</span>
+        <span class="cv-meta"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span>
+        ${chip}${badge}
+      </button>`;
+  }
+
   private renderDJ(): void {
     const need = minutesForLevel(this.p.level);
     const venue = VENUES[this.p.venue];
+    const unlockedVenues = VENUE_ORDER.filter((id) => this.p.unlocks.includes(id));
     const jacketHues = [...JACKET_HUES, ...PRIZES.filter((p) => p.kind === "jacket" && this.p.unlocks.includes(p.id)).map((p) => p.hue)];
     const palettes = [...PALETTES, ...PRIZES.filter((p) => p.kind === "palette" && this.p.unlocks.includes(p.id)).map((p) => ({ name: p.name, hue: p.hue }))];
     this.sheetBody.innerHTML = `
@@ -193,12 +205,10 @@ export class Controls {
       <div class="cv-swatches">${jacketHues.map((h) => `<button data-jh="${h}" style="--c:hsl(${h},65%,55%)" class="${this.p.jacketHue === h ? "on" : ""}"></button>`).join("")}</div>
       <span class="cv-label">Club lights</span>
       <div class="cv-swatches">${palettes.map((p) => `<button data-hue="${p.hue}" style="--c:hsl(${p.hue},80%,55%)" class="${this.p.palette === p.hue ? "on" : ""}" title="${esc(p.name)}"></button>`).join("")}</div>
-      <span class="cv-label">Venue (${this.p.unlocks.filter((u) => u in VENUES).length}/${VENUE_ORDER.length} · buy more in 🛒 Store)</span>
-      <div class="cv-pills">${VENUE_ORDER.map((id) => {
+      <span class="cv-label">Venue · ${unlockedVenues.length}/${VENUE_ORDER.length} owned (buy more in 🛒 Store)</span>
+      <div class="cv-pills">${unlockedVenues.map((id) => {
         const m = VENUES[id];
-        const locked = !this.p.unlocks.includes(id);
-        const tag = locked ? ` 🔒 ◈${m.price}` : (m.ported ? "" : " · soon");
-        return `<button data-venue="${id}" class="${this.p.venue === id ? "on" : ""} ${locked ? "locked" : ""}" ${locked ? "disabled" : ""}>${m.name}${tag}</button>`;
+        return `<button data-venue="${id}" class="${this.p.venue === id ? "on" : ""}" title="plays best with ${esc(m.genre)}">${esc(m.name)} <i class="cv-vg">${esc(m.genre)}</i></button>`;
       }).join("")}</div>`;
     const name = $<HTMLInputElement>(this.sheetBody, ".cv-name");
     name.oninput = () => this.cb.onName(name.value);
@@ -221,6 +231,7 @@ export class Controls {
       const m = VENUES[id], afford = this.p.cred >= m.price;
       return `<button class="cv-buy ${afford ? "" : "cant"}" data-buy-venue="${id}">
         <span class="cv-buy-name">${esc(m.name)}${m.ported ? "" : " · soon"}</span>
+        <i class="cv-vg">${esc(m.genre)}</i>
         <span class="cv-buy-price">◈ ${m.price}</span></button>`;
     };
     const prizeCard = (p: (typeof PRIZES)[number]) => {

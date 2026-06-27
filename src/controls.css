@@ -67,7 +67,7 @@
   background: #170f28; border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; cursor: pointer; }
 .cv-track.on { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan); }
 .cv-k { font-size: 16px; }
-.cv-meta { display: flex; flex-direction: column; min-width: 0; }
+.cv-meta { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .cv-meta b { color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cv-meta small { color: #8a7fae; font-size: 12px; }
 
@@ -107,6 +107,14 @@
 .cv-bonus.native .cv-bonus-now { color: #9fe0c0; }
 .cv-bonus.daily { border-color: var(--mag); box-shadow: 0 0 14px -4px var(--mag); }
 .cv-bonus.daily .cv-bonus-now { color: #ff9ad0; font-weight: bold; }
+
+/* station genre chip + ×bonus badge + venue genre tag */
+.cv-genre { font-size: 9px; text-transform: uppercase; letter-spacing: .5px; color: #1a1326; background: var(--c); border-radius: 5px; padding: 2px 6px; flex: 0 0 auto; align-self: center; }
+.cv-btag { font-family: "Press Start 2P", monospace; font-size: 8px; color: #ffd86a; flex: 0 0 auto; align-self: center; }
+.cv-btag.hot { color: #ff7ad0; }
+.cv-track.native { border-color: #3a6a4a; }
+.cv-track.daily { border-color: var(--mag); box-shadow: 0 0 10px -4px var(--mag); }
+.cv-vg { font-style: normal; font-size: 9px; text-transform: uppercase; letter-spacing: .5px; color: #9a8fc0; opacity: .85; }
 .cv-name { width: 100%; background: #160e26; border: 1px solid var(--line); border-radius: 10px; padding: 12px; color: #fff; font-family: "Press Start 2P", monospace; font-size: 12px; }
 .cv-pills { display: flex; flex-wrap: wrap; gap: 7px; }
 .cv-pills button { min-height: 40px; background: #170f28; border: 1px solid var(--line); color: #e7e0f5; padding: 8px 12px; border-radius: 12px; cursor: pointer; font-size: 13px; }
