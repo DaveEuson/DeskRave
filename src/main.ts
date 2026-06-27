@@ -6,7 +6,7 @@ import { Classifier } from "./classifier";
 import { Controls } from "./controls";
 import { loadProfile, loadProfileSync, saveProfile, dayKey, deskTotals, type Profile } from "./profile";
 import { accrue, unlockLabel } from "./xp";
-import { BALANCE, CRED_PER_MIN, PRIZES, VENUES, VIBES, type AvatarId, type VenueId, type VibeName } from "./config";
+import { BALANCE, CRED_PER_MIN, PRIZES, VENUES, VIBES, genreMult, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, uploadFile } from "./library";
 import { Presence } from "./presence";
 
@@ -348,11 +348,17 @@ function fmtDuration(ms: number): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
 }
+// genre of the currently-playing station (null for local files / nothing playing)
+function currentGenre(): Genre | null {
+  return audio.playing && audio.current?.station ? (audio.current.genre ?? null) : null;
+}
+let lastBonusKind: "daily" | "native" | null = null;
 function flushDesk(): void {
   if (deskAddMs <= 0) return;
   const k = dayKey();
   profile.deskLog[k] = (profile.deskLog[k] ?? 0) + deskAddMs / 1000;
-  profile.cred += (deskAddMs / 60000) * CRED_PER_MIN * balanceMult; // earn Cred (scaled by balance)
+  const mult = genreMult(profile.venue, currentGenre()).mult; // venue×genre bonus
+  profile.cred += (deskAddMs / 60000) * CRED_PER_MIN * balanceMult * mult;
   deskAddMs = 0;
 }
 // flush + save the tail when the page is hidden/closed so the day total survives
@@ -361,6 +367,9 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) { flu
 setInterval(() => {
   scene.setState({ venue: currentVenue() }); // keep the scene synced (honours ?venue=)
   flushDesk();
+  const gm = genreMult(profile.venue, currentGenre()); // celebrate when a bonus starts
+  if (gm.kind && gm.kind !== lastBonusKind) toast(gm.kind === "daily" ? `🎯 TODAY'S BONUS! ×${gm.mult} Cred` : `🔥 Genre match · ×${gm.mult} Cred`);
+  lastBonusKind = gm.kind;
   controls.setCred(profile.cred); // live balance while it ticks up at the desk
   if (++persistTick >= 20) { persistTick = 0; persist(); } // checkpoint the log ~every 20s
   const todayMs = deskTotals(profile).today * 1000;

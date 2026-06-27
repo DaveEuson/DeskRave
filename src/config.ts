@@ -275,19 +275,60 @@ export const CC_STATION = {
 // Streamed through a same-origin proxy (/api/radio) so the AnalyserNode can read
 // them regardless of each station's CORS headers. SomaFM is listener-supported
 // and freely streamable — credited in the HUD.
+// Each station carries a Genre so it can be matched against a venue's affinity
+// (and the daily bonus pairing) for the Cred multiplier.
 export interface Station {
   name: string;
-  genre: string;
+  genre: Genre;
   stream: string;
   hue: number;
 }
+const soma = (id: string): string => `https://ice1.somafm.com/${id}-128-mp3`;
 export const STATIONS: Station[] = [
-  { name: "Groove Salad", genre: "downtempo", stream: "https://ice1.somafm.com/groovesalad-128-mp3", hue: 150 },
-  { name: "Beat Blender", genre: "deep house", stream: "https://ice1.somafm.com/beatblender-128-mp3", hue: 288 },
-  { name: "DEF CON Radio", genre: "electronic", stream: "https://ice1.somafm.com/defcon-128-mp3", hue: 190 },
-  { name: "The Trip", genre: "prog house", stream: "https://ice1.somafm.com/thetrip-128-mp3", hue: 262 },
+  { name: "Fluid", genre: "lofi", stream: soma("fluid"), hue: 280 },
+  { name: "Groove Salad", genre: "chill", stream: soma("groovesalad"), hue: 150 },
+  { name: "Lush", genre: "downtempo", stream: soma("lush"), hue: 175 },
+  { name: "Beat Blender", genre: "house", stream: soma("beatblender"), hue: 288 },
+  { name: "DEF CON Radio", genre: "techno", stream: soma("defcon"), hue: 190 },
+  { name: "Dub Step Beyond", genre: "dnb", stream: soma("dubstep"), hue: 200 },
+  { name: "Drone Zone", genre: "ambient", stream: soma("dronezone"), hue: 210 },
+  { name: "Metal", genre: "metal", stream: soma("metal"), hue: 0 },
+  { name: "BAGeL Radio", genre: "rock", stream: soma("bagel"), hue: 14 },
+  { name: "Indie Pop Rocks!", genre: "pop", stream: soma("indiepop"), hue: 330 },
+  { name: "Seven Inch Soul", genre: "funk", stream: soma("7soul"), hue: 40 },
+  { name: "Sonic Universe", genre: "jazz", stream: soma("sonicuniverse"), hue: 48 },
+  { name: "Boot Liquor", genre: "country", stream: soma("bootliquor"), hue: 30 },
+  { name: "Suburbs of Goa", genre: "world", stream: soma("suburbsofgoa"), hue: 128 },
+  { name: "Underground 80s", genre: "synthwave", stream: soma("u80s"), hue: 312 },
 ];
 
 export const radioUrl = (stream: string): string => `/api/radio?url=${encodeURIComponent(stream)}`;
+
+// ── venue × genre Cred multiplier ────────────────────────────────────────────
+// Play music whose genre matches the venue and you earn faster. A native match
+// (station genre == the venue's affinity) gives MATCH_MULT; hitting today's
+// rotating bonus pairing (a random genre at a random place, same for everyone
+// that day) gives the bigger DAILY_MULT.
+export const MATCH_MULT = 1.5;
+export const DAILY_MULT = 3;
+
+// Today's bonus pairing — deterministic per UTC day so it's stable all day and
+// rotates each day. Random-feeling genre × place via a cheap hash of the day.
+export function dailyBonus(date = new Date()): { genre: Genre; venue: VenueId } {
+  const day = Math.floor(date.getTime() / 86400000);
+  const genres = [...new Set(STATIONS.map((s) => s.genre))];
+  const hash = (n: number) => ((Math.sin(n) * 43758.5453) % 1 + 1) % 1; // 0..1
+  const g = genres[Math.floor(hash(day * 2.17) * genres.length)];
+  const v = VENUE_ORDER[Math.floor(hash(day * 7.31 + 11) * VENUE_ORDER.length)];
+  return { genre: g, venue: v };
+}
+
+export function genreMult(venue: VenueId, stationGenre: Genre | null, date = new Date()): { mult: number; kind: "daily" | "native" | null } {
+  if (!stationGenre) return { mult: 1, kind: null };
+  const daily = dailyBonus(date);
+  if (stationGenre === daily.genre && venue === daily.venue) return { mult: DAILY_MULT, kind: "daily" };
+  if (stationGenre === VENUES[venue].genre) return { mult: MATCH_MULT, kind: "native" };
+  return { mult: 1, kind: null };
+}
 
 export const ACCEPTED_AUDIO = /\.(mp3|wav|wave|aif|aiff|aifc|flac|m4a|mp4|aac|ogg|oga|opus)$/i;

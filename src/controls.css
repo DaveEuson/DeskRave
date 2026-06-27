@@ -97,6 +97,16 @@
 .cv-buy.cant .cv-buy-price { color: #9a7fb0; }
 .cv-buy-sw { width: 14px; height: 14px; border-radius: 4px; background: var(--c); border: 1px solid rgba(255, 255, 255, .25); flex: 0 0 auto; }
 .cv-allset { color: #9fe0c0; text-align: center; padding: 14px; font-size: 13px; }
+
+/* genre×venue bonus banner */
+.cv-bonus { display: flex; flex-direction: column; gap: 3px; background: #170f28; border: 1px solid var(--line); border-radius: 12px; padding: 9px 13px; }
+.cv-bonus-today { font-size: 12px; color: #cdbff0; }
+.cv-bonus-today b { color: #ffd86a; }
+.cv-bonus-now { font-size: 11px; color: #8a7fae; }
+.cv-bonus.native { border-color: #3a6a4a; }
+.cv-bonus.native .cv-bonus-now { color: #9fe0c0; }
+.cv-bonus.daily { border-color: var(--mag); box-shadow: 0 0 14px -4px var(--mag); }
+.cv-bonus.daily .cv-bonus-now { color: #ff9ad0; font-weight: bold; }
 .cv-name { width: 100%; background: #160e26; border: 1px solid var(--line); border-radius: 10px; padding: 12px; color: #fff; font-family: "Press Start 2P", monospace; font-size: 12px; }
 .cv-pills { display: flex; flex-wrap: wrap; gap: 7px; }
 .cv-pills button { min-height: 40px; background: #170f28; border: 1px solid var(--line); color: #e7e0f5; padding: 8px 12px; border-radius: 12px; cursor: pointer; font-size: 13px; }
