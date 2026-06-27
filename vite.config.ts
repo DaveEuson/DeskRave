@@ -78,6 +78,25 @@ function lanUrl(port: number): string {
   return `http://localhost:${port}`;
 }
 
+// Hosts the radio proxy will relay: the curated stations + any host the user has
+// saved as a custom station (read back from the profile store). Keeps it from
+// being a fully open proxy — only stations someone actually added are allowed.
+const STATIC_RADIO_HOSTS = /(^|\.)(somafm\.com|plaza\.one)$/i;
+async function isAllowedRadioHost(host: string): Promise<boolean> {
+  if (STATIC_RADIO_HOSTS.test(host)) return true;
+  try {
+    const all = await loadProfiles();
+    for (const p of Object.values(all)) {
+      const cs = (p as { customStations?: { stream?: string }[] }).customStations;
+      if (!Array.isArray(cs)) continue;
+      for (const st of cs) {
+        try { if (st.stream && new URL(st.stream).hostname === host) return true; } catch { /* bad url */ }
+      }
+    }
+  } catch { /* no profiles yet */ }
+  return false;
+}
+
 // Tiny kiosk file subsystem: upload audio to disk, list it, report the LAN URL.
 // Files land in public/media so Vite serves them same-origin at /media/<name>
 // (which the AnalyserNode can read without any CORS dance).
@@ -175,7 +194,7 @@ const mediaApi = (port: number): Connect.NextHandleFunction => {
       const target = new URL(url, "http://x").searchParams.get("url") || "";
       let host = "";
       try { host = new URL(target).hostname; } catch { /* invalid url */ }
-      if (!/(^|\.)somafm\.com$/i.test(host)) {
+      if (!(await isAllowedRadioHost(host))) {
         res.statusCode = 400;
         return res.end("station not allowed");
       }

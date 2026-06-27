@@ -112,7 +112,7 @@ export function defaultProfile(): Profile {
     vibe: "groove",
     auto: true,
     palette: 288,
-    unlocks: ["soundcheck", "cafe", "park", "club", "beanie", "snapback"],
+    unlocks: ["cafe", "park", "club", "beanie", "snapback"],
     cred: 0,
     peakCrowd: 0,
     history: [],

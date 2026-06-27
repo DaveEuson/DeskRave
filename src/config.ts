@@ -10,11 +10,10 @@ export type AvatarId = "beanie" | "snapback" | "visor" | "afro";
 export type SkyId = "night-warm" | "indoor-dim" | "club-dark";
 export type RigId = "string" | "bars" | "truss";
 
-// Music genres used for venue affinity + the daily venue×genre multiplier.
+// Dance/electronic genres only — used for venue affinity + the daily multiplier.
 export type Genre =
-  | "lofi" | "chill" | "downtempo" | "house" | "techno" | "dnb" | "hardcore"
-  | "ambient" | "metal" | "rock" | "pop" | "funk" | "jazz" | "country"
-  | "world" | "synthwave" | "hiphop";
+  | "lofi" | "chill" | "downtempo" | "house" | "techno" | "trance" | "dnb"
+  | "ambient" | "synthwave";
 
 // The venue collection (the 39 Cozy DJ scenes + our signature neon Club).
 // Venue = the place you unlock/pick; the real clock applies a day/night grade.
@@ -67,37 +66,37 @@ export interface VenueMeta {
   ported?: boolean;
 }
 export const VENUES: Record<VenueId, VenueMeta> = {
-  // free starters (the early career + the everyday work spots + signature club)
-  soundcheck: { id: "soundcheck", name: "Soundcheck", label: "🎚 SOUNDCHECK", accent: "#7ad6b0", genre: "rock", price: 0, crowd: true, ported: true },
+  // free starters: café / park / club (the day→night trio). everything else costs Cred
+  soundcheck: { id: "soundcheck", name: "Soundcheck", label: "🎚 SOUNDCHECK", accent: "#7ad6b0", genre: "house", price: 40, crowd: true, ported: true },
   cafe: { id: "cafe", name: "Morning Café", label: "☕ MORNING CAFÉ", accent: "#f6b352", genre: "lofi", price: 0, ported: true },
   park: { id: "park", name: "Afternoon Park", label: "🌳 AFTERNOON PARK", accent: "#7fd06a", genre: "chill", price: 0, crowd: true, ported: true },
   club: { id: "club", name: "Neon Club", label: "● LIVE TONIGHT ●", accent: "#d24fe0", genre: "techno", price: 0, dark: true, crowd: true, ported: true },
   // everyday spots
-  bedroom: { id: "bedroom", name: "BFF's Bedroom", label: "BEST FRIENDS", accent: "#a98cff", genre: "pop", price: 60, crowd: true, ported: true },
-  diner: { id: "diner", name: "Night Owl Diner", label: "THE NIGHT OWL", accent: "#ff5e8a", genre: "rock", price: 60, crowd: true, ported: true },
-  recordshop: { id: "recordshop", name: "Record Shop", label: "CRATE DIGGING", accent: "#e8a23c", genre: "funk", price: 60, ported: true },
-  car: { id: "car", name: "In Your Car", label: "WINDOWS DOWN", accent: "#ff5e8a", genre: "hiphop", price: 60, ported: true },
+  bedroom: { id: "bedroom", name: "BFF's Bedroom", label: "BEST FRIENDS", accent: "#a98cff", genre: "lofi", price: 60, crowd: true, ported: true },
+  diner: { id: "diner", name: "Night Owl Diner", label: "THE NIGHT OWL", accent: "#ff5e8a", genre: "synthwave", price: 60, crowd: true, ported: true },
+  recordshop: { id: "recordshop", name: "Record Shop", label: "CRATE DIGGING", accent: "#e8a23c", genre: "house", price: 60, ported: true },
+  car: { id: "car", name: "In Your Car", label: "WINDOWS DOWN", accent: "#ff5e8a", genre: "synthwave", price: 60, ported: true },
   studio: { id: "studio", name: "After Hours Studio", label: "AFTER HOURS", accent: "#8a8cff", genre: "lofi", price: 80, dark: true, ported: true },
   openhero: { id: "openhero", name: "Opening for Your Hero", label: "WARM-UP SLOT", accent: "#ffd24a", genre: "house", price: 90, crowd: true, ported: true },
   // bigger rooms + outdoors
   rooftop: { id: "rooftop", name: "Rooftop", label: "GOLDEN HOUR", accent: "#ff9e5e", genre: "house", price: 120, crowd: true, ported: true },
   beach: { id: "beach", name: "Sunset Shore", label: "SUNSET SHORE", accent: "#ffb27a", genre: "chill", price: 120, crowd: true, ported: true },
-  houseparty: { id: "houseparty", name: "House Party", label: "HOUSE PARTY", accent: "#ffb84a", genre: "pop", price: 120, crowd: true, ported: true },
+  houseparty: { id: "houseparty", name: "House Party", label: "HOUSE PARTY", accent: "#ffb84a", genre: "house", price: 120, crowd: true, ported: true },
   radio: { id: "radio", name: "Radio Booth", label: "ON AIR", accent: "#ff6a5e", genre: "downtempo", price: 120, dark: true, ported: true },
   arcade: { id: "arcade", name: "Barcade", label: "INSERT COIN", accent: "#62e0ff", genre: "synthwave", price: 140, dark: true, crowd: true, ported: true },
-  laundromat: { id: "laundromat", name: "Laundromat", label: "SPIN CYCLE", accent: "#5fd0e0", genre: "hardcore", price: 140, dark: true, crowd: true, ported: true },
+  laundromat: { id: "laundromat", name: "Laundromat", label: "SPIN CYCLE", accent: "#5fd0e0", genre: "techno", price: 140, dark: true, crowd: true, ported: true },
   subway: { id: "subway", name: "Subway Platform", label: "LAST TRAIN", accent: "#5fd0c8", genre: "lofi", price: 140, dark: true, crowd: true, ported: true },
-  tavern: { id: "tavern", name: "Medieval Tavern", label: "YE OLDE DROP", accent: "#ffae4a", genre: "world", price: 160, crowd: true, ported: true },
+  tavern: { id: "tavern", name: "Medieval Tavern", label: "YE OLDE DROP", accent: "#ffae4a", genre: "trance", price: 160, crowd: true, ported: true },
   // shows + novelty
-  prom: { id: "prom", name: "School Prom", label: "PROM NIGHT", accent: "#9a8cff", genre: "pop", price: 200, dark: true, crowd: true, ported: true },
-  wedding: { id: "wedding", name: "The Reception", label: "THE RECEPTION", accent: "#ff9ec4", genre: "pop", price: 200, crowd: true, ported: true },
+  prom: { id: "prom", name: "School Prom", label: "PROM NIGHT", accent: "#9a8cff", genre: "house", price: 200, dark: true, crowd: true, ported: true },
+  wedding: { id: "wedding", name: "The Reception", label: "THE RECEPTION", accent: "#ff9ec4", genre: "house", price: 200, crowd: true, ported: true },
   silent: { id: "silent", name: "Silent Disco", label: "SILENT DISCO", accent: "#4ce0c0", genre: "house", price: 200, dark: true, crowd: true, ported: true },
-  rink: { id: "rink", name: "Roller Rink", label: "ROLLER DISCO", accent: "#ff5fae", genre: "funk", price: 200, dark: true, crowd: true, ported: true },
+  rink: { id: "rink", name: "Roller Rink", label: "ROLLER DISCO", accent: "#ff5fae", genre: "synthwave", price: 200, dark: true, crowd: true, ported: true },
   skilodge: { id: "skilodge", name: "Ski Lodge", label: "APRÈS-SKI", accent: "#9ed2ff", genre: "house", price: 220, crowd: true, ported: true },
   boat: { id: "boat", name: "Sunset Cruise", label: "ON DECK", accent: "#ff8f6a", genre: "chill", price: 220, crowd: true, ported: true },
-  forest: { id: "forest", name: "Forest Rave", label: "DEEP WOODS", accent: "#7fe04a", genre: "techno", price: 240, crowd: true, ported: true },
+  forest: { id: "forest", name: "Forest Rave", label: "DEEP WOODS", accent: "#7fe04a", genre: "trance", price: 240, crowd: true, ported: true },
   underbridge: { id: "underbridge", name: "Under the Bridge", label: "OVERPASS", accent: "#5fe0c0", genre: "dnb", price: 240, dark: true, crowd: true, ported: true },
-  bakersfield: { id: "bakersfield", name: "Bakersfield Rave", label: "DESERT BASS", accent: "#ffc23c", genre: "country", price: 240, crowd: true, ported: true },
+  bakersfield: { id: "bakersfield", name: "Bakersfield Rave", label: "DESERT BASS", accent: "#ffc23c", genre: "techno", price: 240, crowd: true, ported: true },
   bigroom: { id: "bigroom", name: "Early Doors", label: "THE BIG ROOM", accent: "#6fd0e0", genre: "techno", price: 260, dark: true, crowd: true, ported: true },
   // big stages + spectacle
   warehouse: { id: "warehouse", name: "Warehouse", label: "WAREHOUSE", accent: "#d24fe0", genre: "techno", price: 320, dark: true, crowd: true, ported: true },
@@ -105,12 +104,12 @@ export const VENUES: Record<VenueId, VenueMeta> = {
   balloon: { id: "balloon", name: "Hot Air Balloon", label: "ABOVE IT ALL", accent: "#ff8f4a", genre: "ambient", price: 320, ported: true },
   airport: { id: "airport", name: "Departures Lounge", label: "GATE 13", accent: "#7fb0e8", genre: "ambient", price: 320, crowd: true, ported: true },
   aquarium: { id: "aquarium", name: "Aquarium", label: "DEEP CUTS", accent: "#4ec0ff", genre: "ambient", price: 320, dark: true, crowd: true, ported: true },
-  dmv: { id: "dmv", name: "The DMV", label: "NOW SERVING", accent: "#9bd14a", genre: "jazz", price: 280, dark: true, crowd: true, ported: true },
+  dmv: { id: "dmv", name: "The DMV", label: "NOW SERVING", accent: "#9bd14a", genre: "downtempo", price: 280, dark: true, crowd: true, ported: true },
   // destination / legendary
   space: { id: "space", name: "Space Station", label: "ZERO-G", accent: "#b08cff", genre: "ambient", price: 500, dark: true, crowd: true, ported: true },
-  whitehouse: { id: "whitehouse", name: "The White House", label: "HAIL TO THE BEAT", accent: "#6f9fe0", genre: "funk", price: 500, crowd: true, ported: true },
-  japan: { id: "japan", name: "Sakura Festival", label: "SAKURA SET", accent: "#ff9ec4", genre: "world", price: 460, crowd: true, ported: true },
-  india: { id: "india", name: "Holi House", label: "HOLI HOUSE", accent: "#ff9e3c", genre: "world", price: 460, crowd: true, ported: true },
+  whitehouse: { id: "whitehouse", name: "The White House", label: "HAIL TO THE BEAT", accent: "#6f9fe0", genre: "house", price: 500, crowd: true, ported: true },
+  japan: { id: "japan", name: "Sakura Festival", label: "SAKURA SET", accent: "#ff9ec4", genre: "chill", price: 460, crowd: true, ported: true },
+  india: { id: "india", name: "Holi House", label: "HOLI HOUSE", accent: "#ff9e3c", genre: "trance", price: 460, crowd: true, ported: true },
   heaven: { id: "heaven", name: "Heaven", label: "PEARLY GATES", accent: "#ffe9a0", genre: "ambient", price: 600, dark: true, crowd: true, ported: true },
   headliner: { id: "headliner", name: "Headliner", label: "TOP OF THE BILL", accent: "#ff4ea0", genre: "techno", price: 600, dark: true, crowd: true, ported: true },
 };
@@ -129,8 +128,8 @@ export const VENUE_ORDER: VenueId[] = [
 export interface ClubLook { crowdScale: number; sky: SkyId; rig: RigId; beams: number; speakers: boolean; }
 export const CLUB_LOOK: ClubLook = { crowdScale: 1.0, sky: "club-dark", rig: "truss", beams: 5, speakers: true };
 
-// Venues unlocked for free at the start (everything else costs Cred).
-export const STARTER_VENUES: VenueId[] = ["soundcheck", "cafe", "park", "club"];
+// The first 3 venues are free (café morning → park afternoon → club night).
+export const STARTER_VENUES: VenueId[] = ["cafe", "park", "club"];
 
 // ── Cred economy ──────────────────────────────────────────────────────────────
 // Cred is earned while you're at the desk (camera sees you OR music is playing)
@@ -284,22 +283,19 @@ export interface Station {
   hue: number;
 }
 const soma = (id: string): string => `https://ice1.somafm.com/${id}-128-mp3`;
+// Dance/electronic stations only — every dance Genre has at least one here.
 export const STATIONS: Station[] = [
   { name: "Fluid", genre: "lofi", stream: soma("fluid"), hue: 280 },
   { name: "Groove Salad", genre: "chill", stream: soma("groovesalad"), hue: 150 },
   { name: "Lush", genre: "downtempo", stream: soma("lush"), hue: 175 },
   { name: "Beat Blender", genre: "house", stream: soma("beatblender"), hue: 288 },
+  { name: "The Trip", genre: "trance", stream: soma("thetrip"), hue: 262 },
   { name: "DEF CON Radio", genre: "techno", stream: soma("defcon"), hue: 190 },
+  { name: "Suburbs of Goa", genre: "trance", stream: soma("suburbsofgoa"), hue: 128 },
   { name: "Dub Step Beyond", genre: "dnb", stream: soma("dubstep"), hue: 200 },
   { name: "Drone Zone", genre: "ambient", stream: soma("dronezone"), hue: 210 },
-  { name: "Metal", genre: "metal", stream: soma("metal"), hue: 0 },
-  { name: "BAGeL Radio", genre: "rock", stream: soma("bagel"), hue: 14 },
-  { name: "Indie Pop Rocks!", genre: "pop", stream: soma("indiepop"), hue: 330 },
-  { name: "Seven Inch Soul", genre: "funk", stream: soma("7soul"), hue: 40 },
-  { name: "Sonic Universe", genre: "jazz", stream: soma("sonicuniverse"), hue: 48 },
-  { name: "Boot Liquor", genre: "country", stream: soma("bootliquor"), hue: 30 },
-  { name: "Suburbs of Goa", genre: "world", stream: soma("suburbsofgoa"), hue: 128 },
   { name: "Underground 80s", genre: "synthwave", stream: soma("u80s"), hue: 312 },
+  { name: "Nightwave Plaza", genre: "synthwave", stream: "https://radio.plaza.one/mp3", hue: 318 },
 ];
 
 export const radioUrl = (stream: string): string => `/api/radio?url=${encodeURIComponent(stream)}`;
