@@ -39,10 +39,10 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 
 /* quick venue switcher (top-left) */
 #venueNav { position: absolute; top: 12px; left: 12px; z-index: 12; display: flex; align-items: center; gap: 6px;
-  background: rgba(10,8,20,.62); border: 1px solid #2a2440; border-radius: 999px; padding: 4px 6px;
-  font: 12px ui-monospace, Consolas, monospace; color: #cdbff0; }
-#venueNav button { width: 28px; height: 28px; border-radius: 999px; border: 1px solid #34294f; background: rgba(124,58,237,.18);
-  color: #cdbff0; cursor: pointer; font-size: 12px; line-height: 1; padding: 0; flex: 0 0 auto; }
+  background: rgba(10,8,20,.7); border: 1px solid #2a2440; border-radius: 999px; padding: 5px 7px;
+  font: 14px ui-monospace, Consolas, monospace; color: #e2d8f6; }
+#venueNav button { width: 30px; height: 30px; border-radius: 999px; border: 1px solid #34294f; background: rgba(124,58,237,.22);
+  color: #e2d8f6; cursor: pointer; font-size: 13px; line-height: 1; padding: 0; flex: 0 0 auto; }
 #venueNav button:hover { background: rgba(124,58,237,.36); color: #fff; }
 #venueName { min-width: 70px; max-width: 150px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -121,9 +121,9 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
   /* the venue pill owns the top-left row — drop the desk timer just below it
      (still centred) so the two never overlap on a narrow phone */
   #deskTimer { top: 46px; }
-  #venueNav { top: 8px; left: 8px; padding: 3px 5px; gap: 4px; }
-  #venueNav button { width: 24px; height: 24px; }
-  #venueName { max-width: 70px; font-size: 11px; }
+  #venueNav { top: 8px; left: 8px; padding: 4px 6px; gap: 4px; }
+  #venueNav button { width: 28px; height: 28px; }
+  #venueName { max-width: 84px; font-size: 13px; }
 }
 
 /* short screens: shrink the fader and timer so they don't overrun the viewport */

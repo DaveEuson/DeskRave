@@ -7,7 +7,7 @@ import { Controls } from "./controls";
 import { loadProfile, loadProfileSync, saveProfile, dayKey, deskTotals, type Profile } from "./profile";
 import { trackFromStation } from "./tracks";
 import { accrue, unlockLabel } from "./xp";
-import { BALANCE, CRED_PER_MIN, FANS, GENRE_HUE, PRIZES, VENUES, VENUE_ORDER, VIBES, genreMult, radioUrl, timeMult, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
+import { BALANCE, GENRE_HUE, PRIZES, REWARDS, VENUES, VENUE_ORDER, VIBES, radioUrl, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, uploadFile } from "./library";
 import { Presence } from "./presence";
 import { showOnboarding } from "./onboarding";
@@ -23,6 +23,8 @@ let profile: Profile = loadProfileSync(); // instant boot from the mirror
 // venue drives the scene; the real clock only grades it (day/night). ?venue= forces one for testing
 const forcedVenue = new URLSearchParams(location.search).get("venue") as VenueId | null;
 const currentVenue = (): VenueId => (forcedVenue && forcedVenue in VENUES ? forcedVenue : profile.venue);
+// Zen (calm) mode: hide the score/economy layer + drop all penalties. Default on.
+const zen = (): boolean => profile.settings.zen;
 
 // ?weather=rain|snow|haze|clear forces the atmosphere (testing / manual)
 type WeatherKind = "clear" | "rain" | "snow" | "haze";
@@ -61,6 +63,7 @@ function syncScene(): void {
     clock24: profile.settings.clock24, live: audio.playing,
   });
   document.body.classList.toggle("no-scanlines", !profile.settings.scanlines);
+  document.body.classList.toggle("zen", zen()); // hides the dock cred/fans chip in CSS
 }
 
 // ── control surface (dock + sheet) ──────────────────────────────────────────
@@ -69,7 +72,7 @@ const controls = new Controls($("controls"), profile, {
   onPrev: () => void audio.prev(),
   onNext: () => void audio.next(),
   onMute: () => { audio.toggleMute(); controls.setTransport(audio.playing, audio.muted); },
-  onVolume: (v) => { audio.setVolume(v); updateFader(v); },
+  onVolume: (v) => applyVolume(v),
   onVibe: (v: VibeName) => { profile.vibe = v; profile.auto = false; persist(); controls.setProfile(profile); syncScene(); },
   onAuto: (on: boolean) => { profile.auto = on; persist(); controls.setProfile(profile); },
   onPalette: (hue) => { profile.palette = hue; persist(); controls.setProfile(profile); syncScene(); },
@@ -97,7 +100,7 @@ const controls = new Controls($("controls"), profile, {
     persist(); controls.setProfile(profile); syncScene();
     toast(`🎉 ${pz.name} unlocked!`);
   },
-  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); if ("camera" in patch) void setCamera(!!patch.camera); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); },
+  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); if ("zen" in patch) controls.setProfile(profile); if ("camera" in patch) void setCamera(!!patch.camera); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); },
   onSelectTrack: (i) => void audio.select(i),
   onAddFiles: () => fileInput.click(),
   onAddStation: (name: string, url: string, genre: Genre) => {
@@ -136,7 +139,10 @@ venueNext.onclick = () => cycleVenue(1);
 // ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
 let presenceDrives = false; // does presence control playback right now?
 let awayPauseTimer = 0;
-const AWAY_PAUSE_MS = 6000; // forgive a brief glance away before stopping the music
+// Forgive a long absence before stopping the music. Deep work means sitting still,
+// glancing at a second screen, or stepping away for a minute — none of that should
+// cut the audio. Only a real, sustained departure winds it down.
+const AWAY_PAUSE_MS = 60000;
 presence.onChange = (st) => {
   scene.setPresence(st.count);
   if (presenceDrives) {
@@ -294,15 +300,28 @@ function faderFromY(clientY: number): void {
   const r = volFader.getBoundingClientRect();
   const top = r.top + VF_TOP, bottom = r.bottom - VF_BOT;
   const v = Math.max(0, Math.min(1, 1 - (clientY - top) / (bottom - top)));
+  applyVolume(v);
+}
+// one place to set volume: drives the audio + both UI controls (fader & menu
+// slider) and remembers it in the profile (debounced so a drag isn't a save storm)
+let volSaveT = 0;
+function applyVolume(v: number): void {
   audio.setVolume(v);
   updateFader(v);
+  controls.setVolume(v);
+  profile.settings.volume = v;
+  clearTimeout(volSaveT);
+  volSaveT = window.setTimeout(persist, 400);
 }
 let faderDrag = false;
 volFader.addEventListener("pointerdown", (e) => { faderDrag = true; volFader.setPointerCapture(e.pointerId); faderFromY(e.clientY); });
 volFader.addEventListener("pointermove", (e) => { if (faderDrag) faderFromY(e.clientY); });
 volFader.addEventListener("pointerup", () => { faderDrag = false; });
 volFader.addEventListener("pointercancel", () => { faderDrag = false; });
-updateFader(0.8); // matches AudioStream's default volume
+// restore the remembered volume across the audio + both UI controls
+audio.setVolume(profile.settings.volume);
+updateFader(profile.settings.volume);
+controls.setVolume(profile.settings.volume);
 
 // ── persistence (debounced inside saveProfile) ──────────────────────────────
 function persist(): void { saveProfile(profile); }
@@ -346,35 +365,71 @@ let sessionMs = 0; // this session — resets on reload
 let deskAddMs = 0; // unflushed desk time, folded into the daily log each second
 let persistTick = 0;
 
-// ── balance / Pomodoro: a healthy focus block, then a break nudge + soft decay ─
-const FOCUS_MS = BALANCE.focusMin * 60000, BREAK_MS = BALANCE.breakMin * 60000;
-const DECAY_MS = BALANCE.decayMin * 60000, RENAG_MS = BALANCE.renagMin * 60000;
-let focusMs = 0; // continuous time at the desk this focus block
+// ── balance / Pomodoro: a healthy focus block, then a break nudge ─────────────
+// ?fast=1 shrinks the timings ~60× so the full focus→break→reward cycle can be
+// exercised in ~a minute (verification only; harmless without the param).
+const FAST = new URLSearchParams(location.search).has("fast") ? 1 / 60 : 1;
+const FOCUS_MS = BALANCE.focusMin * 60000 * FAST, BREAK_MS = BALANCE.breakMin * 60000 * FAST;
+const RENAG_MS = BALANCE.renagMin * 60000 * FAST;
+let focusMs = 0; // continuous desk time this focus block
 let awayMs = 0; // continuous time away (a real break resets the block)
-let breakDue = false; // focus block exceeded → the nudge is active
-let onBreak = false; // currently away long enough to count as a break
+let breakDue = false; // focus block complete → the break nudge is active
+let onBreak = false; // away long enough to count as a real break
 let lastNagMs = 0; // focusMs when we last re-nudged
-let balanceMult = 1; // Cred earn multiplier from the balance curve
-function nudgeBreak(): void {
-  toast(`🌿 Time for a break — you've focused ${Math.round(focusMs / 60000)} min`);
-  if (profile.settings.sound) audio.muffledKick(); // a soft "ding through the wall"
+
+// Reward the CYCLE, not presence: Cred lands only at the boundaries of a healthy
+// rhythm — finishing a focus block, and (worth more) taking the break — flat and
+// capped so the carrot ends. No per-minute accrual, no multipliers to min-max.
+function award(cred: number, fans: number, msg: string): void {
+  const today = dayKey();
+  if (profile.earnedDate !== today) { profile.earnedDate = today; profile.earnedToday = 0; }
+  const room = Math.max(0, REWARDS.dailyCap - profile.earnedToday);
+  const got = Math.min(cred, room);
+  profile.cred += got;
+  profile.earnedToday += got;
+  profile.fans += fans; // crowd grows as you build a practice; never decays
+  toast(room <= 0 ? "🌙 today's progress is banked — rest easy" : msg);
+  controls.setCred(profile.cred); controls.setFans(profile.fans);
+  persist();
 }
 function updateBalance(dt: number, here: boolean): void {
   if (here) {
     if (onBreak) { onBreak = false; toast("✨ Welcome back — refreshed!"); }
     focusMs += dt; awayMs = 0;
     if (focusMs >= FOCUS_MS) {
-      const over = focusMs - FOCUS_MS;
-      balanceMult = Math.max(BALANCE.decayFloor, 1 - (over / DECAY_MS) * (1 - BALANCE.decayFloor));
-      if (!breakDue) { breakDue = true; lastNagMs = focusMs; nudgeBreak(); }
-      else if (focusMs - lastNagMs >= RENAG_MS) { lastNagMs = focusMs; nudgeBreak(); }
+      if (!breakDue) {
+        breakDue = true; lastNagMs = focusMs;
+        award(REWARDS.focusBlock, REWARDS.focusFans, `🌿 Solid ${Math.round(FOCUS_MS / 60000 / FAST)}-min block — time for a break`);
+        if (profile.settings.sound) audio.muffledKick(); // soft "ding through the wall"
+      } else if (focusMs - lastNagMs >= RENAG_MS) {
+        lastNagMs = focusMs; toast("🌿 Still going — a break would do you good");
+        if (profile.settings.sound) audio.muffledKick();
+      }
     } else {
-      balanceMult = 1; breakDue = false;
+      breakDue = false;
     }
   } else {
     awayMs += dt;
-    if (awayMs >= BREAK_MS && focusMs > 0) { focusMs = 0; balanceMult = 1; breakDue = false; onBreak = true; }
+    if (awayMs >= BREAK_MS && focusMs > 0) {
+      const completedBlock = breakDue; // did a full focus block happen before this break?
+      focusMs = 0; breakDue = false; onBreak = true;
+      if (completedBlock) award(REWARDS.takeBreak, REWARDS.breakFans, "🌿 Break taken — good for you");
+    }
   }
+}
+// ?fast test hook: drive the focus/break state machine + snapshot/restore the
+// reward fields, so the full cycle (and the daily cap) can be verified in seconds
+// without a real 50-min block or a body in front of the camera. Only exists with ?fast=1.
+if (FAST < 1) {
+  (window as unknown as { __fast: unknown }).__fast = {
+    state: () => ({ focusMs, awayMs, breakDue, onBreak, cred: profile.cred, earnedToday: profile.earnedToday, fans: profile.fans }),
+    tick: (ms: number, present: boolean) => updateBalance(ms, present),
+    snap: () => ({ cred: profile.cred, earnedToday: profile.earnedToday, earnedDate: profile.earnedDate, fans: profile.fans }),
+    restore: (s: { cred: number; earnedToday: number; earnedDate: string; fans: number }) => {
+      profile.cred = s.cred; profile.earnedToday = s.earnedToday; profile.earnedDate = s.earnedDate; profile.fans = s.fans; persist();
+    },
+    FOCUS_MS, BREAK_MS,
+  };
 }
 function fmtDuration(ms: number): string {
   const s = Math.floor(ms / 1000);
@@ -382,24 +437,13 @@ function fmtDuration(ms: number): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
 }
-// genre of the currently-playing station (null for local files / nothing playing)
-function currentGenre(): Genre | null {
-  return audio.playing && audio.current?.station ? (audio.current.genre ?? null) : null;
-}
-let lastBonusKind: "daily" | "native" | null = null;
+// Fold the desk time into the persistent daily log (drives the time-at-desk stats).
+// No Cred here any more — earning is event-based (see award()).
 function flushDesk(): void {
   if (deskAddMs <= 0) return;
   const k = dayKey();
   profile.deskLog[k] = (profile.deskLog[k] ?? 0) + deskAddMs / 1000;
-  const mult = genreMult(profile.venue, currentGenre()).mult * timeMult(profile.venue).mult; // venue×genre × time-of-day
-  profile.cred += (deskAddMs / 60000) * CRED_PER_MIN * balanceMult * mult;
   deskAddMs = 0;
-}
-// fans rise while you're present (faster with a genre + time-of-day bonus), drift off while away
-function updateFans(dt: number, here: boolean): void {
-  const min = dt / 60000;
-  if (here) profile.fans += min * FANS.gainPerMin * genreMult(profile.venue, currentGenre()).mult * timeMult(profile.venue).mult * balanceMult;
-  else profile.fans = Math.max(0, profile.fans - min * FANS.lossPerMin);
 }
 // flush + save the tail when the page is hidden/closed so the day total survives
 addEventListener("pagehide", () => { flushDesk(); persist(); });
@@ -407,26 +451,25 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) { flu
 setInterval(() => {
   scene.setState({ venue: currentVenue() }); // keep the scene synced (honours ?venue=)
   flushDesk();
-  const gm = genreMult(profile.venue, currentGenre()); // celebrate when a bonus starts
-  if (gm.kind && gm.kind !== lastBonusKind) toast(gm.kind === "daily" ? `🎯 TODAY'S BONUS! ×${gm.mult} Cred` : `🔥 Genre match · ×${gm.mult} Cred`);
-  lastBonusKind = gm.kind;
-  controls.setCred(profile.cred); // live balance while it ticks up at the desk
+  controls.setCred(profile.cred);
   controls.setFans(profile.fans);
-  const vNow = currentVenue(), tmNow = timeMult(vNow); // a ☀/🌙 marker shows a venue's natural hour
-  venueName.textContent = (tmNow.daypart ? (tmNow.daypart === "day" ? "☀ " : "🌙 ") : "") + VENUES[vNow].name;
+  venueName.textContent = VENUES[currentVenue()].name; // switcher label (no optimization marker)
   if (++persistTick >= 20) { persistTick = 0; persist(); } // checkpoint the log ~every 20s
   const todayMs = deskTotals(profile).today * 1000;
-  deskTimer.classList.toggle("on", presence.current.present); // show only while it can see you
+  // Zen: the desk timer only surfaces for the gentle break nudge — no always-on
+  // session counter to glance at.
+  deskTimer.classList.toggle("on", breakDue || (!zen() && presence.current.present));
   deskTimer.classList.toggle("break", breakDue);
   deskTimer.innerHTML = breakDue
     ? `<span class="dt-main">🌿 take a break</span>` +
-      `<span class="dt-sub">focused ${fmtDuration(focusMs)} · earning ${Math.round(balanceMult * 100)}%</span>`
+      `<span class="dt-sub">focused ${fmtDuration(focusMs)}</span>`
     : `<span class="dt-main">👤 ${fmtDuration(sessionMs)} <em>this session</em></span>` +
       `<span class="dt-sub">total today · ${fmtDuration(todayMs)}</span>`;
   const c = presence.current.count;
+  // framed as the DJ's behaviour, not a watching camera ("I see you" read as creepy)
   camStatus.textContent = !presence.active ? "camera off"
-    : presence.current.present ? `👁 I see you${c > 1 ? ` ×${c}` : ""}`
-    : "👀 no one in view";
+    : presence.current.present ? `🎧 playing for you${c > 1 ? ` +${c - 1}` : ""}`
+    : "💤 resting";
 }, 1000);
 
 // ── render loop ─────────────────────────────────────────────────────────────
@@ -447,10 +490,11 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
   frames++;
   const dt = now - lastT; lastT = now;
-  const here = presence.current.present || audio.playing;
+  // "at the desk": when the camera's active it's the truth (music left playing in an
+  // empty room is NOT focus); only fall back to "is music playing" when there's no camera.
+  const here = presence.active ? presence.current.present : audio.playing;
   if (here) { sessionMs += dt; deskAddMs += dt; }
   updateBalance(dt, here);
-  updateFans(dt, here);
   scene.setFans(profile.fans); // a bigger crowd as your fanbase grows
   const playing = audio.playing;
   const lv = playing ? audio.levels() : null;

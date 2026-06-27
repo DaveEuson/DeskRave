@@ -20,15 +20,17 @@
   background: #1f1838; border: 1px solid var(--line); color: #cdc4e8; font-size: 14px; }
 .dock-btn:hover { background: #2a2150; }
 .dock-now { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.dock-title { color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dock-sub { color: #9b8fc0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dock-title { color: #fff; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dock-sub { color: #a99fca; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dock-eq { display: flex; gap: 2px; align-items: flex-end; height: 22px; }
 .dock-eq i { width: 3px; height: 3px; background: linear-gradient(var(--cyan), var(--mag)); border-radius: 2px; transition: height 70ms linear; }
 .dock-cred { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; padding: 4px 9px; border-radius: 9px; background: rgba(255,255,255,.05); cursor: pointer; flex: 0 0 auto; white-space: nowrap; line-height: 1.2; }
-.dock-cred .ds-cred { color: #ffd86a; font-size: 12px; }
-.dock-cred .ds-fans { color: #ff9ad0; font-size: 12px; }
-.dock-cred b { font-family: "Press Start 2P", monospace; font-size: 9px; }
+.dock-cred .ds-cred { color: #ffd86a; font-size: 14px; }
+.dock-cred .ds-fans { color: #ff9ad0; font-size: 14px; }
+.dock-cred b { font-family: "Press Start 2P", monospace; font-size: 11px; }
 .dock-toggle { background: rgba(124,58,237,.18); border: 1px solid #34294f; color: #cdbff0; font-size: 20px; line-height: 1; cursor: pointer; padding: 9px 13px; border-radius: 10px; flex: 0 0 auto; }
+/* Zen mode hides the always-on currency hook (Cred/fans chip) from the dock */
+body.zen .dock-cred { display: none; }
 .dock-toggle:hover { background: rgba(124,58,237,.34); color: #fff; }
 
 /* draw the eye until the user first opens the controls */
@@ -52,7 +54,7 @@
 .sheet-body { overflow-y: auto; padding: 12px 14px 18px; }
 
 /* control bits */
-.cv-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #8a7fae; margin: 14px 0 7px; }
+.cv-label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #9a8fc0; margin: 14px 0 7px; }
 .cv-transport { display: flex; gap: 8px; }
 .cv-transport button { flex: 1; min-height: 44px; background: #1a1130; border: 1px solid var(--line); color: #e7e0f5; font-size: 17px; border-radius: 12px; cursor: pointer; }
 .cv-transport .pp { flex: 1.6; background: linear-gradient(120deg, var(--mag), var(--violet)); border: 0; color: #fff; }
@@ -84,42 +86,43 @@
 .cv-track.on { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan); }
 .cv-k { font-size: 16px; }
 .cv-meta { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.cv-meta b { color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cv-meta small { color: #8a7fae; font-size: 12px; }
+.cv-meta b { color: #fff; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cv-meta small { color: #a297c4; font-size: 13px; }
 
 .cv-level { background: #170f28; border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
 .cv-lvlrow { display: flex; justify-content: space-between; align-items: baseline; }
-.cv-lvlrow b { font-family: "Press Start 2P", monospace; font-size: 13px; color: #fff; }
-.cv-lvlrow span { color: #9b8fc0; font-size: 12px; }
+.cv-lvlrow b { font-family: "Press Start 2P", monospace; font-size: 15px; color: #fff; }
+.cv-lvlrow span { color: #ab9fd0; font-size: 13px; }
 .cv-bar { height: 12px; background: #0e0a1c; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin: 8px 0 6px; }
 .cv-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--mag)); }
-.cv-level small { color: #8a7fae; font-size: 12px; }
+.cv-level small { color: #a297c4; font-size: 13px; }
 .cv-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
 .cv-stats > div { background: #170f28; border: 1px solid var(--line); border-radius: 12px; padding: 10px 4px; text-align: center; }
-.cv-stats b { display: block; font-family: "Press Start 2P", monospace; font-size: 12px; color: #9fe0c0; }
-.cv-stats small { display: block; margin-top: 5px; color: #8a7fae; font-size: 11px; }
+.cv-stats b { display: block; font-family: "Press Start 2P", monospace; font-size: 13px; color: #9fe0c0; }
+.cv-stats small { display: block; margin-top: 5px; color: #a297c4; font-size: 12px; }
 
 /* store */
-.cv-credbar { display: flex; align-items: center; gap: 6px; background: #170f28; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; font-size: 14px; color: #cdbff0; }
-.cv-credbar b { font-family: "Press Start 2P", monospace; font-size: 13px; color: #ffd86a; }
-.cv-credbar small { margin-left: auto; color: #8a7fae; font-size: 11px; }
+.cv-credbar { display: flex; align-items: center; gap: 6px; background: #170f28; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; font-size: 15px; color: #cdbff0; }
+.cv-credbar b { font-family: "Press Start 2P", monospace; font-size: 15px; color: #ffd86a; }
+.cv-credbar small { margin-left: auto; color: #a297c4; font-size: 12px; }
 .cv-buylist { display: flex; flex-direction: column; gap: 6px; }
 .cv-buy { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: #160e26; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; color: #e7def6; cursor: pointer; font: inherit; }
 .cv-buy:hover { border-color: var(--mag); }
 .cv-buy.cant, .cv-buy.owned { opacity: .5; cursor: default; }
 .cv-buy.cant:hover, .cv-buy.owned:hover { border-color: var(--line); }
 .cv-buy-name { flex: 1; }
-.cv-buy-price { font-family: "Press Start 2P", monospace; font-size: 10px; color: #ffd86a; white-space: nowrap; }
+.cv-buy { font-size: 14px; }
+.cv-buy-price { font-family: "Press Start 2P", monospace; font-size: 12px; color: #ffd86a; white-space: nowrap; }
 .cv-buy.cant .cv-buy-price { color: #9a7fb0; }
 .cv-buy-sw { width: 14px; height: 14px; border-radius: 4px; background: var(--c); border: 1px solid rgba(255, 255, 255, .25); flex: 0 0 auto; }
 .cv-allset { color: #9fe0c0; text-align: center; padding: 14px; font-size: 13px; }
 
 /* genre×venue bonus banner */
 .cv-bonus { display: flex; flex-direction: column; gap: 3px; background: #170f28; border: 1px solid var(--line); border-radius: 12px; padding: 9px 13px; }
-.cv-bonus-today { font-size: 12px; color: #cdbff0; }
+.cv-bonus-today { font-size: 13px; color: #cdbff0; }
 .cv-bonus-today b { color: #ffd86a; }
-.cv-bonus-now { font-size: 11px; color: #8a7fae; }
-.cv-bonus-time { font-size: 11px; color: #9a8fc0; }
+.cv-bonus-now { font-size: 12px; color: #a297c4; }
+.cv-bonus-time { font-size: 12px; color: #a99ecc; }
 .cv-bonus-time.good { color: #9fe0c0; }
 .cv-bonus-time.bad { color: #e0a06a; }
 .cv-bonus.native { border-color: #3a6a4a; }
@@ -128,15 +131,15 @@
 .cv-bonus.daily .cv-bonus-now { color: #ff9ad0; font-weight: bold; }
 
 /* station genre chip + ×bonus badge + venue genre tag */
-.cv-genre { font-size: 9px; text-transform: uppercase; letter-spacing: .5px; color: #1a1326; background: var(--c); border-radius: 5px; padding: 2px 6px; flex: 0 0 auto; align-self: center; }
-.cv-btag { font-family: "Press Start 2P", monospace; font-size: 8px; color: #ffd86a; flex: 0 0 auto; align-self: center; }
+.cv-genre { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #1a1326; background: var(--c); border-radius: 5px; padding: 3px 7px; flex: 0 0 auto; align-self: center; font-weight: 700; }
+.cv-btag { font-family: "Press Start 2P", monospace; font-size: 10px; color: #ffd86a; flex: 0 0 auto; align-self: center; }
 .cv-btag.hot { color: #ff7ad0; }
 .cv-track.native { border-color: #3a6a4a; }
 .cv-track.daily { border-color: var(--mag); box-shadow: 0 0 10px -4px var(--mag); }
 .cv-vg { font-style: normal; font-size: 9px; text-transform: uppercase; letter-spacing: .5px; color: #9a8fc0; opacity: .85; }
-.cv-name { width: 100%; background: #160e26; border: 1px solid var(--line); border-radius: 10px; padding: 12px; color: #fff; font-family: "Press Start 2P", monospace; font-size: 12px; }
+.cv-name { width: 100%; background: #160e26; border: 1px solid var(--line); border-radius: 10px; padding: 12px; color: #fff; font-family: "Press Start 2P", monospace; font-size: 13px; }
 .cv-pills { display: flex; flex-wrap: wrap; gap: 7px; }
-.cv-pills button { min-height: 40px; background: #170f28; border: 1px solid var(--line); color: #e7e0f5; padding: 8px 12px; border-radius: 12px; cursor: pointer; font-size: 13px; }
+.cv-pills button { min-height: 42px; background: #170f28; border: 1px solid var(--line); color: #e7e0f5; padding: 8px 13px; border-radius: 12px; cursor: pointer; font-size: 14px; }
 .cv-pills button.on { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan); }
 .cv-pills button.locked { opacity: .45; cursor: not-allowed; }
 .cv-swatches { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -165,7 +168,7 @@
   .dock-btn { width: 30px; height: 30px; flex-basis: 30px; font-size: 13px; }
   .dock-sub { display: none; } /* keep the title, drop the "tap to open" hint */
   .dock-cred { padding: 3px 6px; }
-  .dock-cred .ds-cred, .dock-cred .ds-fans { font-size: 11px; }
+  .dock-cred .ds-cred, .dock-cred .ds-fans { font-size: 13px; }
   .dock-toggle { padding: 7px 10px; font-size: 18px; }
   .sheet { bottom: 52px; }
 }
