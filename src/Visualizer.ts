@@ -36,6 +36,8 @@ export class Visualizer {
   private glow: CanvasRenderingContext2D;
   private bloomCanvas: HTMLCanvasElement;
   private bloom: CanvasRenderingContext2D;
+  private blurCanvas: HTMLCanvasElement; // small downscale buffer for the cheap bloom
+  private blur: CanvasRenderingContext2D;
   private frameN = 0;
   private momentT = 0; // seconds; "the crowd goes wild" banner shows until this
   private lastMomentT = -99;
@@ -66,6 +68,8 @@ export class Visualizer {
     this.glow = this.glowCanvas.getContext("2d")!;
     this.bloomCanvas = document.createElement("canvas");
     this.bloom = this.bloomCanvas.getContext("2d")!;
+    this.blurCanvas = document.createElement("canvas");
+    this.blur = this.blurCanvas.getContext("2d")!;
     this.resize();
     addEventListener("resize", () => this.resize());
     // ported venue scenes (everything else → comingSoon). One line per venue.
@@ -128,8 +132,13 @@ export class Visualizer {
     this.glowCanvas.height = this.h;
     this.bloomCanvas.width = this.w;
     this.bloomCanvas.height = this.h;
+    // the bloom buffer is downscaled ~3× — the down/up resample IS the blur
+    this.blurCanvas.width = Math.max(1, Math.ceil(this.w / 3));
+    this.blurCanvas.height = Math.max(1, Math.ceil(this.h / 3));
     this.g.imageSmoothingEnabled = false;
     this.glow.imageSmoothingEnabled = false;
+    this.blur.imageSmoothingEnabled = true; // bilinear averaging = the cheap blur
+    this.bloom.imageSmoothingEnabled = true;
   }
 
   setState(p: Partial<SceneState>): void {
@@ -138,6 +147,11 @@ export class Visualizer {
 
   setPresence(count: number): void {
     this.presenceCount = count;
+  }
+
+  private fanLevel = 0;
+  setFans(n: number): void {
+    this.fanLevel = n;
   }
 
   private px(x: number, y: number, w: number, h: number, color: string, g = this.g): void {
@@ -206,13 +220,17 @@ export class Visualizer {
     // lights still pop against a darkened night scene)
     this.applyTimeGrade(now);
 
-    // bloom — the blur is the heaviest op, so refresh the cache every other frame
+    // bloom — a downscale→upscale resample instead of ctx.filter="blur" (which is
+    // very slow on the kiosk GPU). Box-average the glow into a ~1/3-size buffer,
+    // then let the bilinear upscale smear it back to a soft glow. Refresh every
+    // other frame; the cached bloom is composited every frame below.
     this.frameN++;
     if (this.frameN % 2 === 0) {
+      const bw = this.blurCanvas.width, bh = this.blurCanvas.height;
+      this.blur.clearRect(0, 0, bw, bh);
+      this.blur.drawImage(this.glowCanvas, 0, 0, W, H, 0, 0, bw, bh);
       this.bloom.clearRect(0, 0, W, H);
-      this.bloom.filter = "blur(2px)";
-      this.bloom.drawImage(this.glowCanvas, 0, 0);
-      this.bloom.filter = "none";
+      this.bloom.drawImage(this.blurCanvas, 0, 0, bw, bh, 0, 0, W, H);
     }
     this.g.save();
     this.g.globalCompositeOperation = "lighter";
@@ -303,7 +321,7 @@ export class Visualizer {
     this.stageDeck(stageTopY, u, hue);
     this.dj((W * 0.5) | 0, stageTopY, u, t, vibe.djIntensity, this._moment);
     this.floorGlow(stageTopY + 10 * u, hue);
-    this.crowd(Math.round(H * 0.95), u, t, vibe, V.crowdScale);
+    this.crowd(Math.round(H * 0.95), u, t, vibe, V.crowdScale * (1 + Math.min(1, this.fanLevel / 500)));
   }
 
   // ── COMING SOON — venues not yet ported keep the DJ grooving on a lit stage ──

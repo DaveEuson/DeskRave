@@ -1,4 +1,4 @@
-import { AVATARS, DAILY_MULT, JACKET_HUES, PALETTES, PRIZES, VENUES, VENUE_ORDER, dailyBonus, genreMult, type AvatarId, type VenueId, type VibeName } from "./config";
+import { AVATARS, DAILY_MULT, GENRES, JACKET_HUES, PALETTES, PRIZES, VENUES, VENUE_ORDER, dailyBonus, genreMult, timeMult, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 import { minutesForLevel } from "./xp";
 import { deskTotals, fmtSpan, type Profile } from "./profile";
 import type { Track } from "./tracks";
@@ -23,6 +23,8 @@ export interface ControlsCallbacks {
   onSettings(patch: Partial<Profile["settings"]>): void;
   onSelectTrack(i: number): void;
   onAddFiles(): void;
+  onAddStation(name: string, url: string, genre: Genre): void;
+  onRemoveStation(stream: string): void;
 }
 
 type View = "music" | "dj" | "store" | "options";
@@ -60,7 +62,7 @@ export class Controls {
         <button class="dock-btn" data-act="mute" title="mute">🔊</button>
         <div class="dock-now" data-act="toggle"><b class="dock-title">—</b><span class="dock-sub">tap to open the menu</span></div>
         <div class="dock-eq" data-act="toggle">${"<i></i>".repeat(6)}</div>
-        <div class="dock-cred" data-act="toggle" title="Cred — spend it in the Store">◈ <b class="cv-cred-val">0</b></div>
+        <div class="dock-cred" data-act="toggle" title="Cred to spend · fans you've drawn"><span class="ds-cred">◈ <b class="cv-cred-val">0</b></span><span class="ds-fans">👥 <b class="cv-fans-val">0</b></span></div>
         <button class="dock-toggle" data-act="toggle" title="menu">☰</button>
       </div>`;
     this.sheetBody = $(root, ".sheet-body");
@@ -134,10 +136,15 @@ export class Controls {
     const nowLine = gm.kind === "daily" ? `🔥 BONUS ACTIVE · ×${gm.mult} Cred`
       : gm.kind === "native" ? `✓ ${playingGenre} suits ${esc(VENUES[this.p.venue].name)} · ×${gm.mult}`
       : playingGenre ? `playing ${playingGenre} · ×1` : "play a genre that suits the venue → bonus Cred";
+    const tm = timeMult(this.p.venue);
+    const timeLine = tm.daypart
+      ? `${tm.daypart === "day" ? "☀️" : "🌙"} ${esc(VENUES[this.p.venue].name)} is a ${tm.daypart} spot · ×${tm.mult.toFixed(2)} right now`
+      : "";
     this.sheetBody.innerHTML = `
       <div class="cv-bonus ${gm.kind ?? ""}">
         <span class="cv-bonus-today">🎯 Today: <b>${daily.genre}</b> @ <b>${esc(VENUES[daily.venue].name)}</b> ·×${DAILY_MULT}</span>
         <span class="cv-bonus-now">${nowLine}</span>
+        ${timeLine ? `<span class="cv-bonus-time ${tm.fit >= 0.6 ? "good" : tm.fit <= 0.4 ? "bad" : ""}">${timeLine}</span>` : ""}
       </div>
       <div class="cv-transport">
         <button data-act="prev">⏮</button>
@@ -150,7 +157,13 @@ export class Controls {
         <button class="cv-auto ${this.p.auto ? "on" : ""}" data-act="auto">🤖 AUTO</button>
         <div class="cv-seg">${(["chill", "groove", "rave"] as VibeName[]).map((v) => `<button data-vibe="${v}" class="${this.p.vibe === v ? "on" : ""}">${v}</button>`).join("")}</div>
       </div>
-      <div class="cv-row cv-listhead"><span class="cv-label">Stations &amp; files — bonus for ${esc(VENUES[this.p.venue].name)} on top</span><button class="cv-add" data-act="add">＋ Add</button></div>
+      <div class="cv-row cv-listhead"><span class="cv-label">Stations &amp; files — bonus for ${esc(VENUES[this.p.venue].name)} on top</span><span class="cv-addbtns"><button class="cv-add" data-act="addstation" title="add a station">📻﹢</button><button class="cv-add" data-act="add" title="add files">📁﹢</button></span></div>
+      <form class="cv-addsta" hidden>
+        <input class="cv-sta-name" placeholder="Station name" maxlength="40" />
+        <input class="cv-sta-url" placeholder="https://stream.example/mp3" />
+        <div class="cv-sta-row"><select class="cv-sta-genre">${GENRES.map((g) => `<option value="${g}">${g}</option>`).join("")}</select><button type="submit" class="cv-sta-add">Add</button></div>
+        <small>direct mp3 / icecast streams only — not YouTube links</small>
+      </form>
       <div class="cv-list">${this.tracks
         .map((t, i) => ({ t, i }))
         .sort((a, b) => (b.t.station ? genreMult(this.p.venue, b.t.genre ?? null).mult : 1) - (a.t.station ? genreMult(this.p.venue, a.t.genre ?? null).mult : 1))
@@ -161,7 +174,17 @@ export class Controls {
     $(this.sheetBody, '[data-act="mute"]').onclick = () => this.cb.onMute();
     $(this.sheetBody, '[data-act="auto"]').onclick = () => this.cb.onAuto(!this.p.auto);
     $(this.sheetBody, '[data-act="add"]').onclick = () => this.cb.onAddFiles();
+    const form = $<HTMLFormElement>(this.sheetBody, ".cv-addsta");
+    $(this.sheetBody, '[data-act="addstation"]').onclick = () => { form.hidden = !form.hidden; if (!form.hidden) $<HTMLInputElement>(form, ".cv-sta-name").focus(); };
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const name = $<HTMLInputElement>(form, ".cv-sta-name").value;
+      const url = $<HTMLInputElement>(form, ".cv-sta-url").value;
+      const genre = $<HTMLSelectElement>(form, ".cv-sta-genre").value as Genre;
+      this.cb.onAddStation(name, url, genre);
+    };
     this.sheetBody.querySelectorAll<HTMLButtonElement>("[data-vibe]").forEach((b) => (b.onclick = () => this.cb.onVibe(b.dataset.vibe as VibeName)));
+    this.sheetBody.querySelectorAll<HTMLElement>(".cv-del").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); this.cb.onRemoveStation(b.dataset.del ?? ""); }));
     this.sheetBody.querySelectorAll<HTMLButtonElement>(".cv-track").forEach((b) => (b.onclick = () => this.cb.onSelectTrack(Number(b.dataset.i))));
   }
 
@@ -173,19 +196,18 @@ export class Controls {
     return `<button class="cv-track ${i === this.currentIndex ? "on" : ""} ${gm.kind ?? ""}" data-i="${i}">
         <span class="cv-k">${t.local ? "♪" : "📻"}</span>
         <span class="cv-meta"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span>
-        ${chip}${badge}
+        ${chip}${badge}${t.custom ? `<span class="cv-del" data-del="${esc(t.stream ?? "")}" title="remove station">✕</span>` : ""}
       </button>`;
   }
 
   private renderDJ(): void {
     const need = minutesForLevel(this.p.level);
-    const venue = VENUES[this.p.venue];
     const unlockedVenues = VENUE_ORDER.filter((id) => this.p.unlocks.includes(id));
     const jacketHues = [...JACKET_HUES, ...PRIZES.filter((p) => p.kind === "jacket" && this.p.unlocks.includes(p.id)).map((p) => p.hue)];
     const palettes = [...PALETTES, ...PRIZES.filter((p) => p.kind === "palette" && this.p.unlocks.includes(p.id)).map((p) => ({ name: p.name, hue: p.hue }))];
     this.sheetBody.innerHTML = `
       <div class="cv-level">
-        <div class="cv-lvlrow"><b>Level ${this.p.level}</b><span>${esc(venue.name)} · ◈ <b class="cv-cred-val">${Math.floor(this.p.cred)}</b></span></div>
+        <div class="cv-lvlrow"><b>Level ${this.p.level}</b><span>◈ <b class="cv-cred-val">${Math.floor(this.p.cred)}</b> · 👥 <b class="cv-fans-val">${Math.round(this.p.fans)}</b></span></div>
         <div class="cv-bar"><i style="width:${Math.round(this.p.xp * 100)}%"></i></div>
         <small>${this.p.listenedMinutes} min listened · next level in ~${Math.max(0, Math.round(need - need * this.p.xp))} min of play</small>
       </div>
@@ -219,9 +241,12 @@ export class Controls {
     this.sheetBody.querySelectorAll<HTMLButtonElement>("[data-venue]").forEach((b) => (b.onclick = () => { if (!b.disabled) this.cb.onVenue(b.dataset.venue as VenueId); }));
   }
 
-  // Live-update just the Cred numbers (cheap; called every second from main).
+  // Live-update the Cred + Fans numbers (cheap; called every second from main).
   setCred(cred: number): void {
     this.root.querySelectorAll<HTMLElement>(".cv-cred-val").forEach((e) => (e.textContent = String(Math.floor(cred))));
+  }
+  setFans(fans: number): void {
+    this.root.querySelectorAll<HTMLElement>(".cv-fans-val").forEach((e) => (e.textContent = String(Math.round(fans))));
   }
 
   private renderStore(): void {

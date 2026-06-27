@@ -8,11 +8,14 @@ body { height: 100vh; }
 #stage { position: fixed; inset: 0; background: #04030a; }
 canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; object-fit: contain; }
 
+/* CRT scanlines + vignette. Uses plain alpha compositing, NOT mix-blend-mode:
+   multiply — a full-screen multiply blend forces the compositor to read back the
+   whole framebuffer every frame and capped the kiosk at ~42fps. Dark translucent
+   scanlines over the scene read almost identically and composite for free. */
 #crt { position: absolute; inset: 0; pointer-events: none;
   background:
     repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px),
-    radial-gradient(120% 100% at 50% 42%, transparent 55%, rgba(2,1,6,.7) 100%);
-  mix-blend-mode: multiply; }
+    radial-gradient(120% 100% at 50% 42%, transparent 55%, rgba(2,1,6,.7) 100%); }
 body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, transparent 60%, rgba(2,1,6,.6) 100%); }
 
 #drop { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
@@ -33,6 +36,15 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 #deskTimer.break { color: #ffd08a; border-color: #6a5326; background: rgba(46,32,10,0.72); animation: deskBreathe 1.7s ease-in-out infinite; }
 #deskTimer.break .dt-sub { color: #e7b06e; }
 @keyframes deskBreathe { 0%, 100% { opacity: .95; } 50% { opacity: .5; } }
+
+/* quick venue switcher (top-left) */
+#venueNav { position: absolute; top: 12px; left: 12px; z-index: 12; display: flex; align-items: center; gap: 6px;
+  background: rgba(10,8,20,.62); border: 1px solid #2a2440; border-radius: 999px; padding: 4px 6px;
+  font: 12px ui-monospace, Consolas, monospace; color: #cdbff0; }
+#venueNav button { width: 28px; height: 28px; border-radius: 999px; border: 1px solid #34294f; background: rgba(124,58,237,.18);
+  color: #cdbff0; cursor: pointer; font-size: 12px; line-height: 1; padding: 0; flex: 0 0 auto; }
+#venueNav button:hover { background: rgba(124,58,237,.36); color: #fff; }
+#venueName { min-width: 70px; max-width: 150px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* "what the camera sees" — privacy preview, mirrored, with the detection box */
 #camPreview { position: absolute; left: 12px; bottom: 12px; width: 160px; height: 120px;
@@ -95,3 +107,36 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 .dev-perf { position: absolute; top: 10px; left: 92px; z-index: 20;
   background: rgba(10,8,20,.7); color: #9fe0c0; border: 1px solid #34294f; border-radius: 6px;
   padding: 5px 9px; font: 12px ui-monospace, monospace; pointer-events: none; }
+
+/* ── tiny screens: scale the floating HUD so nothing clips or collides ─────────
+   The venue pill (top-left) and the desk timer (top-centre) fight for the top
+   row on narrow displays — pin the timer to the right edge so both stay legible. */
+@media (max-width: 430px) {
+  #deskTimer { padding: 5px 14px; }
+  #deskTimer .dt-main { font-size: 20px; }
+  #venueName { max-width: 96px; }
+  #camPreview { width: 120px; height: 90px; }
+}
+@media (max-width: 380px) {
+  /* the venue pill owns the top-left row — drop the desk timer just below it
+     (still centred) so the two never overlap on a narrow phone */
+  #deskTimer { top: 46px; }
+  #venueNav { top: 8px; left: 8px; padding: 3px 5px; gap: 4px; }
+  #venueNav button { width: 24px; height: 24px; }
+  #venueName { max-width: 70px; font-size: 11px; }
+}
+
+/* short screens: shrink the fader and timer so they don't overrun the viewport */
+@media (max-height: 480px) {
+  #volFader { height: 116px; }
+  #deskTimer .dt-main { font-size: 19px; }
+}
+@media (max-height: 380px) {
+  #volFader { height: 92px; right: 5px; width: 32px; }
+  #deskTimer { padding: 4px 12px; }
+  #deskTimer .dt-main { font-size: 16px; }
+  #deskTimer .dt-sub { font-size: 11px; }
+}
+
+/* onboarding card: never taller than the screen — scroll inside instead */
+.ob-card { max-height: 92vh; overflow-y: auto; }
