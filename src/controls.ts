@@ -58,9 +58,10 @@ export class Controls {
         <button class="dock-pp" data-act="pp" title="play / pause">▶</button>
         <button class="dock-btn" data-act="next" title="next">⏭</button>
         <button class="dock-btn" data-act="mute" title="mute">🔊</button>
-        <div class="dock-now" data-act="toggle"><b class="dock-title">—</b><span class="dock-sub">tap for stations & options</span></div>
+        <div class="dock-now" data-act="toggle"><b class="dock-title">—</b><span class="dock-sub">tap to open the menu</span></div>
         <div class="dock-eq" data-act="toggle">${"<i></i>".repeat(6)}</div>
-        <button class="dock-toggle" data-act="toggle" title="more">▴</button>
+        <div class="dock-cred" data-act="toggle" title="Cred — spend it in the Store">◈ <b class="cv-cred-val">0</b></div>
+        <button class="dock-toggle" data-act="toggle" title="menu">☰</button>
       </div>`;
     this.sheetBody = $(root, ".sheet-body");
 

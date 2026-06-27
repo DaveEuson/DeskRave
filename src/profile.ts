@@ -25,6 +25,7 @@ export interface Settings {
   weather: "clear" | "rain" | "snow" | "haze"; // active atmosphere (set by the live feed)
   weatherAuto: boolean; // pull real weather from /api/weather
   weatherCity: string; // manual city override; "" = auto-locate from IP
+  onboarded: boolean; // has seen the first-run intro
 }
 
 export interface Profile {
@@ -116,7 +117,7 @@ export function defaultProfile(): Profile {
     peakCrowd: 0,
     history: [],
     deskLog: {},
-    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, camera: false, weather: "clear", weatherAuto: true, weatherCity: "" },
+    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, camera: false, weather: "clear", weatherAuto: true, weatherCity: "", onboarded: false },
     lastSeen: new Date().toISOString(),
   };
 }

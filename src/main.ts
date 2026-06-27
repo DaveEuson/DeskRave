@@ -9,6 +9,7 @@ import { accrue, unlockLabel } from "./xp";
 import { BALANCE, CRED_PER_MIN, PRIZES, VENUES, VIBES, genreMult, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, uploadFile } from "./library";
 import { Presence } from "./presence";
+import { showOnboarding } from "./onboarding";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 
@@ -393,6 +394,11 @@ toast("👆 Tap the screen to open controls & pick a station");
 if (profile.settings.camera) void setCamera(true); // resume presence if it was on
 void refreshWeather(); // pull live weather now, then keep it fresh
 setInterval(() => void refreshWeather(), 15 * 60_000);
+
+// first-run intro (once, or forced with ?onboard=1)
+if (new URLSearchParams(location.search).has("onboard") || !profile.settings.onboarded) {
+  showOnboarding(() => { profile.settings.onboarded = true; persist(); });
+}
 let lastT = performance.now();
 let frames = 0;
 function frame(now: number): void {

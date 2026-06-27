@@ -69,6 +69,24 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 .vf-knob::after { content: ""; position: absolute; left: 5px; right: 5px; top: 50%; height: 1px; background: #6a5d8a; }
 .vf-ico { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 12px; opacity: .8; pointer-events: none; }
 
+/* first-run onboarding */
+#onboard { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+  background: rgba(6,4,14,0.8); backdrop-filter: blur(3px); padding: 20px; }
+.ob-card { position: relative; width: min(440px, 92vw); background: linear-gradient(180deg, #1a1230, #140e26);
+  border: 1px solid #34294f; border-radius: 18px; padding: 30px 26px 22px; text-align: center;
+  box-shadow: 0 18px 60px rgba(0,0,0,.6); color: #e7def6; font-family: ui-monospace, Consolas, monospace; }
+.ob-skip { position: absolute; top: 12px; right: 14px; background: none; border: none; color: #8a7fae; font: inherit; cursor: pointer; }
+.ob-icon { font-size: 48px; line-height: 1; margin-bottom: 12px; }
+.ob-card h2 { margin: 0 0 10px; font-family: "Press Start 2P", monospace; font-size: 14px; line-height: 1.5; color: #fff; }
+.ob-card p { margin: 0 auto 18px; max-width: 34ch; font-size: 14px; line-height: 1.55; color: #cdbff0; }
+.ob-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 18px; }
+.ob-dots span { width: 7px; height: 7px; border-radius: 999px; background: #3a2f55; transition: width .2s, background .2s; }
+.ob-dots span.on { background: #d946ef; width: 18px; }
+.ob-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ob-nav button { font: inherit; font-size: 14px; cursor: pointer; border-radius: 10px; padding: 12px 18px; }
+.ob-back { background: transparent; border: 1px solid #34294f; color: #b9aee0; }
+.ob-next { background: linear-gradient(90deg, #7c3aed, #d946ef); border: none; color: #fff; font-weight: bold; flex: 1; }
+
 /* dev-only progression tester (DEV builds only) */
 .dev-time { position: absolute; top: 10px; left: 10px; z-index: 20; font: inherit;
   background: #1a1530; color: #9fe0c0; border: 1px solid #34294f; border-radius: 6px;
