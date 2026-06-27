@@ -6,7 +6,7 @@ import { Classifier } from "./classifier";
 import { Controls } from "./controls";
 import { loadProfile, loadProfileSync, saveProfile, dayKey, deskTotals, type Profile } from "./profile";
 import { accrue, unlockLabel } from "./xp";
-import { CRED_PER_MIN, PRIZES, VENUES, VIBES, type AvatarId, type VenueId, type VibeName } from "./config";
+import { BALANCE, CRED_PER_MIN, PRIZES, VENUES, VIBES, type AvatarId, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, uploadFile } from "./library";
 import { Presence } from "./presence";
 
@@ -311,6 +311,37 @@ const deskTimer = $("deskTimer");
 let sessionMs = 0; // this session — resets on reload
 let deskAddMs = 0; // unflushed desk time, folded into the daily log each second
 let persistTick = 0;
+
+// ── balance / Pomodoro: a healthy focus block, then a break nudge + soft decay ─
+const FOCUS_MS = BALANCE.focusMin * 60000, BREAK_MS = BALANCE.breakMin * 60000;
+const DECAY_MS = BALANCE.decayMin * 60000, RENAG_MS = BALANCE.renagMin * 60000;
+let focusMs = 0; // continuous time at the desk this focus block
+let awayMs = 0; // continuous time away (a real break resets the block)
+let breakDue = false; // focus block exceeded → the nudge is active
+let onBreak = false; // currently away long enough to count as a break
+let lastNagMs = 0; // focusMs when we last re-nudged
+let balanceMult = 1; // Cred earn multiplier from the balance curve
+function nudgeBreak(): void {
+  toast(`🌿 Time for a break — you've focused ${Math.round(focusMs / 60000)} min`);
+  if (profile.settings.sound) audio.muffledKick(); // a soft "ding through the wall"
+}
+function updateBalance(dt: number, here: boolean): void {
+  if (here) {
+    if (onBreak) { onBreak = false; toast("✨ Welcome back — refreshed!"); }
+    focusMs += dt; awayMs = 0;
+    if (focusMs >= FOCUS_MS) {
+      const over = focusMs - FOCUS_MS;
+      balanceMult = Math.max(BALANCE.decayFloor, 1 - (over / DECAY_MS) * (1 - BALANCE.decayFloor));
+      if (!breakDue) { breakDue = true; lastNagMs = focusMs; nudgeBreak(); }
+      else if (focusMs - lastNagMs >= RENAG_MS) { lastNagMs = focusMs; nudgeBreak(); }
+    } else {
+      balanceMult = 1; breakDue = false;
+    }
+  } else {
+    awayMs += dt;
+    if (awayMs >= BREAK_MS && focusMs > 0) { focusMs = 0; balanceMult = 1; breakDue = false; onBreak = true; }
+  }
+}
 function fmtDuration(ms: number): string {
   const s = Math.floor(ms / 1000);
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
@@ -321,7 +352,7 @@ function flushDesk(): void {
   if (deskAddMs <= 0) return;
   const k = dayKey();
   profile.deskLog[k] = (profile.deskLog[k] ?? 0) + deskAddMs / 1000;
-  profile.cred += (deskAddMs / 60000) * CRED_PER_MIN; // earn Cred while at the desk
+  profile.cred += (deskAddMs / 60000) * CRED_PER_MIN * balanceMult; // earn Cred (scaled by balance)
   deskAddMs = 0;
 }
 // flush + save the tail when the page is hidden/closed so the day total survives
@@ -334,9 +365,12 @@ setInterval(() => {
   if (++persistTick >= 20) { persistTick = 0; persist(); } // checkpoint the log ~every 20s
   const todayMs = deskTotals(profile).today * 1000;
   deskTimer.classList.toggle("on", presence.current.present); // show only while it can see you
-  deskTimer.innerHTML =
-    `<span class="dt-main">👤 ${fmtDuration(sessionMs)} <em>this session</em></span>` +
-    `<span class="dt-sub">total today · ${fmtDuration(todayMs)}</span>`;
+  deskTimer.classList.toggle("break", breakDue);
+  deskTimer.innerHTML = breakDue
+    ? `<span class="dt-main">🌿 take a break</span>` +
+      `<span class="dt-sub">focused ${fmtDuration(focusMs)} · earning ${Math.round(balanceMult * 100)}%</span>`
+    : `<span class="dt-main">👤 ${fmtDuration(sessionMs)} <em>this session</em></span>` +
+      `<span class="dt-sub">total today · ${fmtDuration(todayMs)}</span>`;
   const c = presence.current.count;
   camStatus.textContent = !presence.active ? "camera off"
     : presence.current.present ? `👁 I see you${c > 1 ? ` ×${c}` : ""}`
@@ -356,7 +390,9 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
   frames++;
   const dt = now - lastT; lastT = now;
-  if (presence.current.present || audio.playing) { sessionMs += dt; deskAddMs += dt; }
+  const here = presence.current.present || audio.playing;
+  if (here) { sessionMs += dt; deskAddMs += dt; }
+  updateBalance(dt, here);
   const playing = audio.playing;
   const lv = playing ? audio.levels() : null;
   scene.render(lv, now / 1000, new Date());
