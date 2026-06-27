@@ -1,4 +1,4 @@
-import { AVATARS, JACKET_HUES, PALETTES, PRIZES, VENUES, VENUE_ORDER, type AvatarId, type VenueId, type VibeName } from "./config";
+import { AVATARS, DAILY_MULT, JACKET_HUES, PALETTES, PRIZES, VENUES, VENUE_ORDER, dailyBonus, genreMult, type AvatarId, type VenueId, type VibeName } from "./config";
 import { minutesForLevel } from "./xp";
 import { deskTotals, fmtSpan, type Profile } from "./profile";
 import type { Track } from "./tracks";
@@ -126,7 +126,18 @@ export class Controls {
   }
 
   private renderMusic(): void {
+    const cur = this.tracks[this.currentIndex];
+    const playingGenre = cur?.station ? (cur.genre ?? null) : null;
+    const daily = dailyBonus();
+    const gm = genreMult(this.p.venue, playingGenre);
+    const nowLine = gm.kind === "daily" ? `🔥 BONUS ACTIVE · ×${gm.mult} Cred`
+      : gm.kind === "native" ? `✓ ${playingGenre} suits ${esc(VENUES[this.p.venue].name)} · ×${gm.mult}`
+      : playingGenre ? `playing ${playingGenre} · ×1` : "play a genre that suits the venue → bonus Cred";
     this.sheetBody.innerHTML = `
+      <div class="cv-bonus ${gm.kind ?? ""}">
+        <span class="cv-bonus-today">🎯 Today: <b>${daily.genre}</b> @ <b>${esc(VENUES[daily.venue].name)}</b> ·×${DAILY_MULT}</span>
+        <span class="cv-bonus-now">${nowLine}</span>
+      </div>
       <div class="cv-transport">
         <button data-act="prev">⏮</button>
         <button data-act="pp" class="pp">${this.playing ? "⏸" : "▶"}</button>

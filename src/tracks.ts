@@ -1,7 +1,7 @@
 // A Track is anything playable: either a curated CC stream from the Internet
 // Archive, or a local file the user dropped in. Both feed the same audio graph,
 // so local files get the full reactive treatment with no DRM or licensing strings.
-import { ACCEPTED_AUDIO, CC_STATION, PALETTES, STATIONS, radioUrl } from "./config";
+import { ACCEPTED_AUDIO, CC_STATION, PALETTES, STATIONS, radioUrl, type Genre } from "./config";
 
 export interface Track {
   src: string; // playable URL — radio proxy, archive.org URL, or a local object URL
@@ -11,6 +11,7 @@ export interface Track {
   hue: number; // base palette hue for the visuals
   local?: boolean; // true for user-dropped files
   station?: boolean; // true for continuous internet-radio streams
+  genre?: Genre; // station genre — drives the venue×genre Cred multiplier
   sourceUrl?: string; // attribution link (CC tracks only)
 }
 
@@ -22,6 +23,7 @@ export const STATION_TRACKS: Track[] = STATIONS.map((s) => ({
   license: "internet radio",
   hue: s.hue,
   station: true,
+  genre: s.genre,
   sourceUrl: "https://somafm.com",
 }));
 
