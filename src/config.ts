@@ -15,6 +15,12 @@ export type Genre =
   | "lofi" | "chill" | "downtempo" | "house" | "techno" | "trance" | "dnb"
   | "ambient" | "synthwave";
 
+export const GENRE_HUE: Record<Genre, number> = {
+  lofi: 280, chill: 150, downtempo: 175, house: 288, techno: 190,
+  trance: 262, dnb: 200, ambient: 210, synthwave: 312,
+};
+export const GENRES = Object.keys(GENRE_HUE) as Genre[];
+
 // The venue collection (the 39 Cozy DJ scenes + our signature neon Club).
 // Venue = the place you unlock/pick; the real clock applies a day/night grade.
 export type VenueId =
@@ -64,54 +70,55 @@ export interface VenueMeta {
   dark?: boolean;
   crowd?: boolean;
   ported?: boolean;
+  daypart?: "day" | "night"; // natural hour — pays off best then, less at the wrong time (omit = time-neutral)
 }
 export const VENUES: Record<VenueId, VenueMeta> = {
   // free starters: café / park / club (the day→night trio). everything else costs Cred
   soundcheck: { id: "soundcheck", name: "Soundcheck", label: "🎚 SOUNDCHECK", accent: "#7ad6b0", genre: "house", price: 40, crowd: true, ported: true },
-  cafe: { id: "cafe", name: "Morning Café", label: "☕ MORNING CAFÉ", accent: "#f6b352", genre: "lofi", price: 0, ported: true },
-  park: { id: "park", name: "Afternoon Park", label: "🌳 AFTERNOON PARK", accent: "#7fd06a", genre: "chill", price: 0, crowd: true, ported: true },
-  club: { id: "club", name: "Neon Club", label: "● LIVE TONIGHT ●", accent: "#d24fe0", genre: "techno", price: 0, dark: true, crowd: true, ported: true },
+  cafe: { id: "cafe", name: "Morning Café", label: "☕ MORNING CAFÉ", accent: "#f6b352", genre: "lofi", price: 0, ported: true, daypart: "day" },
+  park: { id: "park", name: "Afternoon Park", label: "🌳 AFTERNOON PARK", accent: "#7fd06a", genre: "chill", price: 0, crowd: true, ported: true, daypart: "day" },
+  club: { id: "club", name: "Neon Club", label: "● LIVE TONIGHT ●", accent: "#d24fe0", genre: "techno", price: 0, dark: true, crowd: true, ported: true, daypart: "night" },
   // everyday spots
   bedroom: { id: "bedroom", name: "BFF's Bedroom", label: "BEST FRIENDS", accent: "#a98cff", genre: "lofi", price: 60, crowd: true, ported: true },
-  diner: { id: "diner", name: "Night Owl Diner", label: "THE NIGHT OWL", accent: "#ff5e8a", genre: "synthwave", price: 60, crowd: true, ported: true },
-  recordshop: { id: "recordshop", name: "Record Shop", label: "CRATE DIGGING", accent: "#e8a23c", genre: "house", price: 60, ported: true },
+  diner: { id: "diner", name: "Night Owl Diner", label: "THE NIGHT OWL", accent: "#ff5e8a", genre: "synthwave", price: 60, crowd: true, ported: true, daypart: "night" },
+  recordshop: { id: "recordshop", name: "Record Shop", label: "CRATE DIGGING", accent: "#e8a23c", genre: "house", price: 60, ported: true, daypart: "day" },
   car: { id: "car", name: "In Your Car", label: "WINDOWS DOWN", accent: "#ff5e8a", genre: "synthwave", price: 60, ported: true },
-  studio: { id: "studio", name: "After Hours Studio", label: "AFTER HOURS", accent: "#8a8cff", genre: "lofi", price: 80, dark: true, ported: true },
-  openhero: { id: "openhero", name: "Opening for Your Hero", label: "WARM-UP SLOT", accent: "#ffd24a", genre: "house", price: 90, crowd: true, ported: true },
+  studio: { id: "studio", name: "After Hours Studio", label: "AFTER HOURS", accent: "#8a8cff", genre: "lofi", price: 80, dark: true, ported: true, daypart: "night" },
+  openhero: { id: "openhero", name: "Opening for Your Hero", label: "WARM-UP SLOT", accent: "#ffd24a", genre: "house", price: 90, crowd: true, ported: true, daypart: "night" },
   // bigger rooms + outdoors
-  rooftop: { id: "rooftop", name: "Rooftop", label: "GOLDEN HOUR", accent: "#ff9e5e", genre: "house", price: 120, crowd: true, ported: true },
-  beach: { id: "beach", name: "Sunset Shore", label: "SUNSET SHORE", accent: "#ffb27a", genre: "chill", price: 120, crowd: true, ported: true },
-  houseparty: { id: "houseparty", name: "House Party", label: "HOUSE PARTY", accent: "#ffb84a", genre: "house", price: 120, crowd: true, ported: true },
+  rooftop: { id: "rooftop", name: "Rooftop", label: "GOLDEN HOUR", accent: "#ff9e5e", genre: "house", price: 120, crowd: true, ported: true, daypart: "day" },
+  beach: { id: "beach", name: "Sunset Shore", label: "SUNSET SHORE", accent: "#ffb27a", genre: "chill", price: 120, crowd: true, ported: true, daypart: "day" },
+  houseparty: { id: "houseparty", name: "House Party", label: "HOUSE PARTY", accent: "#ffb84a", genre: "house", price: 120, crowd: true, ported: true, daypart: "night" },
   radio: { id: "radio", name: "Radio Booth", label: "ON AIR", accent: "#ff6a5e", genre: "downtempo", price: 120, dark: true, ported: true },
-  arcade: { id: "arcade", name: "Barcade", label: "INSERT COIN", accent: "#62e0ff", genre: "synthwave", price: 140, dark: true, crowd: true, ported: true },
+  arcade: { id: "arcade", name: "Barcade", label: "INSERT COIN", accent: "#62e0ff", genre: "synthwave", price: 140, dark: true, crowd: true, ported: true, daypart: "night" },
   laundromat: { id: "laundromat", name: "Laundromat", label: "SPIN CYCLE", accent: "#5fd0e0", genre: "techno", price: 140, dark: true, crowd: true, ported: true },
-  subway: { id: "subway", name: "Subway Platform", label: "LAST TRAIN", accent: "#5fd0c8", genre: "lofi", price: 140, dark: true, crowd: true, ported: true },
-  tavern: { id: "tavern", name: "Medieval Tavern", label: "YE OLDE DROP", accent: "#ffae4a", genre: "trance", price: 160, crowd: true, ported: true },
+  subway: { id: "subway", name: "Subway Platform", label: "LAST TRAIN", accent: "#5fd0c8", genre: "lofi", price: 140, dark: true, crowd: true, ported: true, daypart: "night" },
+  tavern: { id: "tavern", name: "Medieval Tavern", label: "YE OLDE DROP", accent: "#ffae4a", genre: "trance", price: 160, crowd: true, ported: true, daypart: "night" },
   // shows + novelty
-  prom: { id: "prom", name: "School Prom", label: "PROM NIGHT", accent: "#9a8cff", genre: "house", price: 200, dark: true, crowd: true, ported: true },
+  prom: { id: "prom", name: "School Prom", label: "PROM NIGHT", accent: "#9a8cff", genre: "house", price: 200, dark: true, crowd: true, ported: true, daypart: "night" },
   wedding: { id: "wedding", name: "The Reception", label: "THE RECEPTION", accent: "#ff9ec4", genre: "house", price: 200, crowd: true, ported: true },
-  silent: { id: "silent", name: "Silent Disco", label: "SILENT DISCO", accent: "#4ce0c0", genre: "house", price: 200, dark: true, crowd: true, ported: true },
-  rink: { id: "rink", name: "Roller Rink", label: "ROLLER DISCO", accent: "#ff5fae", genre: "synthwave", price: 200, dark: true, crowd: true, ported: true },
-  skilodge: { id: "skilodge", name: "Ski Lodge", label: "APRÈS-SKI", accent: "#9ed2ff", genre: "house", price: 220, crowd: true, ported: true },
-  boat: { id: "boat", name: "Sunset Cruise", label: "ON DECK", accent: "#ff8f6a", genre: "chill", price: 220, crowd: true, ported: true },
-  forest: { id: "forest", name: "Forest Rave", label: "DEEP WOODS", accent: "#7fe04a", genre: "trance", price: 240, crowd: true, ported: true },
-  underbridge: { id: "underbridge", name: "Under the Bridge", label: "OVERPASS", accent: "#5fe0c0", genre: "dnb", price: 240, dark: true, crowd: true, ported: true },
-  bakersfield: { id: "bakersfield", name: "Bakersfield Rave", label: "DESERT BASS", accent: "#ffc23c", genre: "techno", price: 240, crowd: true, ported: true },
-  bigroom: { id: "bigroom", name: "Early Doors", label: "THE BIG ROOM", accent: "#6fd0e0", genre: "techno", price: 260, dark: true, crowd: true, ported: true },
+  silent: { id: "silent", name: "Silent Disco", label: "SILENT DISCO", accent: "#4ce0c0", genre: "house", price: 200, dark: true, crowd: true, ported: true, daypart: "night" },
+  rink: { id: "rink", name: "Roller Rink", label: "ROLLER DISCO", accent: "#ff5fae", genre: "synthwave", price: 200, dark: true, crowd: true, ported: true, daypart: "night" },
+  skilodge: { id: "skilodge", name: "Ski Lodge", label: "APRÈS-SKI", accent: "#9ed2ff", genre: "house", price: 220, crowd: true, ported: true, daypart: "day" },
+  boat: { id: "boat", name: "Sunset Cruise", label: "ON DECK", accent: "#ff8f6a", genre: "chill", price: 220, crowd: true, ported: true, daypart: "day" },
+  forest: { id: "forest", name: "Forest Rave", label: "DEEP WOODS", accent: "#7fe04a", genre: "trance", price: 240, crowd: true, ported: true, daypart: "night" },
+  underbridge: { id: "underbridge", name: "Under the Bridge", label: "OVERPASS", accent: "#5fe0c0", genre: "dnb", price: 240, dark: true, crowd: true, ported: true, daypart: "night" },
+  bakersfield: { id: "bakersfield", name: "Bakersfield Rave", label: "DESERT BASS", accent: "#ffc23c", genre: "techno", price: 240, crowd: true, ported: true, daypart: "night" },
+  bigroom: { id: "bigroom", name: "Early Doors", label: "THE BIG ROOM", accent: "#6fd0e0", genre: "techno", price: 260, dark: true, crowd: true, ported: true, daypart: "night" },
   // big stages + spectacle
-  warehouse: { id: "warehouse", name: "Warehouse", label: "WAREHOUSE", accent: "#d24fe0", genre: "techno", price: 320, dark: true, crowd: true, ported: true },
+  warehouse: { id: "warehouse", name: "Warehouse", label: "WAREHOUSE", accent: "#d24fe0", genre: "techno", price: 320, dark: true, crowd: true, ported: true, daypart: "night" },
   festival: { id: "festival", name: "Main Stage", label: "MAIN STAGE", accent: "#ffd24a", genre: "techno", price: 360, crowd: true, ported: true },
-  balloon: { id: "balloon", name: "Hot Air Balloon", label: "ABOVE IT ALL", accent: "#ff8f4a", genre: "ambient", price: 320, ported: true },
+  balloon: { id: "balloon", name: "Hot Air Balloon", label: "ABOVE IT ALL", accent: "#ff8f4a", genre: "ambient", price: 320, ported: true, daypart: "day" },
   airport: { id: "airport", name: "Departures Lounge", label: "GATE 13", accent: "#7fb0e8", genre: "ambient", price: 320, crowd: true, ported: true },
   aquarium: { id: "aquarium", name: "Aquarium", label: "DEEP CUTS", accent: "#4ec0ff", genre: "ambient", price: 320, dark: true, crowd: true, ported: true },
-  dmv: { id: "dmv", name: "The DMV", label: "NOW SERVING", accent: "#9bd14a", genre: "downtempo", price: 280, dark: true, crowd: true, ported: true },
+  dmv: { id: "dmv", name: "The DMV", label: "NOW SERVING", accent: "#9bd14a", genre: "downtempo", price: 280, dark: true, crowd: true, ported: true, daypart: "day" },
   // destination / legendary
   space: { id: "space", name: "Space Station", label: "ZERO-G", accent: "#b08cff", genre: "ambient", price: 500, dark: true, crowd: true, ported: true },
   whitehouse: { id: "whitehouse", name: "The White House", label: "HAIL TO THE BEAT", accent: "#6f9fe0", genre: "house", price: 500, crowd: true, ported: true },
-  japan: { id: "japan", name: "Sakura Festival", label: "SAKURA SET", accent: "#ff9ec4", genre: "chill", price: 460, crowd: true, ported: true },
-  india: { id: "india", name: "Holi House", label: "HOLI HOUSE", accent: "#ff9e3c", genre: "trance", price: 460, crowd: true, ported: true },
+  japan: { id: "japan", name: "Sakura Festival", label: "SAKURA SET", accent: "#ff9ec4", genre: "chill", price: 460, crowd: true, ported: true, daypart: "day" },
+  india: { id: "india", name: "Holi House", label: "HOLI HOUSE", accent: "#ff9e3c", genre: "trance", price: 460, crowd: true, ported: true, daypart: "day" },
   heaven: { id: "heaven", name: "Heaven", label: "PEARLY GATES", accent: "#ffe9a0", genre: "ambient", price: 600, dark: true, crowd: true, ported: true },
-  headliner: { id: "headliner", name: "Headliner", label: "TOP OF THE BILL", accent: "#ff4ea0", genre: "techno", price: 600, dark: true, crowd: true, ported: true },
+  headliner: { id: "headliner", name: "Headliner", label: "TOP OF THE BILL", accent: "#ff4ea0", genre: "techno", price: 600, dark: true, crowd: true, ported: true, daypart: "night" },
 };
 // Browse/career order (matches the package's switcher order, club last).
 export const VENUE_ORDER: VenueId[] = [
@@ -136,6 +143,12 @@ export const STARTER_VENUES: VenueId[] = ["cafe", "park", "club"];
 // and spent in the store on venues + cosmetic prizes. Rate tuned so ~40 desk-hours
 // a week comfortably buys about two venues and a prize (≈600 Cred/week).
 export const CRED_PER_MIN = 0.25; // ≈15 Cred per hour at the desk
+
+// ── Fans — a crowd that grows when you play well, drifts off when you don't ────
+export const FANS = {
+  gainPerMin: 2, // fans/min while present (× the genre multiplier × the balance multiplier)
+  lossPerMin: 1.2, // fans/min lost while away — the crowd wanders off
+};
 
 // ── Balance / anti-burnout (Pomodoro) ────────────────────────────────────────
 // A healthy focus block earns full Cred; overstay it and the rate soft-decays to
@@ -325,6 +338,28 @@ export function genreMult(venue: VenueId, stationGenre: Genre | null, date = new
   if (stationGenre === daily.genre && venue === daily.venue) return { mult: DAILY_MULT, kind: "daily" };
   if (stationGenre === VENUES[venue].genre) return { mult: MATCH_MULT, kind: "native" };
   return { mult: 1, kind: null };
+}
+
+// ── time-of-day suitability ──────────────────────────────────────────────────
+// Some venues simply pay off at their natural hour: a park is a daytime place
+// (worth less at midnight), a neon club comes alive at night (worth less at
+// noon). A tagged venue earns TIME_LOW..TIME_HIGH × by how well NOW fits its
+// daypart; untagged venues are time-neutral (always ×1).
+export const TIME_LOW = 0.5; // the wrong time of day for this venue
+export const TIME_HIGH = 1.3; // its natural hour
+
+// Daylight strength 0..1 on the LOCAL clock — a cosine peaking ~1pm, trough ~1am.
+export function daylight(date = new Date()): number {
+  const h = date.getHours() + date.getMinutes() / 60;
+  const phase = ((h - 13) / 24) * Math.PI * 2;
+  return (Math.cos(phase) + 1) / 2;
+}
+
+export function timeMult(venue: VenueId, date = new Date()): { mult: number; daypart: "day" | "night" | null; fit: number } {
+  const dp = VENUES[venue].daypart ?? null;
+  if (!dp) return { mult: 1, daypart: null, fit: 0.5 };
+  const fit = dp === "day" ? daylight(date) : 1 - daylight(date); // 1 = perfect hour, 0 = worst
+  return { mult: TIME_LOW + (TIME_HIGH - TIME_LOW) * fit, daypart: dp, fit };
 }
 
 export const ACCEPTED_AUDIO = /\.(mp3|wav|wave|aif|aiff|aifc|flac|m4a|mp4|aac|ogg|oga|opus)$/i;

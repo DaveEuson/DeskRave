@@ -1,4 +1,6 @@
-import { VENUES, STARTER_VENUES, type AvatarId, type VenueId, type VibeName } from "./config";
+import { VENUES, STARTER_VENUES, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
+
+export interface CustomStation { name: string; stream: string; genre: Genre; hue: number }
 
 // Coerce legacy/invalid data forward: an unknown saved venue (e.g. a retired id)
 // would crash the venue dispatch, so snap it to the club and guarantee starters.
@@ -8,6 +10,8 @@ function normalize(p: Profile): Profile {
   for (const v of STARTER_VENUES) if (!p.unlocks.includes(v)) p.unlocks.push(v);
   if (typeof p.deskLog !== "object" || p.deskLog === null) p.deskLog = {};
   if (typeof p.cred !== "number" || !isFinite(p.cred)) p.cred = 0;
+  if (typeof p.fans !== "number" || !isFinite(p.fans)) p.fans = 0;
+  if (!Array.isArray(p.customStations)) p.customStations = [];
   // settings merge is shallow, so backfill any keys a stale saved profile lacks
   p.settings = { ...defaultProfile().settings, ...(p.settings ?? {}) };
   return p;
@@ -43,9 +47,11 @@ export interface Profile {
   palette: number; // club light base hue
   unlocks: string[]; // venue + avatar + prize ids earned/bought
   cred: number; // spendable currency earned at the desk
+  fans: number; // crowd that rises/falls with how well you play
   peakCrowd: number;
   history: string[]; // last ~6 titles
   deskLog: Record<string, number>; // local date "YYYY-MM-DD" → seconds at desk that day
+  customStations: CustomStation[]; // user-added internet-radio stations
   settings: Settings;
   lastSeen: string; // ISO — for the away time-lapse (fast-follow)
 }
@@ -114,9 +120,11 @@ export function defaultProfile(): Profile {
     palette: 288,
     unlocks: ["cafe", "park", "club", "beanie", "snapback"],
     cred: 0,
+    fans: 0,
     peakCrowd: 0,
     history: [],
     deskLog: {},
+    customStations: [],
     settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, camera: false, weather: "clear", weatherAuto: true, weatherCity: "", onboarded: false },
     lastSeen: new Date().toISOString(),
   };

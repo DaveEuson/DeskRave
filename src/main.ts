@@ -5,8 +5,9 @@ import { Visualizer } from "./Visualizer";
 import { Classifier } from "./classifier";
 import { Controls } from "./controls";
 import { loadProfile, loadProfileSync, saveProfile, dayKey, deskTotals, type Profile } from "./profile";
+import { trackFromStation } from "./tracks";
 import { accrue, unlockLabel } from "./xp";
-import { BALANCE, CRED_PER_MIN, PRIZES, VENUES, VIBES, genreMult, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
+import { BALANCE, CRED_PER_MIN, FANS, GENRE_HUE, PRIZES, VENUES, VENUE_ORDER, VIBES, genreMult, radioUrl, timeMult, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, uploadFile } from "./library";
 import { Presence } from "./presence";
 import { showOnboarding } from "./onboarding";
@@ -99,7 +100,38 @@ const controls = new Controls($("controls"), profile, {
   onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); if ("camera" in patch) void setCamera(!!patch.camera); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); },
   onSelectTrack: (i) => void audio.select(i),
   onAddFiles: () => fileInput.click(),
+  onAddStation: (name: string, url: string, genre: Genre) => {
+    let host = "";
+    try { host = new URL(url.trim()).hostname; } catch { /* invalid */ }
+    if (!host) { toast("⚠ Enter a valid stream URL (https://…)"); return; }
+    const s = { name: name.trim() || host, stream: url.trim(), genre, hue: GENRE_HUE[genre] };
+    if (profile.customStations.some((c) => c.stream === s.stream)) { toast("Already added"); return; }
+    profile.customStations.push(s);
+    persist();
+    audio.addTracks([trackFromStation(s)]);
+    controls.setMedia(audio.tracks, audio.index);
+    toast(`📻 Added ${s.name}`);
+  },
+  onRemoveStation: (stream: string) => {
+    profile.customStations = profile.customStations.filter((c) => c.stream !== stream);
+    persist();
+    const i = audio.tracks.findIndex((t) => t.src === radioUrl(stream));
+    if (i >= 0) audio.removeTrack(i);
+    controls.setMedia(audio.tracks, audio.index);
+  },
 });
+
+// ── quick on-screen venue switcher (◀ name ▶) — cycle owned venues, no menu ──
+const venuePrev = $("venuePrev"), venueNext = $("venueNext"), venueName = $("venueName");
+function cycleVenue(dir: number): void {
+  const list = VENUE_ORDER.filter((id) => profile.unlocks.includes(id));
+  if (!list.length) return;
+  const i = Math.max(0, list.indexOf(profile.venue));
+  profile.venue = list[(i + dir + list.length) % list.length];
+  persist(); controls.setProfile(profile); syncScene();
+}
+venuePrev.onclick = () => cycleVenue(-1);
+venueNext.onclick = () => cycleVenue(1);
 
 // ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
 let presenceDrives = false; // does presence control playback right now?
@@ -215,6 +247,7 @@ audio.onTrackChange = () => {
 };
 audio.onPlayState = () => { syncScene(); controls.setTransport(audio.playing, audio.muted); };
 audio.onPlaylistChange = () => controls.setMedia(audio.tracks, audio.index);
+if (profile.customStations.length) audio.addTracks(profile.customStations.map(trackFromStation));
 audio.load(0);
 controls.setMedia(audio.tracks, audio.index);
 
@@ -358,9 +391,15 @@ function flushDesk(): void {
   if (deskAddMs <= 0) return;
   const k = dayKey();
   profile.deskLog[k] = (profile.deskLog[k] ?? 0) + deskAddMs / 1000;
-  const mult = genreMult(profile.venue, currentGenre()).mult; // venue×genre bonus
+  const mult = genreMult(profile.venue, currentGenre()).mult * timeMult(profile.venue).mult; // venue×genre × time-of-day
   profile.cred += (deskAddMs / 60000) * CRED_PER_MIN * balanceMult * mult;
   deskAddMs = 0;
+}
+// fans rise while you're present (faster with a genre + time-of-day bonus), drift off while away
+function updateFans(dt: number, here: boolean): void {
+  const min = dt / 60000;
+  if (here) profile.fans += min * FANS.gainPerMin * genreMult(profile.venue, currentGenre()).mult * timeMult(profile.venue).mult * balanceMult;
+  else profile.fans = Math.max(0, profile.fans - min * FANS.lossPerMin);
 }
 // flush + save the tail when the page is hidden/closed so the day total survives
 addEventListener("pagehide", () => { flushDesk(); persist(); });
@@ -372,6 +411,9 @@ setInterval(() => {
   if (gm.kind && gm.kind !== lastBonusKind) toast(gm.kind === "daily" ? `🎯 TODAY'S BONUS! ×${gm.mult} Cred` : `🔥 Genre match · ×${gm.mult} Cred`);
   lastBonusKind = gm.kind;
   controls.setCred(profile.cred); // live balance while it ticks up at the desk
+  controls.setFans(profile.fans);
+  const vNow = currentVenue(), tmNow = timeMult(vNow); // a ☀/🌙 marker shows a venue's natural hour
+  venueName.textContent = (tmNow.daypart ? (tmNow.daypart === "day" ? "☀ " : "🌙 ") : "") + VENUES[vNow].name;
   if (++persistTick >= 20) { persistTick = 0; persist(); } // checkpoint the log ~every 20s
   const todayMs = deskTotals(profile).today * 1000;
   deskTimer.classList.toggle("on", presence.current.present); // show only while it can see you
@@ -408,6 +450,8 @@ function frame(now: number): void {
   const here = presence.current.present || audio.playing;
   if (here) { sessionMs += dt; deskAddMs += dt; }
   updateBalance(dt, here);
+  updateFans(dt, here);
+  scene.setFans(profile.fans); // a bigger crowd as your fanbase grows
   const playing = audio.playing;
   const lv = playing ? audio.levels() : null;
   scene.render(lv, now / 1000, new Date());

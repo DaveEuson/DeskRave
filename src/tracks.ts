@@ -11,8 +11,25 @@ export interface Track {
   hue: number; // base palette hue for the visuals
   local?: boolean; // true for user-dropped files
   station?: boolean; // true for continuous internet-radio streams
+  custom?: boolean; // a user-added station (removable)
+  stream?: string; // raw stream URL (custom stations — used to remove them)
   genre?: Genre; // station genre — drives the venue×genre Cred multiplier
   sourceUrl?: string; // attribution link (CC tracks only)
+}
+
+// A user-added internet-radio station → a playable Track (proxied for the FFT).
+export function trackFromStation(s: { name: string; stream: string; genre: Genre; hue: number }): Track {
+  return {
+    src: radioUrl(s.stream),
+    title: s.name,
+    artist: `custom · ${s.genre}`,
+    license: "internet radio",
+    hue: s.hue,
+    station: true,
+    custom: true,
+    stream: s.stream,
+    genre: s.genre,
+  };
 }
 
 // Internet radio stations (continuous streams, proxied for CORS).
