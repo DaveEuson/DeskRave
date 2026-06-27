@@ -1,4 +1,4 @@
-import { AVATARS, DAILY_MULT, GENRES, JACKET_HUES, PALETTES, PRIZES, VENUES, VENUE_ORDER, dailyBonus, genreMult, timeMult, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
+import { AVATARS, GENRES, JACKET_HUES, PALETTES, PRIZES, VENUES, VENUE_ORDER, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 import { minutesForLevel } from "./xp";
 import { deskTotals, fmtSpan, type Profile } from "./profile";
 import type { Track } from "./tracks";
@@ -40,9 +40,12 @@ export class Controls {
   private nowVibe: VibeName = "groove";
   private playing = false;
   private muted = false;
+  private vol = 0.8; // 0..1 — reflected by the menu volume slider
+  private get zenOn(): boolean { return this.p.settings.zen; }
 
   constructor(root: HTMLElement, private p: Profile, private cb: ControlsCallbacks) {
     this.root = root;
+    this.vol = p.settings.volume ?? 0.8;
     root.innerHTML = `
       <div class="scrim" data-act="close"></div>
       <div class="sheet">
@@ -129,45 +132,26 @@ export class Controls {
   }
 
   private renderMusic(): void {
-    const cur = this.tracks[this.currentIndex];
-    const playingGenre = cur?.station ? (cur.genre ?? null) : null;
-    const daily = dailyBonus();
-    const gm = genreMult(this.p.venue, playingGenre);
-    const nowLine = gm.kind === "daily" ? `🔥 BONUS ACTIVE · ×${gm.mult} Cred`
-      : gm.kind === "native" ? `✓ ${playingGenre} suits ${esc(VENUES[this.p.venue].name)} · ×${gm.mult}`
-      : playingGenre ? `playing ${playingGenre} · ×1` : "play a genre that suits the venue → bonus Cred";
-    const tm = timeMult(this.p.venue);
-    const timeLine = tm.daypart
-      ? `${tm.daypart === "day" ? "☀️" : "🌙"} ${esc(VENUES[this.p.venue].name)} is a ${tm.daypart} spot · ×${tm.mult.toFixed(2)} right now`
-      : "";
     this.sheetBody.innerHTML = `
-      <div class="cv-bonus ${gm.kind ?? ""}">
-        <span class="cv-bonus-today">🎯 Today: <b>${daily.genre}</b> @ <b>${esc(VENUES[daily.venue].name)}</b> ·×${DAILY_MULT}</span>
-        <span class="cv-bonus-now">${nowLine}</span>
-        ${timeLine ? `<span class="cv-bonus-time ${tm.fit >= 0.6 ? "good" : tm.fit <= 0.4 ? "bad" : ""}">${timeLine}</span>` : ""}
-      </div>
       <div class="cv-transport">
         <button data-act="prev">⏮</button>
         <button data-act="pp" class="pp">${this.playing ? "⏸" : "▶"}</button>
         <button data-act="next">⏭</button>
         <button data-act="mute" class="${this.muted ? "on" : ""}">${this.muted ? "🔇" : "🔊"}</button>
       </div>
-      <input class="cv-vol" type="range" min="0" max="100" value="80" title="volume" />
+      <input class="cv-vol" type="range" min="0" max="100" value="${Math.round(this.vol * 100)}" title="volume" />
       <div class="cv-row"><span class="cv-label">Vibe</span>
         <button class="cv-auto ${this.p.auto ? "on" : ""}" data-act="auto">🤖 AUTO</button>
         <div class="cv-seg">${(["chill", "groove", "rave"] as VibeName[]).map((v) => `<button data-vibe="${v}" class="${this.p.vibe === v ? "on" : ""}">${v}</button>`).join("")}</div>
       </div>
-      <div class="cv-row cv-listhead"><span class="cv-label">Stations &amp; files — bonus for ${esc(VENUES[this.p.venue].name)} on top</span><span class="cv-addbtns"><button class="cv-add" data-act="addstation" title="add a station">📻﹢</button><button class="cv-add" data-act="add" title="add files">📁﹢</button></span></div>
+      <div class="cv-row cv-listhead"><span class="cv-label">Stations &amp; files</span><span class="cv-addbtns"><button class="cv-add" data-act="addstation" title="add a station">📻﹢</button><button class="cv-add" data-act="add" title="add files">📁﹢</button></span></div>
       <form class="cv-addsta" hidden>
         <input class="cv-sta-name" placeholder="Station name" maxlength="40" />
         <input class="cv-sta-url" placeholder="https://stream.example/mp3" />
         <div class="cv-sta-row"><select class="cv-sta-genre">${GENRES.map((g) => `<option value="${g}">${g}</option>`).join("")}</select><button type="submit" class="cv-sta-add">Add</button></div>
         <small>direct mp3 / icecast streams only — not YouTube links</small>
       </form>
-      <div class="cv-list">${this.tracks
-        .map((t, i) => ({ t, i }))
-        .sort((a, b) => (b.t.station ? genreMult(this.p.venue, b.t.genre ?? null).mult : 1) - (a.t.station ? genreMult(this.p.venue, a.t.genre ?? null).mult : 1))
-        .map(({ t, i }) => this.trackRow(t, i)).join("")}</div>`;
+      <div class="cv-list">${this.tracks.map((t, i) => this.trackRow(t, i)).join("")}</div>`;
     $(this.sheetBody, ".cv-vol").oninput = (e) => this.cb.onVolume(Number((e.target as HTMLInputElement).value) / 100);
     $(this.sheetBody, '[data-act="prev"]').onclick = () => this.cb.onPrev();
     $(this.sheetBody, '[data-act="next"]').onclick = () => this.cb.onNext();
@@ -188,15 +172,13 @@ export class Controls {
     this.sheetBody.querySelectorAll<HTMLButtonElement>(".cv-track").forEach((b) => (b.onclick = () => this.cb.onSelectTrack(Number(b.dataset.i))));
   }
 
-  // one station/file row: genre chip + a ×bonus badge when it pays off at the venue
+  // one station/file row: just an informational genre chip (no ×bonus/optimization signal)
   private trackRow(t: Track, i: number): string {
-    const gm = t.station ? genreMult(this.p.venue, t.genre ?? null) : { mult: 1, kind: null as null | "native" | "daily" };
-    const badge = gm.kind === "daily" ? `<span class="cv-btag hot">×3</span>` : gm.kind === "native" ? `<span class="cv-btag">×1.5</span>` : "";
     const chip = t.station && t.genre ? `<span class="cv-genre" style="--c:hsl(${t.hue},70%,55%)">${esc(t.genre)}</span>` : "";
-    return `<button class="cv-track ${i === this.currentIndex ? "on" : ""} ${gm.kind ?? ""}" data-i="${i}">
+    return `<button class="cv-track ${i === this.currentIndex ? "on" : ""}" data-i="${i}">
         <span class="cv-k">${t.local ? "♪" : "📻"}</span>
         <span class="cv-meta"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span>
-        ${chip}${badge}${t.custom ? `<span class="cv-del" data-del="${esc(t.stream ?? "")}" title="remove station">✕</span>` : ""}
+        ${chip}${t.custom ? `<span class="cv-del" data-del="${esc(t.stream ?? "")}" title="remove station">✕</span>` : ""}
       </button>`;
   }
 
@@ -207,9 +189,9 @@ export class Controls {
     const palettes = [...PALETTES, ...PRIZES.filter((p) => p.kind === "palette" && this.p.unlocks.includes(p.id)).map((p) => ({ name: p.name, hue: p.hue }))];
     this.sheetBody.innerHTML = `
       <div class="cv-level">
-        <div class="cv-lvlrow"><b>Level ${this.p.level}</b><span>◈ <b class="cv-cred-val">${Math.floor(this.p.cred)}</b> · 👥 <b class="cv-fans-val">${Math.round(this.p.fans)}</b></span></div>
+        <div class="cv-lvlrow"><b>Level ${this.p.level}</b>${this.zenOn ? "" : `<span>◈ <b class="cv-cred-val">${Math.floor(this.p.cred)}</b> · 👥 <b class="cv-fans-val">${Math.round(this.p.fans)}</b></span>`}</div>
         <div class="cv-bar"><i style="width:${Math.round(this.p.xp * 100)}%"></i></div>
-        <small>${this.p.listenedMinutes} min listened · next level in ~${Math.max(0, Math.round(need - need * this.p.xp))} min of play</small>
+        <small>${this.p.listenedMinutes} min listened${this.zenOn ? "" : ` · next level in ~${Math.max(0, Math.round(need - need * this.p.xp))} min of play`}</small>
       </div>
       <span class="cv-label">Time at desk</span>
       ${(() => { const d = deskTotals(this.p); return `<div class="cv-stats">
@@ -249,6 +231,13 @@ export class Controls {
     this.root.querySelectorAll<HTMLElement>(".cv-fans-val").forEach((e) => (e.textContent = String(Math.round(fans))));
   }
 
+  // keep the menu volume slider in sync with the right-edge fader / saved value
+  setVolume(v: number): void {
+    this.vol = v;
+    const el = this.root.querySelector<HTMLInputElement>(".cv-vol");
+    if (el) el.value = String(Math.round(v * 100));
+  }
+
   private renderStore(): void {
     const cred = Math.floor(this.p.cred);
     const owned = (id: string) => this.p.unlocks.includes(id);
@@ -281,7 +270,7 @@ export class Controls {
     const st = this.p.settings;
     const toggle = (k: keyof Profile["settings"], label: string) =>
       `<label class="cv-opt"><span>${label}</span><input type="checkbox" data-set="${k}" ${st[k] ? "checked" : ""}/></label>`;
-    this.sheetBody.innerHTML = `${toggle("camera", "👁 Camera presence — DJ wakes when it sees you")}${toggle("sound", "🔊 Muffled kick (through the wall)")}`
+    this.sheetBody.innerHTML = `${toggle("zen", "🧘 Zen mode — hide scores & bonuses, just music")}${toggle("camera", "👁 Camera presence — DJ wakes when it sees you")}${toggle("sound", "🔊 Muffled kick (through the wall)")}`
       + `${toggle("weatherAuto", "🌦 Live weather — real rain/snow over the scene")}`
       + `<label class="cv-opt"><span>Weather city</span><input class="cv-city" type="text" placeholder="auto-detect from IP" maxlength="40" value="${esc(st.weatherCity)}" ${st.weatherAuto ? "" : "disabled"}/></label>`
       + `${toggle("showClock", "Desk clock")}${toggle("showDate", "Show date")}${toggle("clock24", "24-hour time")}${toggle("scanlines", "CRT scanlines")}`;

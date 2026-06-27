@@ -10,6 +10,8 @@ function normalize(p: Profile): Profile {
   for (const v of STARTER_VENUES) if (!p.unlocks.includes(v)) p.unlocks.push(v);
   if (typeof p.deskLog !== "object" || p.deskLog === null) p.deskLog = {};
   if (typeof p.cred !== "number" || !isFinite(p.cred)) p.cred = 0;
+  if (typeof p.earnedToday !== "number" || !isFinite(p.earnedToday)) p.earnedToday = 0;
+  if (typeof p.earnedDate !== "string") p.earnedDate = "";
   if (typeof p.fans !== "number" || !isFinite(p.fans)) p.fans = 0;
   if (!Array.isArray(p.customStations)) p.customStations = [];
   // settings merge is shallow, so backfill any keys a stale saved profile lacks
@@ -30,6 +32,8 @@ export interface Settings {
   weatherAuto: boolean; // pull real weather from /api/weather
   weatherCity: string; // manual city override; "" = auto-locate from IP
   onboarded: boolean; // has seen the first-run intro
+  volume: number; // master playback volume 0..1 (remembered across sessions)
+  zen: boolean; // calm mode — hides the score/economy layer, no penalties (default on)
 }
 
 export interface Profile {
@@ -46,8 +50,10 @@ export interface Profile {
   auto: boolean;
   palette: number; // club light base hue
   unlocks: string[]; // venue + avatar + prize ids earned/bought
-  cred: number; // spendable currency earned at the desk
-  fans: number; // crowd that rises/falls with how well you play
+  cred: number; // spendable currency earned by completing focus/break cycles
+  earnedToday: number; // Cred earned today — enforces the daily satiation cap
+  earnedDate: string; // local day key the earnedToday counter belongs to
+  fans: number; // crowd that grows as you build a healthy practice (no decay)
   peakCrowd: number;
   history: string[]; // last ~6 titles
   deskLog: Record<string, number>; // local date "YYYY-MM-DD" → seconds at desk that day
@@ -120,12 +126,14 @@ export function defaultProfile(): Profile {
     palette: 288,
     unlocks: ["cafe", "park", "club", "beanie", "snapback"],
     cred: 0,
+    earnedToday: 0,
+    earnedDate: "",
     fans: 0,
     peakCrowd: 0,
     history: [],
     deskLog: {},
     customStations: [],
-    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, camera: false, weather: "clear", weatherAuto: true, weatherCity: "", onboarded: false },
+    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, camera: false, weather: "clear", weatherAuto: true, weatherCity: "", onboarded: false, volume: 0.8, zen: true },
     lastSeen: new Date().toISOString(),
   };
 }

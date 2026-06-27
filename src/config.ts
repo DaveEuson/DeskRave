@@ -142,12 +142,21 @@ export const STARTER_VENUES: VenueId[] = ["cafe", "park", "club"];
 // Cred is earned while you're at the desk (camera sees you OR music is playing)
 // and spent in the store on venues + cosmetic prizes. Rate tuned so ~40 desk-hours
 // a week comfortably buys about two venues and a prize (≈600 Cred/week).
-export const CRED_PER_MIN = 0.25; // ≈15 Cred per hour at the desk
+export const CRED_PER_MIN = 0.25; // (legacy; no longer used — earning is event-based, see below)
 
-// ── Fans — a crowd that grows when you play well, drifts off when you don't ────
-export const FANS = {
-  gainPerMin: 2, // fans/min while present (× the genre multiplier × the balance multiplier)
-  lossPerMin: 1.2, // fans/min lost while away — the crowd wanders off
+// ── Reward events (corrected model: reward the cycle, not raw presence) ────────
+// Cred is earned at the BOUNDARIES of a healthy work rhythm — finishing a focus
+// block, and (worth more) actually taking the break — never per-minute-present.
+// Presence is a bad proxy (you can doomscroll in the chair and still earn); you
+// reinforce what you measure, so measure the behaviour you want. Flat + bounded:
+// no multipliers to min-max, and a daily cap so the carrot ENDS (a natural stop,
+// which a dopamine-seeking brain needs). The break pays more than staying.
+export const REWARDS = {
+  focusBlock: 8, // Cred for completing a healthy focus block
+  takeBreak: 14, // Cred for actually taking the break (> staying — un-breaks the break)
+  focusFans: 3, // crowd that shows up when you do the work
+  breakFans: 2,
+  dailyCap: 60, // "you've banked today's max" — ≈2–3 cycles, then rest easy
 };
 
 // ── Balance / anti-burnout (Pomodoro) ────────────────────────────────────────
