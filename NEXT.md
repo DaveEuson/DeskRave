@@ -59,6 +59,17 @@ optional toy *outside* the reward loop. Needs a Jetson feasibility spike (pose f
 ### Crowd reactions — maybe, ambient only
 Emotes on peaks (🔥/🙌), never a chat feed. The resting view already has too many narrators.
 
+### Quest log (goals to chase) — good FORM, content is everything
+An MMO-style quest list (e.g. left side, lights up when completed). The form is a great ADHD
+scaffold — visible goals. But it lives or dies on content:
+- ✅ quests about your PRACTICE / discovery: "3 focus blocks today," "take all your breaks,"
+  "5-day streak of healthy cycles," "explore a venue you haven't visited," "try a new station."
+- ❌ quests about optimizing the app: "right song in the right venue ×3," "grow your crowd." These
+  re-add the exact optimization/compulsion layer we removed — train you to min-max listening/presence
+  instead of doing the work. Do NOT build these.
+First confirm via the dogfood whether you want *goals* or just the *optimization hit* — the urge to
+add this two days into the flat model was itself the seeking-loop the flat model is meant to starve.
+
 ### Design punch-list (Claude design)
 1. **Tame the clock** — loudest object on a calm screen; ~40% smaller, desaturated, tucked.
 2. **Pixel authenticity** — dither/reduce the bloom (~20%), band the smooth light-beam gradients
