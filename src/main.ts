@@ -135,6 +135,7 @@ function cycleVenue(dir: number): void {
 }
 venuePrev.onclick = () => cycleVenue(-1);
 venueNext.onclick = () => cycleVenue(1);
+venueName.onclick = () => controls.openVenuePicker(); // tap the name → full venue list
 
 // ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
 let presenceDrives = false; // does presence control playback right now?
@@ -461,8 +462,11 @@ setInterval(() => {
   deskTimer.classList.toggle("on", breakDue || (!zen() && presence.current.present));
   deskTimer.classList.toggle("break", breakDue);
   deskTimer.innerHTML = breakDue
-    ? `<span class="dt-main">🌿 take a break</span>` +
-      `<span class="dt-sub">focused ${fmtDuration(focusMs)}</span>`
+    ? presence.current.present
+      ? `<span class="dt-main">🌿 take a break</span>` +
+        `<span class="dt-sub">step away ≈${BALANCE.breakMin} min to reset</span>`
+      : `<span class="dt-main">🌿 on a break</span>` +
+        `<span class="dt-sub">${fmtDuration(Math.max(0, BREAK_MS - awayMs))} left</span>`
     : `<span class="dt-main">👤 ${fmtDuration(sessionMs)} <em>this session</em></span>` +
       `<span class="dt-sub">total today · ${fmtDuration(todayMs)}</span>`;
   const c = presence.current.count;
