@@ -98,6 +98,14 @@ export class Controls {
     if (!this.open) this.setOpen(true);
   }
 
+  // tapping the venue pill jumps straight to the venue list (DJ tab) and scrolls to it
+  openVenuePicker(): void {
+    this.view = "dj";
+    this.renderNav();
+    this.setOpen(true);
+    requestAnimationFrame(() => this.sheetBody.querySelector("[data-venue]")?.scrollIntoView({ block: "center", behavior: "smooth" }));
+  }
+
   setProfile(p: Profile): void { this.p = p; if (this.open) this.renderBody(); this.renderDock(); }
   setMedia(tracks: Track[], current: number): void { this.tracks = tracks; this.currentIndex = current; if (this.open && this.view === "music") this.renderBody(); this.renderDock(); }
   setNowPlaying(vibe: VibeName, current: number): void { this.nowVibe = vibe; this.currentIndex = current; this.renderDock(); if (this.open && this.view === "music") this.renderBody(); }
