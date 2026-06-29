@@ -203,6 +203,50 @@ qrBtn.onclick = (e) => { e.stopPropagation(); void openQr(); };
 qrOverlay.querySelector(".qr-scrim")?.addEventListener("click", () => (qrOverlay.hidden = true));
 qrOverlay.querySelector(".qr-close")?.addEventListener("click", () => (qrOverlay.hidden = true));
 
+// ── remote control: poll the companion command channel + report state back ───
+let remoteSince = 0;
+function applyRemote(cmd: string, value: unknown): void {
+  switch (cmd) {
+    case "venue":
+      if (typeof value === "string" && value in VENUES && profile.unlocks.includes(value)) {
+        profile.venue = value as VenueId; persist(); controls.setProfile(profile); syncScene();
+      }
+      break;
+    case "selectTrack": if (typeof value === "number") void audio.select(value); break;
+    case "play": void audio.play(); break;
+    case "pause": audio.pause(); break;
+    case "next": void audio.next(); break;
+    case "prev": void audio.prev(); break;
+    case "volume": if (typeof value === "number") applyVolume(Math.max(0, Math.min(1, value))); break;
+    case "mute": audio.toggleMute(); syncMuteIcon(); controls.setTransport(audio.playing, audio.muted); break;
+    case "mode": profile.settings.zen = value === "calm"; persist(); syncScene(); controls.setProfile(profile); syncModeToggle(); break;
+    case "reloadLibrary": void fetchLibrary().then((lib) => { if (lib.length) { audio.addTracks(lib); controls.setMedia(audio.tracks, audio.index); } }); break;
+  }
+}
+function reportState(): void {
+  const c = audio.current;
+  void fetch("/api/remote/state", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      venueId: currentVenue(), venueName: VENUES[currentVenue()].name,
+      trackIndex: audio.index, trackTitle: c?.title ?? null,
+      playing: audio.playing, muted: audio.muted, volume: profile.settings.volume,
+      mode: zen() ? "calm" : "game", unlocks: profile.unlocks,
+      tracks: audio.tracks.map((t, i) => ({ i, title: t.title, artist: t.artist, station: !!t.station })),
+    }),
+  }).catch(() => {});
+}
+setInterval(() => {
+  void fetch(`/api/remote?since=${remoteSince}`, { cache: "no-store" })
+    .then((r) => r.json())
+    .then((r: { latest: number; cmds: { cmd: string; value: unknown }[] }) => {
+      remoteSince = r.latest;
+      for (const c of r.cmds) applyRemote(c.cmd, c.value);
+    })
+    .catch(() => {});
+  reportState();
+}, 1500);
+
 // ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
 let presenceDrives = false; // does presence control playback right now?
 let awayPauseTimer = 0;
