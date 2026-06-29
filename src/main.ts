@@ -166,6 +166,23 @@ venueName.onclick = () => openVenueBoard();
 venueBoard.querySelector(".vb-scrim")?.addEventListener("click", closeVenueBoard);
 venueBoard.querySelector(".vb-close")?.addEventListener("click", closeVenueBoard);
 
+// ── one-tap Game / Calm toggle — flips Zen (hides the game HUD for heads-down) ──
+const modeToggle = $("modeToggle");
+function syncModeToggle(): void {
+  modeToggle.textContent = zen() ? "🌿" : "🎮";
+  modeToggle.title = zen() ? "Calm view — tap for Game" : "Game view — tap for Calm";
+}
+modeToggle.onclick = (e) => {
+  e.stopPropagation();
+  profile.settings.zen = !profile.settings.zen;
+  persist();
+  syncScene(); // toggles body.zen → shows/hides buffs, Cred chip, desk counter
+  controls.setProfile(profile);
+  syncModeToggle();
+  toast(zen() ? "🌿 Calm view" : "🎮 Game view");
+};
+syncModeToggle();
+
 // ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
 let presenceDrives = false; // does presence control playback right now?
 let awayPauseTimer = 0;

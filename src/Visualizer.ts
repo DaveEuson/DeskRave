@@ -3754,18 +3754,31 @@ export class Visualizer {
     if (!this.s.clock24) { suffix = h >= 12 ? " PM" : " AM"; h = h % 12 || 12; }
     const pad = (n: number) => String(n).padStart(2, "0");
     const time = `${this.s.clock24 ? pad(h) : h}:${pad(m)}:${pad(sec)}${suffix}`;
-    const size = Math.max(4, Math.round(3.4 * u));
+    // tamed: smaller + desaturated than before so it doesn't shout over the scene
+    const size = Math.max(4, Math.round(2.7 * u)), dateSize = Math.max(3, Math.round(2.1 * u));
+    const right = this.w - 4 * u, top = 4 * u, gap = 2 * u;
+    g.textAlign = "right"; g.textBaseline = "top";
     g.font = `${size}px "Press Start 2P", monospace`;
-    g.textAlign = "right";
-    g.textBaseline = "top";
-    g.fillStyle = `hsl(${this.s.hue},90%,72%)`;
-    g.fillText(time, this.w - 4 * u, 4 * u);
+    let wmax = g.measureText(time).width, date = "";
     if (this.s.showDate) {
       const wd = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][now.getDay()];
       const mo = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][now.getMonth()];
-      g.font = `${Math.max(3, Math.round(2.6 * u))}px "Press Start 2P", monospace`;
-      g.fillStyle = `hsl(${this.s.hue},60%,55%)`;
-      g.fillText(`${wd} · ${mo} ${now.getDate()}`, this.w - 4 * u, 4 * u + size + 2 * u);
+      date = `${wd} · ${mo} ${now.getDate()}`;
+      g.font = `${dateSize}px "Press Start 2P", monospace`;
+      wmax = Math.max(wmax, g.measureText(date).width);
+    }
+    // dark backing pill — keeps it legible against bright skies (was washing out)
+    const padX = 2.5 * u, padY = 1.5 * u;
+    const boxH = size + padY * 2 + (date ? gap + dateSize : 0);
+    g.fillStyle = "rgba(8,6,16,0.5)";
+    g.fillRect(right - wmax - padX, top - padY, wmax + padX * 2, boxH);
+    g.font = `${size}px "Press Start 2P", monospace`;
+    g.fillStyle = `hsla(${this.s.hue},35%,84%,0.95)`;
+    g.fillText(time, right, top);
+    if (date) {
+      g.font = `${dateSize}px "Press Start 2P", monospace`;
+      g.fillStyle = `hsla(${this.s.hue},28%,68%,0.85)`;
+      g.fillText(date, right, top + size + gap);
     }
   }
 }
