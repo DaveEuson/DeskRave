@@ -49,6 +49,12 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
   cursor: pointer; background: none; border: 0; color: #e2d8f6; font: inherit; padding: 5px 10px; border-radius: 999px; }
 #venueName:hover { color: #fff; background: rgba(255,255,255,.07); }
 
+/* one-tap Game / Calm toggle (top-left) */
+#modeToggle { position: absolute; top: 10px; left: 10px; z-index: 12; width: 38px; height: 38px;
+  border-radius: 999px; border: 1px solid #3a3258; background: rgba(10,8,20,.86); color: #e2d8f6;
+  font-size: 18px; line-height: 1; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.45); }
+#modeToggle:hover { background: rgba(124,58,237,.32); }
+
 /* now-playing title — bottom-centre, prominent */
 #nowPlaying { position: absolute; bottom: 54px; left: 50%; transform: translateX(-50%); z-index: 11;
   display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none;
