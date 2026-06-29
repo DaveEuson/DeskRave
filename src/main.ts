@@ -620,7 +620,9 @@ setInterval(() => {
   const todayMs = deskTotals(profile).today * 1000;
   // Zen: the desk timer only surfaces for the gentle break nudge — no always-on
   // session counter to glance at.
-  deskTimer.classList.toggle("on", breakDue || (!zen() && presence.current.present));
+  // keep the session timer on screen through an active session (or while music plays)
+  // so a glance at your main monitor doesn't make it vanish + read as a reset
+  deskTimer.classList.toggle("on", breakDue || (!zen() && (presence.current.present || focusMs > 0 || audio.playing)));
   deskTimer.classList.toggle("break", breakDue);
   deskTimer.innerHTML = breakDue
     ? presence.current.present
