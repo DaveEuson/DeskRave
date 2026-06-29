@@ -164,7 +164,7 @@ export const REWARDS = {
 // a floor (a nudge, not a punishment); a real break away from the desk resets it.
 export const BALANCE = {
   focusMin: 50, // a healthy focus block before the "take a break" nudge
-  breakMin: 5, // minutes away from the desk that counts as a real break (resets focus)
+  breakMin: 10, // minutes continuously away (and music stopped) before the focus block resets
   decayMin: 20, // minutes past the focus block over which the earn rate sinks to the floor
   decayFloor: 0.3, // earn-rate multiplier while you keep overstaying
   renagMin: 5, // re-nudge this often while a break is overdue
