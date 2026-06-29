@@ -414,6 +414,7 @@ function updateBalance(dt: number, here: boolean): void {
     if (awayMs >= BREAK_MS && focusMs > 0) {
       const completedBlock = breakDue; // did a full focus block happen before this break?
       focusMs = 0; breakDue = false; onBreak = true;
+      sessionMs = 0; // a real break ends the sitting → "this session" starts fresh on return
       if (completedBlock) award(REWARDS.takeBreak, REWARDS.breakFans, "🌿 Break taken — good for you");
     }
   }
