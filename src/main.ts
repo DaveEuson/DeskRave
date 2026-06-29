@@ -8,7 +8,8 @@ import { loadProfile, loadProfileSync, saveProfile, dayKey, deskTotals, type Pro
 import { trackFromStation } from "./tracks";
 import { accrue, unlockLabel } from "./xp";
 import { BALANCE, DAILY_MULT, GENRE_HUE, MATCH_MULT, PRIZES, REWARDS, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
-import { fetchLibrary, uploadFile } from "./library";
+import { fetchLibrary, serverInfo, uploadFile } from "./library";
+import QRCode from "qrcode";
 import { Presence } from "./presence";
 import { showOnboarding } from "./onboarding";
 
@@ -182,6 +183,25 @@ modeToggle.onclick = (e) => {
   toast(zen() ? "🌿 Calm view" : "🎮 Game view");
 };
 syncModeToggle();
+
+// ── 📱 QR to open the app on a phone (encodes the kiosk's LAN URL) ────────────
+const qrBtn = $("qrBtn"), qrOverlay = $("qrOverlay");
+let qrReady = false;
+async function openQr(): Promise<void> {
+  if (!qrReady) {
+    const url = (await serverInfo()) || location.origin;
+    (qrOverlay.querySelector(".qr-url") as HTMLElement).textContent = url.replace(/^https?:\/\//, "");
+    try {
+      (qrOverlay.querySelector(".qr-img") as HTMLImageElement).src =
+        await QRCode.toDataURL(url, { margin: 1, width: 320, color: { dark: "#0c0816", light: "#ffffff" } });
+      qrReady = true;
+    } catch { /* leave placeholder */ }
+  }
+  qrOverlay.hidden = false;
+}
+qrBtn.onclick = (e) => { e.stopPropagation(); void openQr(); };
+qrOverlay.querySelector(".qr-scrim")?.addEventListener("click", () => (qrOverlay.hidden = true));
+qrOverlay.querySelector(".qr-close")?.addEventListener("click", () => (qrOverlay.hidden = true));
 
 // ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
 let presenceDrives = false; // does presence control playback right now?
