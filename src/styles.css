@@ -27,8 +27,8 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 #deskTimer { position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 1px; text-align: center;
   color: #9fe0c0; opacity: 0; transition: opacity .4s;
-  background: rgba(10,8,20,.6); border: 1px solid #2a3a30; border-radius: 16px; padding: 7px 22px;
-  pointer-events: none; text-shadow: 0 2px 6px #000; }
+  background: rgba(10,8,20,.84); border: 1px solid #2a3a30; border-radius: 16px; padding: 7px 22px;
+  pointer-events: none; text-shadow: 0 2px 6px #000; box-shadow: 0 2px 10px rgba(0,0,0,.4); }
 #deskTimer.on { opacity: .92; }
 #deskTimer .dt-main { font: 700 24px ui-monospace, Consolas, monospace; letter-spacing: .5px; }
 #deskTimer .dt-main em { font-size: 13px; font-weight: 400; font-style: normal; opacity: .65; letter-spacing: .5px; }
@@ -40,8 +40,8 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 /* venue switcher — bottom-centre: ◀ ▶ instant-cycle, tap name → Venue Board */
 #venueNav { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 12;
   display: flex; align-items: center; gap: 6px;
-  background: rgba(10,8,20,.72); border: 1px solid #2a2440; border-radius: 999px; padding: 5px 8px;
-  font: 14px ui-monospace, Consolas, monospace; color: #e2d8f6; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+  background: rgba(10,8,20,.86); border: 1px solid #3a3258; border-radius: 999px; padding: 5px 8px;
+  font: 14px ui-monospace, Consolas, monospace; color: #e2d8f6; box-shadow: 0 4px 16px rgba(0,0,0,.45); }
 #venuePrev, #venueNext { width: 30px; height: 30px; border-radius: 999px; border: 1px solid #34294f; background: rgba(124,58,237,.22);
   color: #e2d8f6; cursor: pointer; font-size: 13px; line-height: 1; padding: 0; flex: 0 0 auto; }
 #venuePrev:hover, #venueNext:hover { background: rgba(124,58,237,.4); color: #fff; }
@@ -50,21 +50,25 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 #venueName:hover { color: #fff; background: rgba(255,255,255,.07); }
 
 /* now-playing title — bottom-centre, prominent */
-#nowPlaying { position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%); z-index: 11;
+#nowPlaying { position: absolute; bottom: 54px; left: 50%; transform: translateX(-50%); z-index: 11;
   display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none;
-  max-width: 60vw; text-shadow: 0 2px 8px #000; }
+  max-width: 60vw; padding: 4px 16px; border-radius: 12px;
+  background: rgba(12,8,22,.62); backdrop-filter: blur(2px); text-shadow: 0 2px 6px #000; }
 #nowPlaying[hidden] { display: none; }
 .np-title { font: 700 18px ui-monospace, Consolas, monospace; color: #fff; letter-spacing: .3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.np-sub { font: 13px ui-monospace, Consolas, monospace; color: #b9aee0; }
+.np-sub { font: 13px ui-monospace, Consolas, monospace; color: #cdbff0; }
 
 /* left buff list — active venue×genre bonuses (lit when active) */
 #buffs { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); z-index: 11;
-  display: flex; flex-direction: column; gap: 6px; max-width: 210px; pointer-events: none; }
-.buff-title { font: 11px ui-monospace, monospace; text-transform: uppercase; letter-spacing: 1px; color: #8a7fae; margin-bottom: 2px; }
-.buff { display: flex; align-items: center; gap: 6px; font: 12px ui-monospace, monospace; color: #9a8fc0;
-  background: rgba(10,8,20,.62); border: 1px solid #2a2440; border-radius: 10px; padding: 6px 9px; opacity: .5; transition: opacity .2s; }
-.buff.on { opacity: 1; border-color: #34d399; color: #e7e0f5; box-shadow: 0 0 12px -4px #34d399; }
+  display: flex; flex-direction: column; gap: 6px; max-width: 230px; pointer-events: none; }
+.buff-title { font: 11px ui-monospace, monospace; text-transform: uppercase; letter-spacing: 1px; color: #cdbff0;
+  margin-bottom: 2px; text-shadow: 0 1px 3px #000; }
+.buff { display: flex; align-items: center; gap: 6px; font: 12px ui-monospace, monospace; color: #d6cdec;
+  background: rgba(14,10,26,.92); border: 1px solid #3a3258; border-radius: 10px; padding: 6px 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+.buff:not(.on) { opacity: .82; }
+.buff.on { border-color: #34d399; color: #fff; box-shadow: 0 0 14px -3px #34d399, 0 2px 8px rgba(0,0,0,.5); }
 .buff-ic { flex: 0 0 auto; }
 .buff-tx { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .buff b { font-family: "Press Start 2P", monospace; font-size: 9px; color: #ffd86a; flex: 0 0 auto; }
