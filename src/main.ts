@@ -308,7 +308,12 @@ function ingest(files: FileList | null): void {
   if (first >= 0) { void audio.select(first); for (const f of Array.from(files)) void uploadFile(f); }
 }
 const stageEl = $("stage");
-stageEl.addEventListener("click", () => controls.reveal()); // tap the scene → open controls
+// tap the BARE scene (canvas / crt / stage) → open controls. Taps on HUD overlays
+// inside #stage (venue switcher, Venue Board, etc.) must NOT bubble up to open the menu.
+stageEl.addEventListener("click", (e) => {
+  const t = e.target as HTMLElement;
+  if (t === stageEl || t.id === "c" || t.id === "crt") controls.reveal();
+});
 let dragDepth = 0;
 addEventListener("dragenter", (e) => { if (e.dataTransfer?.types.includes("Files")) { dragDepth++; stageEl.classList.add("dragging"); } });
 addEventListener("dragover", (e) => { if (e.dataTransfer?.types.includes("Files")) e.preventDefault(); });
