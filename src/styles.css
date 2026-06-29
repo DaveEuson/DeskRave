@@ -24,7 +24,7 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 #drop small { opacity: .7; font-size: 12px; }
 #stage.dragging #drop { display: flex; }
 
-#deskTimer { position: absolute; top: 56px; left: 50%; transform: translateX(-50%);
+#deskTimer { position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 1px; text-align: center;
   color: #9fe0c0; opacity: 0; transition: opacity .4s;
   background: rgba(10,8,20,.6); border: 1px solid #2a3a30; border-radius: 16px; padding: 7px 22px;
@@ -37,8 +37,8 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 #deskTimer.break .dt-sub { color: #e7b06e; }
 @keyframes deskBreathe { 0%, 100% { opacity: .95; } 50% { opacity: .5; } }
 
-/* venue switcher — top-centre: ◀ ▶ instant-cycle, tap name → Venue Board */
-#venueNav { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 12;
+/* venue switcher — bottom-centre: ◀ ▶ instant-cycle, tap name → Venue Board */
+#venueNav { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 12;
   display: flex; align-items: center; gap: 6px;
   background: rgba(10,8,20,.72); border: 1px solid #2a2440; border-radius: 999px; padding: 5px 8px;
   font: 14px ui-monospace, Consolas, monospace; color: #e2d8f6; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
@@ -48,6 +48,33 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 #venueName { min-width: 96px; max-width: 220px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   cursor: pointer; background: none; border: 0; color: #e2d8f6; font: inherit; padding: 5px 10px; border-radius: 999px; }
 #venueName:hover { color: #fff; background: rgba(255,255,255,.07); }
+
+/* now-playing title — bottom-centre, prominent */
+#nowPlaying { position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%); z-index: 11;
+  display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none;
+  max-width: 60vw; text-shadow: 0 2px 8px #000; }
+#nowPlaying[hidden] { display: none; }
+.np-title { font: 700 18px ui-monospace, Consolas, monospace; color: #fff; letter-spacing: .3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.np-sub { font: 13px ui-monospace, Consolas, monospace; color: #b9aee0; }
+
+/* left buff list — active venue×genre bonuses (lit when active) */
+#buffs { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); z-index: 11;
+  display: flex; flex-direction: column; gap: 6px; max-width: 210px; pointer-events: none; }
+.buff-title { font: 11px ui-monospace, monospace; text-transform: uppercase; letter-spacing: 1px; color: #8a7fae; margin-bottom: 2px; }
+.buff { display: flex; align-items: center; gap: 6px; font: 12px ui-monospace, monospace; color: #9a8fc0;
+  background: rgba(10,8,20,.62); border: 1px solid #2a2440; border-radius: 10px; padding: 6px 9px; opacity: .5; transition: opacity .2s; }
+.buff.on { opacity: 1; border-color: #34d399; color: #e7e0f5; box-shadow: 0 0 12px -4px #34d399; }
+.buff-ic { flex: 0 0 auto; }
+.buff-tx { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.buff b { font-family: "Press Start 2P", monospace; font-size: 9px; color: #ffd86a; flex: 0 0 auto; }
+body.zen #buffs { display: none; }
+
+/* narrow screens: lift the bottom-centre stack above the full-width dock */
+@media (max-width: 719px) {
+  #venueNav { bottom: 68px; }
+  #nowPlaying { bottom: 110px; }
+}
 
 /* Venue Board — a centered, single-purpose venue picker (not the options menu) */
 #venueBoard { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 20px; }

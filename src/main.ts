@@ -7,7 +7,7 @@ import { Controls } from "./controls";
 import { loadProfile, loadProfileSync, saveProfile, dayKey, deskTotals, type Profile } from "./profile";
 import { trackFromStation } from "./tracks";
 import { accrue, unlockLabel } from "./xp";
-import { BALANCE, GENRE_HUE, PRIZES, REWARDS, VENUES, VENUE_ORDER, VIBES, radioUrl, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
+import { BALANCE, DAILY_MULT, GENRE_HUE, MATCH_MULT, PRIZES, REWARDS, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, uploadFile } from "./library";
 import { Presence } from "./presence";
 import { showOnboarding } from "./onboarding";
@@ -419,18 +419,24 @@ let breakDue = false; // focus block complete → the break nudge is active
 let onBreak = false; // away long enough to count as a real break
 let lastNagMs = 0; // focusMs when we last re-nudged
 
-// Reward the CYCLE, not presence: Cred lands only at the boundaries of a healthy
-// rhythm — finishing a focus block, and (worth more) taking the break — flat and
-// capped so the carrot ends. No per-minute accrual, no multipliers to min-max.
+// genre of the currently-playing station (null for local files / nothing playing)
+function currentGenre(): Genre | null {
+  return audio.playing && audio.current?.station ? (audio.current.genre ?? null) : null;
+}
+// Reward the CYCLE (finishing a focus block / taking the break) — flat base, capped
+// daily. A venue×genre BONUS multiplies it when you're playing a fitting station
+// (a modest boost on top of the healthy-habit reward; see the buff list on the left).
 function award(cred: number, fans: number, msg: string): void {
+  const gm = genreMult(profile.venue, currentGenre());
+  const boosted = Math.round(cred * gm.mult);
   const today = dayKey();
   if (profile.earnedDate !== today) { profile.earnedDate = today; profile.earnedToday = 0; }
   const room = Math.max(0, REWARDS.dailyCap - profile.earnedToday);
-  const got = Math.min(cred, room);
+  const got = Math.min(boosted, room);
   profile.cred += got;
   profile.earnedToday += got;
   profile.fans += fans; // crowd grows as you build a practice; never decays
-  toast(room <= 0 ? "🌙 today's progress is banked — rest easy" : msg);
+  toast(room <= 0 ? "🌙 today's progress is banked — rest easy" : gm.mult > 1 ? `${msg} · ×${gm.mult} bonus!` : msg);
   controls.setCred(profile.cred); controls.setFans(profile.fans);
   persist();
 }
@@ -489,6 +495,26 @@ function flushDesk(): void {
   deskAddMs = 0;
 }
 // flush + save the tail when the page is hidden/closed so the day total survives
+// ── left buff list (active venue×genre bonuses) + bottom-centre now-playing ───
+const buffs = $("buffs"), nowPlaying = $("nowPlaying");
+function renderBuffs(): void {
+  const g = currentGenre(), daily = dailyBonus(), v = currentVenue();
+  const nativeOn = !!g && g === VENUES[v].genre;
+  const dailyOn = !!g && g === daily.genre && v === daily.venue;
+  buffs.innerHTML =
+    `<div class="buff-title">Bonuses</div>` +
+    `<div class="buff ${nativeOn ? "on" : ""}"><span class="buff-ic">🎧</span><span class="buff-tx">fits ${VENUES[v].name}</span><b>×${MATCH_MULT}</b></div>` +
+    `<div class="buff ${dailyOn ? "on" : ""}"><span class="buff-ic">🔥</span><span class="buff-tx">today · ${daily.genre} @ ${VENUES[daily.venue].name}</span><b>×${DAILY_MULT}</b></div>`;
+}
+function updateNowPlaying(): void {
+  const c = audio.current;
+  if (audio.playing && c) {
+    (nowPlaying.querySelector(".np-title") as HTMLElement).textContent = c.title;
+    (nowPlaying.querySelector(".np-sub") as HTMLElement).textContent = c.artist;
+    nowPlaying.hidden = false;
+  } else nowPlaying.hidden = true;
+}
+
 addEventListener("pagehide", () => { flushDesk(); persist(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden) { flushDesk(); persist(); } });
 setInterval(() => {
@@ -496,7 +522,9 @@ setInterval(() => {
   flushDesk();
   controls.setCred(profile.cred);
   controls.setFans(profile.fans);
-  venueName.textContent = VENUES[currentVenue()].name; // switcher label (no optimization marker)
+  venueName.textContent = VENUES[currentVenue()].name; // switcher label
+  renderBuffs();
+  updateNowPlaying();
   if (++persistTick >= 20) { persistTick = 0; persist(); } // checkpoint the log ~every 20s
   const todayMs = deskTotals(profile).today * 1000;
   // Zen: the desk timer only surfaces for the gentle break nudge — no always-on
