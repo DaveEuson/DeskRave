@@ -71,7 +71,7 @@ const controls = new Controls($("controls"), profile, {
   onPlayPause: () => void audio.toggle(),
   onPrev: () => void audio.prev(),
   onNext: () => void audio.next(),
-  onMute: () => { audio.toggleMute(); controls.setTransport(audio.playing, audio.muted); },
+  onMute: () => { audio.toggleMute(); controls.setTransport(audio.playing, audio.muted); syncMuteIcon(); },
   onVolume: (v) => applyVolume(v),
   onVibe: (v: VibeName) => { profile.vibe = v; profile.auto = false; persist(); controls.setProfile(profile); syncScene(); },
   onAuto: (on: boolean) => { profile.auto = on; persist(); controls.setProfile(profile); },
@@ -348,6 +348,18 @@ volFader.addEventListener("pointerdown", (e) => { faderDrag = true; volFader.set
 volFader.addEventListener("pointermove", (e) => { if (faderDrag) faderFromY(e.clientY); });
 volFader.addEventListener("pointerup", () => { faderDrag = false; });
 volFader.addEventListener("pointercancel", () => { faderDrag = false; });
+// the speaker icon doubles as a mute toggle — tap it (doesn't drag the volume)
+const vfIco = volFader.querySelector(".vf-ico") as HTMLElement;
+function syncMuteIcon(): void {
+  vfIco.textContent = audio.muted ? "🔇" : "🔊";
+  volFader.classList.toggle("muted", audio.muted);
+}
+vfIco.addEventListener("pointerdown", (e) => {
+  e.stopPropagation(); // don't let the fader read this tap as a volume drag
+  audio.toggleMute();
+  syncMuteIcon();
+  controls.setTransport(audio.playing, audio.muted);
+});
 // restore the remembered volume across the audio + both UI controls
 audio.setVolume(profile.settings.volume);
 updateFader(profile.settings.volume);
@@ -498,7 +510,7 @@ setInterval(() => {
       : `<span class="dt-main">🌿 on a break</span>` +
         `<span class="dt-sub">${fmtDuration(Math.max(0, BREAK_MS - awayMs))} left</span>`
     : `<span class="dt-main">👤 ${fmtDuration(sessionMs)} <em>this session</em></span>` +
-      `<span class="dt-sub">total today · ${fmtDuration(todayMs)}</span>`;
+      `<span class="dt-sub">🌿 break in ${fmtDuration(Math.max(0, FOCUS_MS - focusMs))} · today ${fmtDuration(todayMs)}</span>`;
   const c = presence.current.count;
   // framed as the DJ's behaviour, not a watching camera ("I see you" read as creepy)
   camStatus.textContent = !presence.active ? "camera off"
