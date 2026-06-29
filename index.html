@@ -22,8 +22,15 @@
       <div id="deskTimer"></div>
       <div id="venueNav">
         <button id="venuePrev" title="previous venue">◀</button>
-        <span id="venueName">—</span>
+        <button id="venueName" title="all venues">—</button>
         <button id="venueNext" title="next venue">▶</button>
+      </div>
+      <div id="venueBoard" hidden>
+        <div class="vb-scrim"></div>
+        <div class="vb-panel">
+          <div class="vb-head"><span>Pick a venue</span><button class="vb-close" title="close">✕</button></div>
+          <div class="vb-grid"></div>
+        </div>
       </div>
       <div id="camPreview" hidden>
         <video id="camVideo" autoplay muted playsinline></video>

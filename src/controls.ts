@@ -98,12 +98,11 @@ export class Controls {
     if (!this.open) this.setOpen(true);
   }
 
-  // tapping the venue pill jumps straight to the venue list (DJ tab) and scrolls to it
-  openVenuePicker(): void {
-    this.view = "dj";
+  // open the menu straight to the Store (used by the Venue Board for locked venues)
+  openStore(): void {
+    this.view = "store";
     this.renderNav();
     this.setOpen(true);
-    requestAnimationFrame(() => this.sheetBody.querySelector("[data-venue]")?.scrollIntoView({ block: "center", behavior: "smooth" }));
   }
 
   setProfile(p: Profile): void { this.p = p; if (this.open) this.renderBody(); this.renderDock(); }

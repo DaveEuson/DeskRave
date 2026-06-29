@@ -124,7 +124,7 @@ const controls = new Controls($("controls"), profile, {
   },
 });
 
-// ── quick on-screen venue switcher (◀ name ▶) — cycle owned venues, no menu ──
+// ── venue switcher (top-centre): ◀ ▶ instant-cycle owned venues; tap name → board ──
 const venuePrev = $("venuePrev"), venueNext = $("venueNext"), venueName = $("venueName");
 function cycleVenue(dir: number): void {
   const list = VENUE_ORDER.filter((id) => profile.unlocks.includes(id));
@@ -135,7 +135,36 @@ function cycleVenue(dir: number): void {
 }
 venuePrev.onclick = () => cycleVenue(-1);
 venueNext.onclick = () => cycleVenue(1);
-venueName.onclick = () => controls.openVenuePicker(); // tap the name → full venue list
+
+// ── Venue Board: a centered, single-purpose venue picker (NOT the options menu) ──
+const venueBoard = $("venueBoard");
+const vbGrid = venueBoard.querySelector<HTMLElement>(".vb-grid")!;
+function venueCardHtml(id: VenueId): string {
+  const m = VENUES[id], owned = profile.unlocks.includes(id), current = profile.venue === id;
+  return `<button class="vb-card ${owned ? "owned" : "locked"} ${current ? "on" : ""}" data-vb="${id}" style="--c:${m.accent}">
+      <span class="vb-cname">${m.name}</span>
+      <span class="vb-cgenre">${m.genre}</span>
+      ${owned ? (current ? `<span class="vb-here">▶ here</span>` : "") : `<span class="vb-cprice">◈ ${m.price}</span>`}
+    </button>`;
+}
+function openVenueBoard(): void {
+  const owned = VENUE_ORDER.filter((id) => profile.unlocks.includes(id));
+  const locked = VENUE_ORDER.filter((id) => !profile.unlocks.includes(id)).sort((a, b) => VENUES[a].price - VENUES[b].price);
+  vbGrid.innerHTML =
+    `<div class="vb-sec">Your venues</div><div class="vb-row">${owned.map(venueCardHtml).join("")}</div>` +
+    (locked.length ? `<div class="vb-sec">Locked — tap to unlock in the Store</div><div class="vb-row">${locked.map(venueCardHtml).join("")}</div>` : "");
+  vbGrid.querySelectorAll<HTMLButtonElement>("[data-vb]").forEach((b) => (b.onclick = () => pickVenue(b.dataset.vb as VenueId)));
+  venueBoard.hidden = false;
+}
+function closeVenueBoard(): void { venueBoard.hidden = true; }
+function pickVenue(id: VenueId): void {
+  closeVenueBoard();
+  if (profile.unlocks.includes(id)) { profile.venue = id; persist(); controls.setProfile(profile); syncScene(); }
+  else controls.openStore(); // locked → go buy it in the Store
+}
+venueName.onclick = () => openVenueBoard();
+venueBoard.querySelector(".vb-scrim")?.addEventListener("click", closeVenueBoard);
+venueBoard.querySelector(".vb-close")?.addEventListener("click", closeVenueBoard);
 
 // ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
 let presenceDrives = false; // does presence control playback right now?
