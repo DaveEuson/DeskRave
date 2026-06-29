@@ -184,12 +184,13 @@ modeToggle.onclick = (e) => {
 };
 syncModeToggle();
 
-// ── 📱 QR to open the app on a phone (encodes the kiosk's LAN URL) ────────────
+// ── 📱 QR → the phone REMOTE that controls this kiosk (/remote.html) ──────────
 const qrBtn = $("qrBtn"), qrOverlay = $("qrOverlay");
 let qrReady = false;
 async function openQr(): Promise<void> {
   if (!qrReady) {
-    const url = (await serverInfo()) || location.origin;
+    const base = (await serverInfo()) || location.origin;
+    const url = base.replace(/\/$/, "") + "/remote.html"; // the remote, not a 2nd app instance
     (qrOverlay.querySelector(".qr-url") as HTMLElement).textContent = url.replace(/^https?:\/\//, "");
     try {
       (qrOverlay.querySelector(".qr-img") as HTMLImageElement).src =
