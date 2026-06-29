@@ -80,6 +80,11 @@ body.zen .dock-cred { display: none; }
 .cv-addsta small { color: #7a6fa0; font-size: 11px; }
 .cv-del { font-size: 13px; color: #b59; flex: 0 0 auto; align-self: center; padding: 4px 8px; margin: -4px -6px -4px 0; border-radius: 8px; line-height: 1; }
 .cv-del:hover { color: #ff7ad0; background: #2a1530; }
+/* Lane B: calm venue↔genre guidance (no scoring, no min-maxing) */
+.cv-fit { margin-top: 10px; font-size: 12px; color: #9a8fc0; }
+.cv-fit b { color: #cdbff0; font-weight: 600; }
+.cv-fit-tag { font-size: 10px; color: #9fe0c0; flex: 0 0 auto; align-self: center; opacity: .9; }
+.cv-track.fits { border-color: #2f5a48; }
 .cv-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .cv-track { display: flex; align-items: center; gap: 10px; min-height: 48px; text-align: left;
   background: #170f28; border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; cursor: pointer; }

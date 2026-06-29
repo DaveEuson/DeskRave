@@ -159,6 +159,7 @@ export class Controls {
         <div class="cv-sta-row"><select class="cv-sta-genre">${GENRES.map((g) => `<option value="${g}">${g}</option>`).join("")}</select><button type="submit" class="cv-sta-add">Add</button></div>
         <small>direct mp3 / icecast streams only — not YouTube links</small>
       </form>
+      <div class="cv-fit">🎚 <b>${esc(VENUES[this.p.venue].name)}</b> sounds best with <b>${VENUES[this.p.venue].genre}</b> — ✓ marks a good fit</div>
       <div class="cv-list">${this.tracks.map((t, i) => this.trackRow(t, i)).join("")}</div>`;
     $(this.sheetBody, ".cv-vol").oninput = (e) => this.cb.onVolume(Number((e.target as HTMLInputElement).value) / 100);
     $(this.sheetBody, '[data-act="prev"]').onclick = () => this.cb.onPrev();
@@ -180,13 +181,15 @@ export class Controls {
     this.sheetBody.querySelectorAll<HTMLButtonElement>(".cv-track").forEach((b) => (b.onclick = () => this.cb.onSelectTrack(Number(b.dataset.i))));
   }
 
-  // one station/file row: just an informational genre chip (no ×bonus/optimization signal)
+  // one station/file row: genre chip + a calm "fits this venue" hint (guidance only,
+  // NOT a scored bonus — it informs your pick, it doesn't pay out or get min-maxed)
   private trackRow(t: Track, i: number): string {
     const chip = t.station && t.genre ? `<span class="cv-genre" style="--c:hsl(${t.hue},70%,55%)">${esc(t.genre)}</span>` : "";
-    return `<button class="cv-track ${i === this.currentIndex ? "on" : ""}" data-i="${i}">
+    const fits = !!(t.station && t.genre && t.genre === VENUES[this.p.venue].genre);
+    return `<button class="cv-track ${i === this.currentIndex ? "on" : ""} ${fits ? "fits" : ""}" data-i="${i}">
         <span class="cv-k">${t.local ? "♪" : "📻"}</span>
         <span class="cv-meta"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span>
-        ${chip}${t.custom ? `<span class="cv-del" data-del="${esc(t.stream ?? "")}" title="remove station">✕</span>` : ""}
+        ${fits ? `<span class="cv-fit-tag" title="a good fit for ${esc(VENUES[this.p.venue].name)}">✓ fits</span>` : ""}${chip}${t.custom ? `<span class="cv-del" data-del="${esc(t.stream ?? "")}" title="remove station">✕</span>` : ""}
       </button>`;
   }
 
