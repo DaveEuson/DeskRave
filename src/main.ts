@@ -543,6 +543,10 @@ function updateBalance(dt: number, here: boolean): void {
       breakDue = false;
     }
   } else {
+    // Music still playing? You're in a work session even if the kiosk camera can't see
+    // your face (you're looking at your main monitor). Don't count that as "away" — it
+    // was resetting people's focus block during normal heads-down work.
+    if (audio.playing) { awayMs = 0; return; }
     awayMs += dt;
     if (awayMs >= BREAK_MS && focusMs > 0) {
       const completedBlock = breakDue; // did a full focus block happen before this break?
