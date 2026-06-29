@@ -24,7 +24,7 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 #drop small { opacity: .7; font-size: 12px; }
 #stage.dragging #drop { display: flex; }
 
-#deskTimer { position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+#deskTimer { position: absolute; top: 66px; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 1px; text-align: center;
   color: #9fe0c0; opacity: 0; transition: opacity .4s;
   background: rgba(10,8,20,.84); border: 1px solid #2a3a30; border-radius: 16px; padding: 7px 22px;
@@ -37,17 +37,18 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 #deskTimer.break .dt-sub { color: #e7b06e; }
 @keyframes deskBreathe { 0%, 100% { opacity: .95; } 50% { opacity: .5; } }
 
-/* venue switcher — bottom-centre: ◀ ▶ instant-cycle, tap name → Venue Board */
-#venueNav { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 12;
-  display: flex; align-items: center; gap: 6px;
-  background: rgba(10,8,20,.86); border: 1px solid #3a3258; border-radius: 999px; padding: 5px 8px;
-  font: 14px ui-monospace, Consolas, monospace; color: #e2d8f6; box-shadow: 0 4px 16px rgba(0,0,0,.45); }
-#venuePrev, #venueNext { width: 30px; height: 30px; border-radius: 999px; border: 1px solid #34294f; background: rgba(124,58,237,.22);
-  color: #e2d8f6; cursor: pointer; font-size: 13px; line-height: 1; padding: 0; flex: 0 0 auto; }
-#venuePrev:hover, #venueNext:hover { background: rgba(124,58,237,.4); color: #fff; }
-#venueName { min-width: 96px; max-width: 220px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  cursor: pointer; background: none; border: 0; color: #e2d8f6; font: inherit; padding: 5px 10px; border-radius: 999px; }
-#venueName:hover { color: #fff; background: rgba(255,255,255,.07); }
+/* venue switcher — top-centre, prominent: ◀ ▶ instant-cycle, tap name → Venue Board */
+#venueNav { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 12;
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(10,8,20,.86); border: 1px solid #3a3258; border-radius: 999px; padding: 5px 10px;
+  color: #e2d8f6; box-shadow: 0 4px 18px rgba(0,0,0,.5); }
+#venuePrev, #venueNext { width: 36px; height: 36px; border-radius: 999px; border: 1px solid #34294f; background: rgba(124,58,237,.24);
+  color: #e2d8f6; cursor: pointer; font-size: 16px; line-height: 1; padding: 0; flex: 0 0 auto; }
+#venuePrev:hover, #venueNext:hover { background: rgba(124,58,237,.42); color: #fff; }
+#venueName { min-width: 140px; max-width: 360px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  cursor: pointer; background: none; border: 0; color: #fff; font: 700 24px ui-monospace, Consolas, monospace; letter-spacing: .5px;
+  padding: 2px 12px; border-radius: 999px; }
+#venueName:hover { background: rgba(255,255,255,.08); }
 
 /* one-tap Game / Calm toggle (top-left) */
 #modeToggle { position: absolute; top: 10px; left: 10px; z-index: 12; width: 38px; height: 38px;
@@ -55,13 +56,13 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
   font-size: 18px; line-height: 1; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.45); }
 #modeToggle:hover { background: rgba(124,58,237,.32); }
 
-/* now-playing title — bottom-centre, prominent */
-#nowPlaying { position: absolute; bottom: 54px; left: 50%; transform: translateX(-50%); z-index: 11;
+/* now-playing song / station — bottom-centre, prominent */
+#nowPlaying { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 11;
   display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none;
-  max-width: 60vw; padding: 4px 16px; border-radius: 12px;
-  background: rgba(12,8,22,.62); backdrop-filter: blur(2px); text-shadow: 0 2px 6px #000; }
+  max-width: 56vw; padding: 5px 18px; border-radius: 12px;
+  background: rgba(12,8,22,.66); backdrop-filter: blur(2px); text-shadow: 0 2px 6px #000; }
 #nowPlaying[hidden] { display: none; }
-.np-title { font: 700 18px ui-monospace, Consolas, monospace; color: #fff; letter-spacing: .3px;
+.np-title { font: 700 20px ui-monospace, Consolas, monospace; color: #fff; letter-spacing: .3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .np-sub { font: 13px ui-monospace, Consolas, monospace; color: #cdbff0; }
 
@@ -80,10 +81,9 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 .buff b { font-family: "Press Start 2P", monospace; font-size: 9px; color: #ffd86a; flex: 0 0 auto; }
 body.zen #buffs { display: none; }
 
-/* narrow screens: lift the bottom-centre stack above the full-width dock */
+/* narrow screens: lift the bottom now-playing above the full-width dock */
 @media (max-width: 719px) {
-  #venueNav { bottom: 68px; }
-  #nowPlaying { bottom: 110px; }
+  #nowPlaying { bottom: 64px; }
 }
 
 /* Venue Board — a centered, single-purpose venue picker (not the options menu) */
@@ -180,13 +180,13 @@ body.zen #buffs { display: none; }
 @media (max-width: 430px) {
   #deskTimer { padding: 5px 14px; }
   #deskTimer .dt-main { font-size: 20px; }
-  #venueName { max-width: 150px; }
+  #venueName { max-width: 200px; font-size: 20px; }
   #camPreview { width: 120px; height: 90px; }
 }
 @media (max-width: 380px) {
-  #venueNav { padding: 4px 6px; gap: 4px; }
-  #venuePrev, #venueNext { width: 28px; height: 28px; }
-  #venueName { max-width: 120px; font-size: 13px; }
+  #venueNav { padding: 4px 7px; gap: 5px; }
+  #venuePrev, #venueNext { width: 32px; height: 32px; }
+  #venueName { max-width: 150px; font-size: 18px; }
 }
 
 /* short screens: shrink the fader and timer so they don't overrun the viewport */
