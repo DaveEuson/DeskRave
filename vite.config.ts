@@ -97,6 +97,14 @@ async function isAllowedRadioHost(host: string): Promise<boolean> {
   return false;
 }
 
+// ── remote-control channel (companion page → kiosk) ──────────────────────────
+// A tiny in-memory command queue: the companion POSTs commands, the kiosk polls
+// for new ones and applies them, and reports its state back so the companion can
+// mirror it. In-memory is fine — commands are ephemeral (lost on server restart).
+let remoteSeq = 0;
+const remoteCmds: { seq: number; ts: number; cmd: string; value: unknown }[] = [];
+let remoteState = "null"; // raw JSON the kiosk last reported
+
 // Tiny kiosk file subsystem: upload audio to disk, list it, report the LAN URL.
 // Files land in public/media so Vite serves them same-origin at /media/<name>
 // (which the AnalyserNode can read without any CORS dance).
@@ -237,6 +245,36 @@ const mediaApi = (port: number): Connect.NextHandleFunction => {
       }
     }
 
+    // ── remote control: state (kiosk reports / companion reads) ─────────────
+    if (url.startsWith("/api/remote/state")) {
+      if (req.method === "POST") {
+        try { remoteState = await readBody(req); } catch { /* ignore */ }
+        res.setHeader("content-type", "application/json");
+        return res.end('{"ok":true}');
+      }
+      res.setHeader("content-type", "application/json");
+      res.setHeader("cache-control", "no-store");
+      return res.end(remoteState);
+    }
+    // ── remote control: command queue (companion posts / kiosk polls) ───────
+    if (url.startsWith("/api/remote")) {
+      if (req.method === "POST") {
+        try {
+          const body = JSON.parse(await readBody(req)) as { cmd?: unknown; value?: unknown };
+          if (typeof body.cmd === "string") {
+            remoteCmds.push({ seq: ++remoteSeq, ts: Date.now(), cmd: body.cmd, value: body.value });
+            if (remoteCmds.length > 50) remoteCmds.shift();
+          }
+        } catch { /* ignore */ }
+        res.setHeader("content-type", "application/json");
+        return res.end(JSON.stringify({ seq: remoteSeq }));
+      }
+      const since = Number(new URL(url, "http://x").searchParams.get("since") || 0);
+      res.setHeader("content-type", "application/json");
+      res.setHeader("cache-control", "no-store");
+      return res.end(JSON.stringify({ latest: remoteSeq, cmds: remoteCmds.filter((c) => c.seq > since) }));
+    }
+
     next();
   };
 };
@@ -259,4 +297,6 @@ export default defineConfig({
   plugins: [mediaServer(PORT)],
   server: { port: PORT, host: "0.0.0.0" },
   preview: { port: PORT, host: "0.0.0.0" },
+  // multi-page: the kiosk app + the phone remote-control companion
+  build: { rollupOptions: { input: { main: "index.html", remote: "remote.html" } } },
 });
