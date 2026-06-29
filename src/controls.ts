@@ -199,8 +199,9 @@ export class Controls {
     const jacketHues = [...JACKET_HUES, ...PRIZES.filter((p) => p.kind === "jacket" && this.p.unlocks.includes(p.id)).map((p) => p.hue)];
     const palettes = [...PALETTES, ...PRIZES.filter((p) => p.kind === "palette" && this.p.unlocks.includes(p.id)).map((p) => ({ name: p.name, hue: p.hue }))];
     this.sheetBody.innerHTML = `
+      ${this.unlockBar()}
       <div class="cv-level">
-        <div class="cv-lvlrow"><b>Level ${this.p.level}</b>${this.zenOn ? "" : `<span>◈ <b class="cv-cred-val">${Math.floor(this.p.cred)}</b> · 👥 <b class="cv-fans-val">${Math.round(this.p.fans)}</b></span>`}</div>
+        <div class="cv-lvlrow"><b>Level ${this.p.level}</b>${this.zenOn ? "" : `<span>👥 <b class="cv-fans-val">${Math.round(this.p.fans)}</b></span>`}</div>
         <div class="cv-bar"><i style="width:${Math.round(this.p.xp * 100)}%"></i></div>
         <small>${this.p.listenedMinutes} min listened${this.zenOn ? "" : ` · next level in ~${Math.max(0, Math.round(need - need * this.p.xp))} min of play`}</small>
       </div>
@@ -249,8 +250,21 @@ export class Controls {
     if (el) el.value = String(Math.round(v * 100));
   }
 
+  // progress toward the next venue unlock — the come-back hook, fed by completed
+  // focus/break cycles (the goal), shown where you'd look for it (not an always-on HUD)
+  private unlockBar(): string {
+    const next = VENUE_ORDER.filter((id) => !this.p.unlocks.includes(id)).sort((a, b) => VENUES[a].price - VENUES[b].price)[0];
+    if (!next) return `<div class="cv-unlock"><div class="cv-unlock-top"><span>🏆 Every venue unlocked!</span></div></div>`;
+    const price = VENUES[next].price, cred = Math.floor(this.p.cred), ready = cred >= price;
+    const pct = Math.min(100, Math.round((cred / price) * 100));
+    return `<div class="cv-unlock ${ready ? "ready" : ""}">
+      <div class="cv-unlock-top"><span>🔓 Next: <b>${esc(VENUES[next].name)}</b></span><span class="cv-unlock-cred">◈ <b class="cv-cred-val">${cred}</b> / ${price}</span></div>
+      <div class="cv-bar"><i style="width:${pct}%"></i></div>
+      <small>${ready ? "✨ Ready — grab it in the Store" : `${price - cred} to go · earn Cred by finishing a focus block + its break`}</small>
+    </div>`;
+  }
+
   private renderStore(): void {
-    const cred = Math.floor(this.p.cred);
     const owned = (id: string) => this.p.unlocks.includes(id);
     const lockedVenues = VENUE_ORDER.filter((id) => !owned(id)).sort((a, b) => VENUES[a].price - VENUES[b].price);
     const venueCard = (id: VenueId) => {
@@ -268,7 +282,7 @@ export class Controls {
         <span class="cv-buy-price">${has ? "✓" : `◈ ${p.price}`}</span></button>`;
     };
     this.sheetBody.innerHTML = `
-      <div class="cv-credbar">◈ <b class="cv-cred-val">${cred}</b> Cred <small>earned at your desk</small></div>
+      ${this.unlockBar()}
       <span class="cv-label">Venues — ${lockedVenues.length} left to unlock</span>
       <div class="cv-buylist">${lockedVenues.map(venueCard).join("") || `<div class="cv-allset">Every venue unlocked! 🎉</div>`}</div>
       <span class="cv-label">Prizes</span>
