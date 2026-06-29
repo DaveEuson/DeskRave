@@ -2626,9 +2626,10 @@ export class Visualizer {
       this.px(tx + 1.8 * u, ty - 13 * u, 1.2 * u, 4 * u, "hsl(26,26%,26%)");
       this.px(tx - 3 * u, ty - 16 * u, 1.2 * u, 3 * u, "hsl(26,26%,24%)");
     }
-    this.px(W * 0.7, 7 * u, 22 * u, 7 * u, "hsl(220,16%,9%)");
-    this.px(W * 0.7 + 2 * u, 8.6 * u, 18 * u, 3.6 * u, "hsl(330,30%,24%)");
-    this.px(W * 0.7 + 2 * u, 8.6 * u, 18 * u, 1 * u, "hsla(330,40%,40%,0.5)");
+    // wall sign — kept clear of the top-right clock/date overlay (was colliding)
+    this.px(W * 0.7, 18 * u, 22 * u, 7 * u, "hsl(220,16%,9%)");
+    this.px(W * 0.7 + 2 * u, 19.6 * u, 18 * u, 3.6 * u, "hsl(330,30%,24%)");
+    this.px(W * 0.7 + 2 * u, 19.6 * u, 18 * u, 1 * u, "hsla(330,40%,40%,0.5)");
     this.g.fillStyle = "hsl(24,20%,17%)"; this.g.fillRect(0, floorY, W, H - floorY);
     for (let py = floorY + 4 * u; py < H; py += 5 * u) this.px(0, py, W, 1, "hsl(24,18%,12%)");
     this.px(0, floorY, W, 1, "hsl(24,22%,24%)");
