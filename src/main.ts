@@ -67,6 +67,18 @@ function syncScene(): void {
   document.body.classList.toggle("zen", zen()); // hides the dock cred/fans chip in CSS
 }
 
+// buy + hop to a venue (shared by the Store tab and the phone remote)
+function buyVenue(id: VenueId): void {
+  const m = VENUES[id];
+  if (profile.unlocks.includes(id)) return;
+  if (profile.cred < m.price) { toast(`◈ ${Math.ceil(m.price - profile.cred)} more Cred for ${m.name}`); return; }
+  profile.cred -= m.price;
+  profile.unlocks.push(id);
+  profile.venue = id; // hop straight to the new place
+  persist(); controls.setProfile(profile); syncScene();
+  toast(`🎉 Unlocked ${m.name}!`);
+}
+
 // ── control surface (dock + sheet) ──────────────────────────────────────────
 const controls = new Controls($("controls"), profile, {
   onPlayPause: () => void audio.toggle(),
@@ -81,16 +93,7 @@ const controls = new Controls($("controls"), profile, {
   onAvatar: (a: AvatarId) => { profile.avatar = a; persist(); controls.setProfile(profile); syncScene(); },
   onJacket: (hue) => { profile.jacketHue = hue; persist(); controls.setProfile(profile); syncScene(); },
   onVenue: (v: VenueId) => { profile.venue = v; persist(); controls.setProfile(profile); syncScene(); },
-  onBuyVenue: (id: VenueId) => {
-    const m = VENUES[id];
-    if (profile.unlocks.includes(id)) return;
-    if (profile.cred < m.price) { toast(`◈ ${Math.ceil(m.price - profile.cred)} more Cred for ${m.name}`); return; }
-    profile.cred -= m.price;
-    profile.unlocks.push(id);
-    profile.venue = id; // hop straight to the new place
-    persist(); controls.setProfile(profile); syncScene();
-    toast(`🎉 Unlocked ${m.name}!`);
-  },
+  onBuyVenue: (id: VenueId) => buyVenue(id),
   onBuyPrize: (pid: string) => {
     const pz = PRIZES.find((p) => p.id === pid);
     if (!pz || profile.unlocks.includes(pid)) return;
@@ -221,6 +224,7 @@ function applyRemote(cmd: string, value: unknown): void {
     case "volume": if (typeof value === "number") applyVolume(Math.max(0, Math.min(1, value))); break;
     case "mute": audio.toggleMute(); syncMuteIcon(); controls.setTransport(audio.playing, audio.muted); break;
     case "mode": profile.settings.zen = value === "calm"; persist(); syncScene(); controls.setProfile(profile); syncModeToggle(); break;
+    case "buyVenue": if (typeof value === "string" && value in VENUES) buyVenue(value as VenueId); break;
     case "reloadLibrary": void fetchLibrary().then((lib) => { if (lib.length) { audio.addTracks(lib); controls.setMedia(audio.tracks, audio.index); } }); break;
   }
 }
@@ -232,7 +236,7 @@ function reportState(): void {
       venueId: currentVenue(), venueName: VENUES[currentVenue()].name,
       trackIndex: audio.index, trackTitle: c?.title ?? null,
       playing: audio.playing, muted: audio.muted, volume: profile.settings.volume,
-      mode: zen() ? "calm" : "game", unlocks: profile.unlocks,
+      mode: zen() ? "calm" : "game", unlocks: profile.unlocks, cred: Math.floor(profile.cred),
       tracks: audio.tracks.map((t, i) => ({ i, title: t.title, artist: t.artist, station: !!t.station })),
     }),
   }).catch(() => {});
@@ -247,6 +251,44 @@ setInterval(() => {
     .catch(() => {});
   reportState();
 }, 1500);
+
+// ── fan feed: canned "what people are saying about the DJ" posts (Game mode) ──
+const fanFeed = $("fanFeed");
+const FAN_HANDLES = ["neon_raver", "bass_seeker", "synth_kid", "404dancer", "moodboard", "lofi_lou", "pixel_punk", "afterhrs", "glowstick", "vinyl_only", "night_owl", "crowdsurfr", "subwoofer", "beatdrop", "rave_mom", "echo_chamber", "808s_only", "midnight_mel", "feels_good", "the_lurker"];
+const FAN_AV = ["🕶️", "🎧", "🪩", "🔥", "✨", "🦄", "🌙", "👾", "💃", "🕺", "🎶", "😎", "🤩", "🫨", "🥹"];
+const FAN_LINES = [
+  "{venue} is going OFF tonight 🔥", "@{dj} the {genre} selection is immaculate 👌",
+  "who IS this dj?? {genre} done right", "{vibe} vibes only rn ✨", "@{dj} never misses 🎧",
+  "this set >>> everything else", "the crowd at {venue} is UNREAL", "ok @{dj} go off i guess 🙌",
+  "{genre} + {venue} = perfection honestly", "been here 2 hrs can't leave send help 😅",
+  "@{dj} reading the room perfectly", "lowkey the best {genre} set i've heard",
+  "{fans} of us and counting 👀", "not me crying to {genre} at {venue} 😭🔥",
+  "@{dj} drop another one PLEASE", "the {vibe} energy is EVERYTHING", "{venue} chat we are SO back",
+  "certified banger alert 🚨", "my productivity? gone. worth it 💅", "@{dj} i NEEDED this today",
+];
+function fanPost(): void {
+  const vars: Record<string, string> = {
+    dj: profile.djName, venue: VENUES[currentVenue()].name,
+    genre: currentGenre() ?? VENUES[currentVenue()].genre,
+    vibe: profile.vibe, fans: String(Math.max(2, Math.round(profile.fans))),
+  };
+  const text = FAN_LINES[Math.floor(Math.random() * FAN_LINES.length)].replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
+  const card = document.createElement("div");
+  card.className = "fan-post";
+  card.innerHTML = `<div class="fan-av"></div><div class="fan-body"><div class="fan-handle"></div><div class="fan-text"></div><div class="fan-likes"></div></div>`;
+  const av = card.querySelector(".fan-av") as HTMLElement;
+  av.textContent = FAN_AV[Math.floor(Math.random() * FAN_AV.length)];
+  av.style.background = `hsl(${Math.floor(Math.random() * 360)},55%,42%)`;
+  (card.querySelector(".fan-handle") as HTMLElement).textContent = "@" + FAN_HANDLES[Math.floor(Math.random() * FAN_HANDLES.length)];
+  (card.querySelector(".fan-text") as HTMLElement).textContent = text;
+  (card.querySelector(".fan-likes") as HTMLElement).textContent = "♥ " + (1 + Math.floor(Math.random() * 240));
+  fanFeed.prepend(card);
+  while (fanFeed.children.length > 3) fanFeed.lastElementChild?.remove();
+  setTimeout(() => { card.classList.add("out"); setTimeout(() => card.remove(), 600); }, 7000);
+}
+(function scheduleFan() {
+  setTimeout(() => { if (!zen() && audio.playing) fanPost(); scheduleFan(); }, (20 + Math.random() * 18) * 1000);
+})();
 
 // ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
 let presenceDrives = false; // does presence control playback right now?
