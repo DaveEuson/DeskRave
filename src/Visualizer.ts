@@ -3180,15 +3180,26 @@ export class Visualizer {
     const { kick, beat } = this.pulse(t, 102);
     const horizon = Math.round(H * 0.66);
 
+    const night = this.isNight(new Date()); // same clock the global grade uses
     const sg = this.g.createLinearGradient(0, 0, 0, horizon);
-    sg.addColorStop(0, "hsl(208,76%,66%)");
-    sg.addColorStop(1, "hsl(196,70%,84%)");
+    if (night) {
+      sg.addColorStop(0, "hsl(234,46%,15%)"); // deep indigo overhead
+      sg.addColorStop(1, "hsl(220,40%,32%)"); // lighter toward the horizon
+    } else {
+      sg.addColorStop(0, "hsl(208,76%,66%)");
+      sg.addColorStop(1, "hsl(196,70%,84%)");
+    }
     this.g.fillStyle = sg;
     this.g.fillRect(0, 0, W, horizon);
 
-    this.parkSun(W, H, u, t);
-    this.parkClouds(W, u);
-    this.parkBirds(W, u, t);
+    if (night) {
+      this.parkStars(W, horizon, u, t);
+      this.parkMoon(W * 0.84, H * 0.16, u);
+    } else {
+      this.parkSun(W, H, u, t);
+      this.parkClouds(W, u);
+      this.parkBirds(W, u, t);
+    }
 
     this.px(0, horizon - 6 * u, W, 8 * u, "hsl(138,34%,44%)");
     for (let i = 0; i < W; i += 5 * u) this.disc(i, horizon - 6 * u, 4 * u, 3 * u, "hsl(135,36%,47%)");
@@ -3237,6 +3248,27 @@ export class Visualizer {
     this.disc(cx, cy, 6 * u, 6 * u, "hsl(50,100%,84%)");
     this.disc(cx, cy, 6 * u, 6 * u, "hsla(50,100%,84%,0.5)", g);
     this.disc(cx, cy, 4 * u, 4 * u, "hsl(54,100%,90%)");
+  }
+
+  // after dark the sun sets and a pale gibbous moon takes its place
+  private parkMoon(cx: number, cy: number, u: number): void {
+    const g = this.glow;
+    this.disc(cx, cy, 9 * u, 9 * u, "hsla(212,46%,86%,0.16)", g); // soft halo (blooms)
+    this.disc(cx, cy, 6 * u, 6 * u, "hsl(212,26%,88%)");          // body
+    this.disc(cx, cy, 6 * u, 6 * u, "hsla(212,46%,90%,0.4)", g);
+    this.disc(cx - 1.8 * u, cy - 1.4 * u, 1.2 * u, 1.2 * u, "hsla(214,18%,72%,0.7)"); // craters
+    this.disc(cx + 1.9 * u, cy + 0.9 * u, 0.9 * u, 0.9 * u, "hsla(214,18%,72%,0.6)");
+    this.disc(cx + 0.2 * u, cy + 2.2 * u, 0.7 * u, 0.7 * u, "hsla(214,18%,72%,0.5)");
+  }
+
+  private parkStars(W: number, horizon: number, u: number, t: number): void {
+    for (let i = 0; i < 36; i++) {
+      const sx = ((i * 97.13) % 1) * W;
+      const sy = ((i * 41.73) % 1) * (horizon - 8 * u);
+      const tw = 0.5 + 0.5 * Math.sin(t * 1.6 + i * 1.3); // gentle twinkle
+      const sz = i % 6 === 0 ? 1.4 * u : 1 * u;
+      this.px(sx, sy, sz, sz, `hsla(210,40%,94%,${(0.3 + tw * 0.55).toFixed(2)})`);
+    }
   }
 
   private parkClouds(W: number, u: number): void {
