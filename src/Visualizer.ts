@@ -3456,7 +3456,7 @@ export class Visualizer {
   // shared: a DJ behind a booth with two spinning decks + mixer
   private deck(px: number, topY: number, s: number, t: number, glow: string): void {
     const cy = topY - 1.3 * s, rx = 3.8 * s, ry = 1.7 * s;
-    this.disc(px, cy, rx + 0.6 * s, ry + 0.5 * s, glow);
+    this.disc(px, cy, rx + 0.6 * s, ry + 0.15 * s, glow);
     this.disc(px, cy, rx, ry, "#15121f");
     this.disc(px, cy, rx * 0.88, ry * 0.88, "#0b0912");
     this.disc(px, cy, rx * 0.36, ry * 0.36, glow);
@@ -3478,8 +3478,6 @@ export class Visualizer {
     const scratch = Math.sin(t * 11) * kick * 1.6 * s;
     this.limb(cx - 3 * s, shoulderY + 2.5 * s, cx - 6.6 * s + scratch, boothTop - 2 * s, 2 * s, o.jacket);
     this.limb(cx + 3 * s, shoulderY + 2.5 * s, cx + 6.6 * s, boothTop - 2 * s - kick * 1.2 * s, 2 * s, o.jacket);
-    this.px(cx - 7.6 * s + scratch, boothTop - 2.8 * s, 2.4 * s, 1.8 * s, o.skin);
-    this.px(cx + 5.2 * s, boothTop - 2.8 * s - kick * 1.2 * s, 2.4 * s, 1.8 * s, o.skin);
     this.block(cx - headR, headCY - headR, headR * 2, headR * 2, o.skin, null, skinSh);
     if (o.hat) {
       this.px(cx - headR - 0.6 * s, headCY - headR - 1 * s, headR * 2 + 1.2 * s, 2.2 * s, o.hat);
@@ -3498,6 +3496,10 @@ export class Visualizer {
     for (let i = 1; i < 5; i++) this.px(cx - boothW / 2 + (i * boothW) / 5, boothTop + 2 * s, 1, boothH - 3 * s, "#0e0b14");
     this.px(cx - boothW / 2, boothTop + boothH - 1.4 * s, boothW, 1.4 * s, o.glow);
     this.px(cx - boothW / 2, boothTop + boothH - 1.4 * s, boothW, 1.4 * s, o.glow, this.glow);
+    // opaque console top so the decks, mixer + EQ lights rest on the booth
+    // instead of floating (and glowing) against the scenery behind it
+    this.px(cx - boothW / 2, boothTop - 4 * s, boothW, 4 * s, o.booth || "#221d2a");
+    this.px(cx - boothW / 2, boothTop - 4 * s, boothW, 1 * s, o.boothHi || "#332c3e");
     this.deck(cx - 7.5 * s, boothTop, s, t, o.glow);
     this.deck(cx + 7.5 * s, boothTop, s, t + 1.5, o.glow);
     this.px(cx - 2.6 * s, boothTop - 3 * s, 5.2 * s, 3 * s, "#151019");
@@ -3507,6 +3509,9 @@ export class Visualizer {
       this.px(cx - 1.8 * s + i * 1.4 * s, boothTop - 2.4 * s, 1 * s, 1.6 * s, c);
       if (lit) this.px(cx - 1.8 * s + i * 1.4 * s, boothTop - 2.4 * s, 1 * s, 1.6 * s, c, this.glow);
     }
+    // hands back on top of the decks (drawn last so the scratch still reads)
+    this.px(cx - 7.6 * s + scratch, boothTop - 2.8 * s, 2.4 * s, 1.8 * s, o.skin);
+    this.px(cx + 5.2 * s, boothTop - 2.8 * s - kick * 1.2 * s, 2.4 * s, 1.8 * s, o.skin);
   }
 
   // ── sky per venue ──────────────────────────────────────────────────────────
