@@ -55,8 +55,29 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
   0%, 100% { box-shadow: 0 0 0 1px rgba(255,40,60,.3), 0 2px 12px rgba(0,0,0,.5); }
   50% { box-shadow: 0 0 0 2px rgba(255,40,60,.9), 0 0 18px rgba(255,30,50,.65); }
 }
-/* make room — the desk timer drops below the sign while it's posted */
-body.curfew #deskTimer { top: 98px; }
+/* make room — the desk timer drops below a top-centre sign while it's posted */
+body.topsign #deskTimer { top: 98px; }
+
+/* break sign — same prominence as the curfew warning, but warm + inviting
+   (a break is the reward, not a punishment): a heads-up that escalates to a
+   pulsing "BREAK TIME" nudge once a focus block is done */
+#breakSign { position: absolute; top: 54px; left: 50%; transform: translateX(-50%); z-index: 14;
+  display: flex; align-items: center; gap: 9px; max-width: 88vw; white-space: nowrap;
+  border-radius: 999px; padding: 6px 15px; pointer-events: none;
+  font: 13px ui-monospace, Consolas, monospace; letter-spacing: .3px;
+  text-shadow: 0 2px 6px #000; box-shadow: 0 2px 12px rgba(0,0,0,.5); }
+#breakSign[hidden] { display: none; }
+#breakSign .cs-tag { font: 700 11px "Press Start 2P", monospace; letter-spacing: .5px; flex: 0 0 auto; }
+#breakSign .cs-txt { opacity: .92; overflow: hidden; text-overflow: ellipsis; }
+#breakSign.soon { background: rgba(10,40,30,.9); border: 1px solid #2a6a52; color: #b8f0d8; }
+#breakSign.soon .cs-tag { color: #5fe0a8; }
+#breakSign.due { background: rgba(8,46,34,.94); border: 1px solid #2fb585; color: #cdfbe6;
+  animation: breakPulse 1.2s ease-in-out infinite; }
+#breakSign.due .cs-tag { color: #4ff0b0; }
+@keyframes breakPulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(60,255,180,.3), 0 2px 12px rgba(0,0,0,.5); }
+  50% { box-shadow: 0 0 0 2px rgba(60,255,180,.8), 0 0 18px rgba(40,240,170,.6); }
+}
 
 /* venue switcher — top-centre, prominent: ◀ ▶ instant-cycle, tap name → Venue Board */
 #venueNav { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 12;
@@ -202,6 +223,27 @@ body.zen #fanFeed { display: none; }
   text-shadow: 0 3px 12px #000, 0 0 20px rgba(255,0,40,.8); white-space: nowrap; }
 #cops.on .cops-label { opacity: 1; animation: copsbounce .5s ease infinite alternate; }
 @keyframes copsbounce { from { transform: translate(-50%,-50%) scale(1); } to { transform: translate(-50%,-50%) scale(1.08); } }
+
+/* break "event" — a warm teal celebration when a focus block lands (the
+   positive counterpart to the cop lights); pops in, then fades */
+#breakFlash { position: absolute; inset: 0; z-index: 46; pointer-events: none; display: none;
+  align-items: center; justify-content: center; }
+#breakFlash.on { display: flex; animation: breakFlashGlow 2.8s ease-out; }
+.break-label { font: 700 28px ui-monospace, Consolas, monospace; color: #aef7d6;
+  text-shadow: 0 0 18px rgba(60,255,180,.8), 0 4px 10px #000; white-space: nowrap;
+  transform: scale(.6); opacity: 0; }
+#breakFlash.on .break-label { animation: breakLabel 2.8s ease-out; }
+@keyframes breakFlashGlow {
+  0% { background: radial-gradient(circle at 50% 44%, rgba(40,240,170,0), transparent 60%); }
+  16% { background: radial-gradient(circle at 50% 44%, rgba(40,240,170,.32), rgba(8,40,30,.12) 55%, transparent 75%); }
+  100% { background: radial-gradient(circle at 50% 44%, rgba(40,240,170,0), transparent 60%); }
+}
+@keyframes breakLabel {
+  0% { transform: scale(.6); opacity: 0; }
+  18% { transform: scale(1.08); opacity: 1; }
+  72% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
 
 /* always-visible volume — a mixer fader on the right edge */
 #volFader { position: fixed; right: 8px; top: 50%; transform: translateY(-50%);

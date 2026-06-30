@@ -294,7 +294,9 @@ function fanPost(): void {
 // ── curfew gag: linger at an outdoor venue after dark → 🚓 the cops show up ────
 const cops = $("cops");
 const curfewSign = $("curfewSign");
+const breakSign = $("breakSign"), breakFlash = $("breakFlash");
 let curfewMs = 0, copsActive = false;
+let breakSignOn = false, curfewSignOn = false; // which top-centre alert is showing
 const busted = new Set<VenueId>(); // spots the cops shut down — closed until the curfew lifts at dawn
 function curfewHour(): boolean {
   if (FAST < 1) return true; // ?fast: any time counts as "after dark" so it's testable
@@ -340,9 +342,9 @@ function triggerCops(): void {
 const fmtHour = (h: number) => `${h % 12 || 12}${h < 12 ? "am" : "pm"}`;
 function renderCurfewSign(): void {
   const v = currentVenue();
-  const show = !zen() && !!VENUES[v].curfew;
+  const show = !zen() && !!VENUES[v].curfew && !breakSignOn; // a break nudge takes the slot
+  curfewSignOn = show;
   curfewSign.hidden = !show;
-  document.body.classList.toggle("curfew", show);
   if (!show) return;
   const name = VENUES[v].name;
   if (curfewHour()) {
@@ -355,6 +357,34 @@ function renderCurfewSign(): void {
     curfewSign.innerHTML = `<span class="cs-tag">🌙 CURFEW</span>`
       + `<span class="cs-txt">${name} closes at ${fmtHour(CURFEW.startHour)} — clear out by dark</span>`;
   }
+}
+// break warning — the healthy counterpart to the cops: a prominent, escalating
+// nudge (heads-up → pulsing "BREAK TIME") once a focus block lands. Game-mode
+// only; Calm mode keeps the quiet deskTimer nudge.
+function renderBreakSign(): void {
+  const present = presence.active ? presence.current.present : audio.playing;
+  let state = "";
+  if (!zen() && present && !onBreak) {
+    if (breakDue) state = "due";
+    else if (focusMs > 0 && FOCUS_MS - focusMs <= SOON_MS) state = "soon";
+  }
+  breakSignOn = state !== "";
+  breakSign.hidden = !breakSignOn;
+  if (state === "due") {
+    breakSign.className = "due";
+    breakSign.innerHTML = `<span class="cs-tag">🌿 BREAK TIME</span>`
+      + `<span class="cs-txt">step away & recharge — the crowd will keep vibing</span>`;
+  } else if (state === "soon") {
+    breakSign.className = "soon";
+    breakSign.innerHTML = `<span class="cs-tag">🌿 BREAK SOON</span>`
+      + `<span class="cs-txt">a good stopping point in ${fmtDuration(Math.max(0, FOCUS_MS - focusMs))}</span>`;
+  }
+}
+// a brief teal "you earned it" flash when a block first completes (Game mode)
+function triggerBreak(): void {
+  if (zen()) return;
+  breakFlash.classList.add("on");
+  setTimeout(() => breakFlash.classList.remove("on"), 2800);
 }
 
 // ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
@@ -609,6 +639,7 @@ let persistTick = 0;
 const FAST = new URLSearchParams(location.search).has("fast") ? 1 / 60 : 1;
 const FOCUS_MS = BALANCE.focusMin * 60000 * FAST, BREAK_MS = BALANCE.breakMin * 60000 * FAST;
 const RENAG_MS = BALANCE.renagMin * 60000 * FAST;
+const SOON_MS = 90 * 1000 * FAST; // heads-up window before a break is due
 let focusMs = 0; // continuous desk time this focus block
 let awayMs = 0; // continuous time away (a real break resets the block)
 let breakDue = false; // focus block complete → the break nudge is active
@@ -645,6 +676,7 @@ function updateBalance(dt: number, here: boolean): void {
         breakDue = true; lastNagMs = focusMs;
         award(REWARDS.focusBlock, REWARDS.focusFans, `🌿 Solid ${Math.round(FOCUS_MS / 60000 / FAST)}-min block — time for a break`);
         if (profile.settings.sound) audio.muffledKick(); // soft "ding through the wall"
+        triggerBreak(); // celebratory teal flash (the positive cousin of the cops)
       } else if (focusMs - lastNagMs >= RENAG_MS) {
         lastNagMs = focusMs; toast("🌿 Still going — a break would do you good");
         if (profile.settings.sound) audio.muffledKick();
@@ -724,7 +756,9 @@ setInterval(() => {
   controls.setFans(profile.fans);
   venueName.textContent = VENUES[currentVenue()].name; // switcher label
   renderBuffs();
-  renderCurfewSign();
+  renderBreakSign();  // sets breakSignOn — takes the top-centre slot when a break is due
+  renderCurfewSign(); // yields the slot while a break nudge is showing
+  document.body.classList.toggle("topsign", breakSignOn || curfewSignOn);
   updateNowPlaying();
   if (++persistTick >= 20) { persistTick = 0; persist(); } // checkpoint the log ~every 20s
   const todayMs = deskTotals(profile).today * 1000;
@@ -734,12 +768,18 @@ setInterval(() => {
   // so a glance at your main monitor doesn't make it vanish + read as a reset
   deskTimer.classList.toggle("on", breakDue || (!zen() && (presence.current.present || focusMs > 0 || audio.playing)));
   deskTimer.classList.toggle("break", breakDue);
-  deskTimer.innerHTML = breakDue
-    ? presence.current.present
-      ? `<span class="dt-main">🌿 take a break</span>` +
-        `<span class="dt-sub">step away ≈${BALANCE.breakMin} min to reset</span>`
-      : `<span class="dt-main">🌿 on a break</span>` +
-        `<span class="dt-sub">${fmtDuration(Math.max(0, BREAK_MS - awayMs))} left</span>`
+  const atDesk = presence.active ? presence.current.present : audio.playing;
+  deskTimer.innerHTML = breakDue && !atDesk
+    ? `<span class="dt-main">🌿 on a break</span>` +
+      `<span class="dt-sub">${fmtDuration(Math.max(0, BREAK_MS - awayMs))} left</span>`
+    : breakDue && breakSignOn
+    ? // the prominent break banner owns the nudge — keep the desk timer on stats
+      `<span class="dt-main">👤 ${fmtDuration(sessionMs)} <em>this session</em></span>` +
+      `<span class="dt-sub">🌿 nice block — today ${fmtDuration(todayMs)}</span>`
+    : breakDue
+    ? // Calm mode: the gentle nudge lives here instead of a banner
+      `<span class="dt-main">🌿 take a break</span>` +
+      `<span class="dt-sub">step away ≈${BALANCE.breakMin} min to reset</span>`
     : `<span class="dt-main">👤 ${fmtDuration(sessionMs)} <em>this session</em></span>` +
       `<span class="dt-sub">🌿 break in ${fmtDuration(Math.max(0, FOCUS_MS - focusMs))} · today ${fmtDuration(todayMs)}</span>`;
   const c = presence.current.count;
