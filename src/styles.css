@@ -37,6 +37,27 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 #deskTimer.break .dt-sub { color: #e7b06e; }
 @keyframes deskBreathe { 0%, 100% { opacity: .95; } 50% { opacity: .5; } }
 
+/* curfew sign — posted notice at restricted venues; flashes a warning after dark */
+#curfewSign { position: absolute; top: 54px; left: 50%; transform: translateX(-50%); z-index: 13;
+  display: flex; align-items: center; gap: 9px; max-width: 88vw; white-space: nowrap;
+  border-radius: 999px; padding: 6px 15px; pointer-events: none;
+  font: 13px ui-monospace, Consolas, monospace; letter-spacing: .3px;
+  text-shadow: 0 2px 6px #000; box-shadow: 0 2px 12px rgba(0,0,0,.5); }
+#curfewSign[hidden] { display: none; }
+#curfewSign .cs-tag { font: 700 11px "Press Start 2P", monospace; letter-spacing: .5px; flex: 0 0 auto; }
+#curfewSign .cs-txt { opacity: .92; overflow: hidden; text-overflow: ellipsis; }
+#curfewSign.warn { background: rgba(40,30,8,.9); border: 1px solid #6a5326; color: #ffd9a0; }
+#curfewSign.warn .cs-tag { color: #ffc14d; }
+#curfewSign.danger { background: rgba(46,8,12,.92); border: 1px solid #b5283a; color: #ffd2d2;
+  animation: curfewPulse 1s ease-in-out infinite; }
+#curfewSign.danger .cs-tag { color: #ff5b6e; }
+@keyframes curfewPulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255,40,60,.3), 0 2px 12px rgba(0,0,0,.5); }
+  50% { box-shadow: 0 0 0 2px rgba(255,40,60,.9), 0 0 18px rgba(255,30,50,.65); }
+}
+/* make room — the desk timer drops below the sign while it's posted */
+body.curfew #deskTimer { top: 98px; }
+
 /* venue switcher — top-centre, prominent: ◀ ▶ instant-cycle, tap name → Venue Board */
 #venueNav { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 12;
   display: flex; align-items: center; gap: 8px;

@@ -292,6 +292,7 @@ function fanPost(): void {
 
 // ── curfew gag: linger at an outdoor venue after dark → 🚓 the cops show up ────
 const cops = $("cops");
+const curfewSign = $("curfewSign");
 let curfewMs = 0, copsActive = false;
 function curfewHour(): boolean {
   if (FAST < 1) return true; // ?fast: any time counts as "after dark" so it's testable
@@ -319,6 +320,27 @@ function triggerCops(): void {
       ? "club" : VENUE_ORDER.filter((id) => profile.unlocks.includes(id) && !VENUES[id].curfew)[0];
     if (safe) { profile.venue = safe as VenueId; persist(); controls.setProfile(profile); syncScene(); toast("🎉 After-party moved to the club!"); }
   }, 3800);
+}
+// posted sign at restricted venues: lists the curfew by day, escalates to a
+// flashing "cops incoming" warning once the sun's down so you can clear out first
+const fmtHour = (h: number) => `${h % 12 || 12}${h < 12 ? "am" : "pm"}`;
+function renderCurfewSign(): void {
+  const v = currentVenue();
+  const show = !zen() && !!VENUES[v].curfew;
+  curfewSign.hidden = !show;
+  document.body.classList.toggle("curfew", show);
+  if (!show) return;
+  const name = VENUES[v].name;
+  if (curfewHour()) {
+    const remain = Math.max(0, CURFEW.lingerSec * 1000 * FAST - curfewMs);
+    curfewSign.className = "danger";
+    curfewSign.innerHTML = `<span class="cs-tag">🚨 AFTER HOURS</span>`
+      + `<span class="cs-txt">${name} is closed — cops in ${fmtDuration(remain)} 🚓</span>`;
+  } else {
+    curfewSign.className = "warn";
+    curfewSign.innerHTML = `<span class="cs-tag">🌙 CURFEW</span>`
+      + `<span class="cs-txt">${name} closes at ${fmtHour(CURFEW.startHour)} — clear out by dark</span>`;
+  }
 }
 
 // ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
@@ -688,6 +710,7 @@ setInterval(() => {
   controls.setFans(profile.fans);
   venueName.textContent = VENUES[currentVenue()].name; // switcher label
   renderBuffs();
+  renderCurfewSign();
   updateNowPlaying();
   if (++persistTick >= 20) { persistTick = 0; persist(); } // checkpoint the log ~every 20s
   const todayMs = deskTotals(profile).today * 1000;
