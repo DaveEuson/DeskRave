@@ -299,7 +299,7 @@ function curfewHour(): boolean {
   return h >= CURFEW.startHour || h < CURFEW.endHour;
 }
 function updateCurfew(dt: number): void {
-  if (copsActive) return;
+  if (copsActive || zen()) return; // a Game-mode gag — never interrupts Calm/focus
   const v = currentVenue();
   if (VENUES[v].curfew && curfewHour() && (presence.current.present || audio.playing)) {
     curfewMs += dt;
