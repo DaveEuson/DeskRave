@@ -14,6 +14,7 @@ interface State {
   volume: number;
   mode: string;
   unlocks: string[];
+  cred: number;
   tracks: { i: number; title: string; artist: string; station: boolean }[];
 }
 
@@ -30,6 +31,7 @@ let sig = ""; // re-render only when something meaningful changes (avoids flashi
 function render(): void {
   if (!state) { app.innerHTML = `<div class="loading">Connecting to the kiosk…<br><small>same Wi-Fi as the kiosk?</small></div>`; return; }
   const s = state, owned = VENUE_ORDER.filter((id) => s.unlocks.includes(id));
+  const locked = VENUE_ORDER.filter((id) => !s.unlocks.includes(id)).sort((a, b) => VENUES[a].price - VENUES[b].price);
   app.innerHTML = `
     <header>
       <h1>🎧 Pixel DJ — Remote</h1>
@@ -45,11 +47,14 @@ function render(): void {
     <input class="vol" type="range" min="0" max="100" value="${Math.round(s.volume * 100)}" />
     <h2>Venue</h2>
     <div class="grid">${owned.map((id) => `<button class="card ${s.venueId === id ? "on" : ""}" data-venue="${id}" style="--c:${VENUES[id].accent}"><b>${esc(VENUES[id].name)}</b><small>${esc(VENUES[id].genre)}</small></button>`).join("")}</div>
+    <h2>Store <span class="cred">◈ ${s.cred}</span></h2>
+    <div class="grid">${locked.length ? locked.map((id) => `<button class="card store ${s.cred >= VENUES[id].price ? "" : "cant"}" data-buy="${id}" style="--c:${VENUES[id].accent}"><b>${esc(VENUES[id].name)}</b><small>${esc(VENUES[id].genre)}</small><span class="price">◈ ${VENUES[id].price}</span></button>`).join("") : `<div class="allset">Every venue unlocked! 🎉</div>`}</div>
     <h2>Stations &amp; files <label class="up">＋ upload<input type="file" accept="audio/*,.mp3,.wav,.m4a,.flac,.ogg" multiple hidden /></label></h2>
     <div class="list">${s.tracks.map((t) => `<button class="row ${t.i === s.trackIndex ? "on" : ""}" data-track="${t.i}"><span class="k">${t.station ? "📻" : "♪"}</span><span class="meta"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span></button>`).join("")}</div>`;
 
   app.querySelectorAll<HTMLButtonElement>("[data-cmd]").forEach((b) => (b.onclick = () => send(b.dataset.cmd!, b.dataset.val)));
   app.querySelectorAll<HTMLButtonElement>("[data-venue]").forEach((b) => (b.onclick = () => send("venue", b.dataset.venue)));
+  app.querySelectorAll<HTMLButtonElement>("[data-buy]").forEach((b) => (b.onclick = () => send("buyVenue", b.dataset.buy)));
   app.querySelectorAll<HTMLButtonElement>("[data-track]").forEach((b) => (b.onclick = () => send("selectTrack", Number(b.dataset.track))));
   const vol = app.querySelector<HTMLInputElement>(".vol");
   if (vol) vol.oninput = () => void fetch("/api/remote", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ cmd: "volume", value: Number(vol.value) / 100 }) }).catch(() => {});
@@ -69,7 +74,7 @@ async function poll(): Promise<void> {
   try {
     const s = (await fetch("/api/remote/state", { cache: "no-store" }).then((r) => r.json())) as State | null;
     if (!s) return;
-    const ns = JSON.stringify([s.venueId, s.trackIndex, s.playing, s.muted, s.mode, s.tracks.length, s.unlocks.length]);
+    const ns = JSON.stringify([s.venueId, s.trackIndex, s.playing, s.muted, s.mode, s.tracks.length, s.unlocks.length, s.cred]);
     state = s;
     if (ns !== sig) { sig = ns; render(); }
   } catch { /* kiosk offline */ }

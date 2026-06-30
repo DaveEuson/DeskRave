@@ -26,6 +26,10 @@ h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #8a
 .card.on { border-color: var(--c); box-shadow: 0 0 0 1px var(--c), 0 0 16px -4px var(--c); }
 .card b { color: #fff; font-size: 15px; }
 .card small { color: var(--c); font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
+h2 .cred { color: #ffd86a; font-size: 13px; }
+.card.store .price { font-family: "Press Start 2P", monospace; font-size: 9px; color: #ffd86a; margin-top: 4px; }
+.card.store.cant { opacity: .5; }
+.allset { grid-column: 1 / -1; color: #9fe0c0; text-align: center; padding: 14px; }
 
 .up { background: #221636; border: 1px solid #2a2040; color: #e7e0f5; padding: 5px 11px; border-radius: 9px; cursor: pointer; font-size: 12px; text-transform: none; letter-spacing: 0; }
 .list { display: flex; flex-direction: column; gap: 6px; }
