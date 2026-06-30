@@ -71,12 +71,16 @@ export interface VenueMeta {
   crowd?: boolean;
   ported?: boolean;
   daypart?: "day" | "night"; // natural hour — pays off best then, less at the wrong time (omit = time-neutral)
+  curfew?: boolean; // outdoor public spot — overstay after dark and the cops show up 🚓 (a fun gag, no penalty)
 }
+
+// Curfew gag: linger at a curfew venue during these hours and you get "moved along".
+export const CURFEW = { startHour: 21, endHour: 6, lingerSec: 120 }; // 9pm–6am, after ~2 min
 export const VENUES: Record<VenueId, VenueMeta> = {
   // free starters: café / park / club (the day→night trio). everything else costs Cred
   soundcheck: { id: "soundcheck", name: "Soundcheck", label: "🎚 SOUNDCHECK", accent: "#7ad6b0", genre: "house", price: 40, crowd: true, ported: true },
   cafe: { id: "cafe", name: "Morning Café", label: "☕ MORNING CAFÉ", accent: "#f6b352", genre: "lofi", price: 0, ported: true, daypart: "day" },
-  park: { id: "park", name: "Afternoon Park", label: "🌳 AFTERNOON PARK", accent: "#7fd06a", genre: "chill", price: 0, crowd: true, ported: true, daypart: "day" },
+  park: { id: "park", name: "Afternoon Park", label: "🌳 AFTERNOON PARK", accent: "#7fd06a", genre: "chill", price: 0, crowd: true, ported: true, daypart: "day", curfew: true },
   club: { id: "club", name: "Neon Club", label: "● LIVE TONIGHT ●", accent: "#d24fe0", genre: "techno", price: 0, dark: true, crowd: true, ported: true, daypart: "night" },
   // everyday spots
   bedroom: { id: "bedroom", name: "BFF's Bedroom", label: "BEST FRIENDS", accent: "#a98cff", genre: "lofi", price: 60, crowd: true, ported: true },
@@ -86,8 +90,8 @@ export const VENUES: Record<VenueId, VenueMeta> = {
   studio: { id: "studio", name: "After Hours Studio", label: "AFTER HOURS", accent: "#8a8cff", genre: "lofi", price: 80, dark: true, ported: true, daypart: "night" },
   openhero: { id: "openhero", name: "Opening for Your Hero", label: "WARM-UP SLOT", accent: "#ffd24a", genre: "house", price: 90, crowd: true, ported: true, daypart: "night" },
   // bigger rooms + outdoors
-  rooftop: { id: "rooftop", name: "Rooftop", label: "GOLDEN HOUR", accent: "#ff9e5e", genre: "house", price: 120, crowd: true, ported: true, daypart: "day" },
-  beach: { id: "beach", name: "Sunset Shore", label: "SUNSET SHORE", accent: "#ffb27a", genre: "chill", price: 120, crowd: true, ported: true, daypart: "day" },
+  rooftop: { id: "rooftop", name: "Rooftop", label: "GOLDEN HOUR", accent: "#ff9e5e", genre: "house", price: 120, crowd: true, ported: true, daypart: "day", curfew: true },
+  beach: { id: "beach", name: "Sunset Shore", label: "SUNSET SHORE", accent: "#ffb27a", genre: "chill", price: 120, crowd: true, ported: true, daypart: "day", curfew: true },
   houseparty: { id: "houseparty", name: "House Party", label: "HOUSE PARTY", accent: "#ffb84a", genre: "house", price: 120, crowd: true, ported: true, daypart: "night" },
   radio: { id: "radio", name: "Radio Booth", label: "ON AIR", accent: "#ff6a5e", genre: "downtempo", price: 120, dark: true, ported: true },
   arcade: { id: "arcade", name: "Barcade", label: "INSERT COIN", accent: "#62e0ff", genre: "synthwave", price: 140, dark: true, crowd: true, ported: true, daypart: "night" },
@@ -100,7 +104,7 @@ export const VENUES: Record<VenueId, VenueMeta> = {
   silent: { id: "silent", name: "Silent Disco", label: "SILENT DISCO", accent: "#4ce0c0", genre: "house", price: 200, dark: true, crowd: true, ported: true, daypart: "night" },
   rink: { id: "rink", name: "Roller Rink", label: "ROLLER DISCO", accent: "#ff5fae", genre: "synthwave", price: 200, dark: true, crowd: true, ported: true, daypart: "night" },
   skilodge: { id: "skilodge", name: "Ski Lodge", label: "APRÈS-SKI", accent: "#9ed2ff", genre: "house", price: 220, crowd: true, ported: true, daypart: "day" },
-  boat: { id: "boat", name: "Sunset Cruise", label: "ON DECK", accent: "#ff8f6a", genre: "chill", price: 220, crowd: true, ported: true, daypart: "day" },
+  boat: { id: "boat", name: "Sunset Cruise", label: "ON DECK", accent: "#ff8f6a", genre: "chill", price: 220, crowd: true, ported: true, daypart: "day", curfew: true },
   forest: { id: "forest", name: "Forest Rave", label: "DEEP WOODS", accent: "#7fe04a", genre: "trance", price: 240, crowd: true, ported: true, daypart: "night" },
   underbridge: { id: "underbridge", name: "Under the Bridge", label: "OVERPASS", accent: "#5fe0c0", genre: "dnb", price: 240, dark: true, crowd: true, ported: true, daypart: "night" },
   bakersfield: { id: "bakersfield", name: "Bakersfield Rave", label: "DESERT BASS", accent: "#ffc23c", genre: "techno", price: 240, crowd: true, ported: true, daypart: "night" },

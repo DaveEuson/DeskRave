@@ -7,7 +7,7 @@ import { Controls } from "./controls";
 import { loadProfile, loadProfileSync, saveProfile, dayKey, deskTotals, type Profile } from "./profile";
 import { trackFromStation } from "./tracks";
 import { accrue, unlockLabel } from "./xp";
-import { BALANCE, DAILY_MULT, GENRE_HUE, MATCH_MULT, PRIZES, REWARDS, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
+import { BALANCE, CURFEW, DAILY_MULT, GENRE_HUE, MATCH_MULT, PRIZES, REWARDS, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, serverInfo, uploadFile } from "./library";
 import QRCode from "qrcode";
 import { Presence } from "./presence";
@@ -289,6 +289,37 @@ function fanPost(): void {
 (function scheduleFan() {
   setTimeout(() => { if (!zen() && audio.playing) fanPost(); scheduleFan(); }, (20 + Math.random() * 18) * 1000);
 })();
+
+// ── curfew gag: linger at an outdoor venue after dark → 🚓 the cops show up ────
+const cops = $("cops");
+let curfewMs = 0, copsActive = false;
+function curfewHour(): boolean {
+  if (FAST < 1) return true; // ?fast: any time counts as "after dark" so it's testable
+  const h = new Date().getHours();
+  return h >= CURFEW.startHour || h < CURFEW.endHour;
+}
+function updateCurfew(dt: number): void {
+  if (copsActive) return;
+  const v = currentVenue();
+  if (VENUES[v].curfew && curfewHour() && (presence.current.present || audio.playing)) {
+    curfewMs += dt;
+    if (curfewMs >= CURFEW.lingerSec * 1000 * FAST) triggerCops();
+  } else curfewMs = 0;
+}
+function triggerCops(): void {
+  copsActive = true; curfewMs = 0;
+  cops.classList.add("on");
+  toast(`🚓 ${VENUES[currentVenue()].name} is closed after dark — move along!`);
+  if (profile.settings.sound) audio.muffledKick();
+  setTimeout(() => {
+    cops.classList.remove("on");
+    copsActive = false;
+    // the party gets moved along — to the club (always owned), else any non-curfew spot
+    const safe = profile.unlocks.includes("club") && !VENUES.club.curfew
+      ? "club" : VENUE_ORDER.filter((id) => profile.unlocks.includes(id) && !VENUES[id].curfew)[0];
+    if (safe) { profile.venue = safe as VenueId; persist(); controls.setProfile(profile); syncScene(); toast("🎉 After-party moved to the club!"); }
+  }, 3800);
+}
 
 // ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
 let presenceDrives = false; // does presence control playback right now?
@@ -704,6 +735,7 @@ function frame(now: number): void {
   const here = presence.active ? presence.current.present : audio.playing;
   if (here) { sessionMs += dt; deskAddMs += dt; }
   updateBalance(dt, here);
+  updateCurfew(dt);
   scene.setFans(profile.fans); // a bigger crowd as your fanbase grows
   const playing = audio.playing;
   const lv = playing ? audio.levels() : null;
