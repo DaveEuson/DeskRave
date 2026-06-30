@@ -92,7 +92,7 @@ const controls = new Controls($("controls"), profile, {
   onName: (name) => { profile.djName = name || "DJ"; persist(); syncScene(); }, // no re-render (keeps focus)
   onAvatar: (a: AvatarId) => { profile.avatar = a; persist(); controls.setProfile(profile); syncScene(); },
   onJacket: (hue) => { profile.jacketHue = hue; persist(); controls.setProfile(profile); syncScene(); },
-  onVenue: (v: VenueId) => { profile.venue = v; persist(); controls.setProfile(profile); syncScene(); },
+  onVenue: (v: VenueId) => { if (curfewBlock(v)) return; profile.venue = v; persist(); controls.setProfile(profile); syncScene(); },
   onBuyVenue: (id: VenueId) => buyVenue(id),
   onBuyPrize: (pid: string) => {
     const pz = PRIZES.find((p) => p.id === pid);
@@ -131,7 +131,7 @@ const controls = new Controls($("controls"), profile, {
 // ── venue switcher (top-centre): ◀ ▶ instant-cycle owned venues; tap name → board ──
 const venuePrev = $("venuePrev"), venueNext = $("venueNext"), venueName = $("venueName");
 function cycleVenue(dir: number): void {
-  const list = VENUE_ORDER.filter((id) => profile.unlocks.includes(id));
+  const list = VENUE_ORDER.filter((id) => profile.unlocks.includes(id) && !venueClosed(id)); // skip raided spots
   if (!list.length) return;
   const i = Math.max(0, list.indexOf(profile.venue));
   profile.venue = list[(i + dir + list.length) % list.length];
@@ -144,11 +144,11 @@ venueNext.onclick = () => cycleVenue(1);
 const venueBoard = $("venueBoard");
 const vbGrid = venueBoard.querySelector<HTMLElement>(".vb-grid")!;
 function venueCardHtml(id: VenueId): string {
-  const m = VENUES[id], owned = profile.unlocks.includes(id), current = profile.venue === id;
-  return `<button class="vb-card ${owned ? "owned" : "locked"} ${current ? "on" : ""}" data-vb="${id}" style="--c:${m.accent}">
+  const m = VENUES[id], owned = profile.unlocks.includes(id), current = profile.venue === id, closed = venueClosed(id);
+  return `<button class="vb-card ${owned ? "owned" : "locked"} ${current ? "on" : ""} ${closed ? "closed" : ""}" data-vb="${id}" style="--c:${m.accent}">
       <span class="vb-cname">${m.name}</span>
       <span class="vb-cgenre">${m.genre}</span>
-      ${owned ? (current ? `<span class="vb-here">▶ here</span>` : "") : `<span class="vb-cprice">◈ ${m.price}</span>`}
+      ${closed ? `<span class="vb-here vb-closed">🚓 closed</span>` : owned ? (current ? `<span class="vb-here">▶ here</span>` : "") : `<span class="vb-cprice">◈ ${m.price}</span>`}
     </button>`;
 }
 function openVenueBoard(): void {
@@ -162,6 +162,7 @@ function openVenueBoard(): void {
 }
 function closeVenueBoard(): void { venueBoard.hidden = true; }
 function pickVenue(id: VenueId): void {
+  if (curfewBlock(id)) return; // raided spot — keep the board open, just toast
   closeVenueBoard();
   if (profile.unlocks.includes(id)) { profile.venue = id; persist(); controls.setProfile(profile); syncScene(); }
   else controls.openStore(); // locked → go buy it in the Store
@@ -212,7 +213,7 @@ let remoteSince = 0;
 function applyRemote(cmd: string, value: unknown): void {
   switch (cmd) {
     case "venue":
-      if (typeof value === "string" && value in VENUES && profile.unlocks.includes(value)) {
+      if (typeof value === "string" && value in VENUES && profile.unlocks.includes(value) && !curfewBlock(value as VenueId)) {
         profile.venue = value as VenueId; persist(); controls.setProfile(profile); syncScene();
       }
       break;
@@ -294,12 +295,23 @@ function fanPost(): void {
 const cops = $("cops");
 const curfewSign = $("curfewSign");
 let curfewMs = 0, copsActive = false;
+const busted = new Set<VenueId>(); // spots the cops shut down — closed until the curfew lifts at dawn
 function curfewHour(): boolean {
   if (FAST < 1) return true; // ?fast: any time counts as "after dark" so it's testable
   const h = new Date().getHours();
   return h >= CURFEW.startHour || h < CURFEW.endHour;
 }
+function venueClosed(id: VenueId): boolean {
+  return busted.has(id) && curfewHour(); // a raided spot stays shut, then reopens at dawn
+}
+// guard a user-driven venue switch: toasts + returns true if the spot is shut down
+function curfewBlock(id: VenueId): boolean {
+  if (!venueClosed(id)) return false;
+  toast(`🚓 ${VENUES[id].name} got shut down — closed till morning`);
+  return true;
+}
 function updateCurfew(dt: number): void {
+  if (!curfewHour() && busted.size) busted.clear(); // dawn — the raided spots reopen
   if (copsActive || zen()) return; // a Game-mode gag — never interrupts Calm/focus
   const v = currentVenue();
   if (VENUES[v].curfew && curfewHour() && (presence.current.present || audio.playing)) {
@@ -309,8 +321,10 @@ function updateCurfew(dt: number): void {
 }
 function triggerCops(): void {
   copsActive = true; curfewMs = 0;
+  const here = currentVenue();
+  busted.add(here); // raided — you can't come back here tonight
   cops.classList.add("on");
-  toast(`🚓 ${VENUES[currentVenue()].name} is closed after dark — move along!`);
+  toast(`🚓 ${VENUES[here].name} is closed after dark — move along!`);
   if (profile.settings.sound) audio.muffledKick();
   setTimeout(() => {
     cops.classList.remove("on");

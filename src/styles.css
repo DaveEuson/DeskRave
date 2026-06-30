@@ -159,6 +159,9 @@ body.zen #fanFeed { display: none; }
 .vb-card.owned { box-shadow: inset 3px 0 0 var(--c); }
 .vb-card.on { border-color: var(--c); box-shadow: 0 0 0 1px var(--c), 0 0 16px -4px var(--c); }
 .vb-card.locked { opacity: .55; }
+.vb-card.closed { opacity: .6; border-color: #6a2030; box-shadow: inset 3px 0 0 #d83a4a; cursor: not-allowed; }
+.vb-card.closed:hover { border-color: #6a2030; }
+.vb-closed { color: #ff7a88 !important; font-weight: 700; }
 .vb-card:hover { border-color: var(--c); }
 .vb-cname { font-size: 14px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .vb-cgenre { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--c); opacity: .95; }
