@@ -786,13 +786,21 @@ export class Visualizer {
     const { kick, beat } = this.pulse(t, 112);
     const parapetY = Math.round(H * 0.54);
     const roofY = Math.round(H * 0.62);
-    const sg = this.g.createLinearGradient(0, 0, 0, parapetY + 8 * u);
-    sg.addColorStop(0, "hsl(30,68%,58%)"); sg.addColorStop(0.5, "hsl(36,84%,70%)"); sg.addColorStop(1, "hsl(20,78%,62%)");
-    this.g.fillStyle = sg; this.g.fillRect(0, 0, W, parapetY + 8 * u);
-    const sunX = W * 0.7, sunY = parapetY - 4 * u;
-    this.disc(sunX, sunY, 14 * u, 14 * u, "hsla(42,100%,76%,0.3)", this.glow);
-    this.disc(sunX, sunY, 8 * u, 8 * u, "hsl(46,100%,82%)");
-    this.disc(sunX, sunY, 8 * u, 8 * u, "hsla(46,100%,82%,0.5)", this.glow);
+    const night = this.isNight(new Date());
+    const skyB = parapetY + 8 * u;
+    if (night) {
+      this.nightSky(skyB);
+      this.skyStars(W, parapetY, u, t);
+      this.skyMoon(W * 0.7, parapetY - 6 * u, u);
+    } else {
+      const sg = this.g.createLinearGradient(0, 0, 0, skyB);
+      sg.addColorStop(0, "hsl(30,68%,58%)"); sg.addColorStop(0.5, "hsl(36,84%,70%)"); sg.addColorStop(1, "hsl(20,78%,62%)");
+      this.g.fillStyle = sg; this.g.fillRect(0, 0, W, skyB);
+      const sunX = W * 0.7, sunY = parapetY - 4 * u;
+      this.disc(sunX, sunY, 14 * u, 14 * u, "hsla(42,100%,76%,0.3)", this.glow);
+      this.disc(sunX, sunY, 8 * u, 8 * u, "hsl(46,100%,82%)");
+      this.disc(sunX, sunY, 8 * u, 8 * u, "hsla(46,100%,82%,0.5)", this.glow);
+    }
     this.skyline(W, parapetY, u, "hsl(18,42%,40%)", 0.62, 6);
     this.skyline(W, parapetY, u, "hsl(14,46%,30%)", 1.0, 11);
     this.g.fillStyle = "hsl(220,8%,30%)"; this.g.fillRect(0, roofY, W, H - roofY);
@@ -825,17 +833,25 @@ export class Visualizer {
     const { kick, beat } = this.pulse(t, 100);
     const seaY = Math.round(H * 0.46);
     const sandY = Math.round(H * 0.6);
-    const sg = this.g.createLinearGradient(0, 0, 0, seaY);
-    sg.addColorStop(0, "hsl(268,38%,46%)"); sg.addColorStop(0.45, "hsl(20,72%,64%)"); sg.addColorStop(1, "hsl(36,88%,72%)");
-    this.g.fillStyle = sg; this.g.fillRect(0, 0, W, seaY);
+    const night = this.isNight(new Date());
     const sunX = W * 0.5, sunY = seaY - 3 * u;
-    this.disc(sunX, sunY, 16 * u, 16 * u, "hsla(40,100%,74%,0.28)", this.glow);
-    this.disc(sunX, sunY, 9 * u, 9 * u, "hsl(44,100%,80%)");
-    this.disc(sunX, sunY, 9 * u, 9 * u, "hsla(44,100%,80%,0.5)", this.glow);
+    if (night) {
+      this.nightSky(seaY);
+      this.skyStars(W, seaY, u, t);
+      this.skyMoon(sunX, seaY - 7 * u, u, 5);
+    } else {
+      const sg = this.g.createLinearGradient(0, 0, 0, seaY);
+      sg.addColorStop(0, "hsl(268,38%,46%)"); sg.addColorStop(0.45, "hsl(20,72%,64%)"); sg.addColorStop(1, "hsl(36,88%,72%)");
+      this.g.fillStyle = sg; this.g.fillRect(0, 0, W, seaY);
+      this.disc(sunX, sunY, 16 * u, 16 * u, "hsla(40,100%,74%,0.28)", this.glow);
+      this.disc(sunX, sunY, 9 * u, 9 * u, "hsl(44,100%,80%)");
+      this.disc(sunX, sunY, 9 * u, 9 * u, "hsla(44,100%,80%,0.5)", this.glow);
+    }
     const eg = this.g.createLinearGradient(0, seaY, 0, sandY);
-    eg.addColorStop(0, "hsl(196,48%,52%)"); eg.addColorStop(1, "hsl(204,42%,40%)");
+    if (night) { eg.addColorStop(0, "hsl(212,44%,24%)"); eg.addColorStop(1, "hsl(216,40%,15%)"); }
+    else { eg.addColorStop(0, "hsl(196,48%,52%)"); eg.addColorStop(1, "hsl(204,42%,40%)"); }
     this.g.fillStyle = eg; this.g.fillRect(0, seaY, W, sandY - seaY);
-    for (let y = seaY; y < sandY; y += 1.4 * u) { const wob = Math.sin(y * 0.5 + t * 2) * 3 * u; this.px(sunX - 4 * u + wob, y, 8 * u, 0.8 * u, "hsla(44,100%,82%,0.55)"); }
+    for (let y = seaY; y < sandY; y += 1.4 * u) { const wob = Math.sin(y * 0.5 + t * 2) * 3 * u; this.px(sunX - 4 * u + wob, y, 8 * u, 0.8 * u, night ? "hsla(210,55%,88%,0.4)" : "hsla(44,100%,82%,0.55)"); }
     for (let i = 0; i < 40; i++) {
       const wx = ((i * 91.7) % 1) * W;
       const wy = seaY + 2 * u + ((i * 37.3) % 1) * (sandY - seaY - 3 * u);
@@ -1370,17 +1386,25 @@ export class Visualizer {
     const W = this.w, H = this.h;
     const { kick, beat } = this.pulse(t, 108);
     const horizon = Math.round(H * 0.46), deckY = Math.round(H * 0.6);
-    const sg = this.g.createLinearGradient(0, 0, 0, horizon);
-    sg.addColorStop(0, "hsl(258,40%,46%)"); sg.addColorStop(0.5, "hsl(18,74%,64%)"); sg.addColorStop(1, "hsl(38,88%,72%)");
-    this.g.fillStyle = sg; this.g.fillRect(0, 0, W, horizon);
+    const night = this.isNight(new Date());
     const sunX = W * 0.66;
-    this.disc(sunX, horizon - 4 * u, 14 * u, 14 * u, "hsla(40,100%,76%,0.26)", this.glow);
-    this.disc(sunX, horizon - 4 * u, 8 * u, 8 * u, "hsl(44,100%,80%)");
-    this.disc(sunX, horizon - 4 * u, 8 * u, 8 * u, "hsla(44,100%,80%,0.5)", this.glow);
+    if (night) {
+      this.nightSky(horizon);
+      this.skyStars(W, horizon, u, t);
+      this.skyMoon(sunX, horizon - 8 * u, u, 5);
+    } else {
+      const sg = this.g.createLinearGradient(0, 0, 0, horizon);
+      sg.addColorStop(0, "hsl(258,40%,46%)"); sg.addColorStop(0.5, "hsl(18,74%,64%)"); sg.addColorStop(1, "hsl(38,88%,72%)");
+      this.g.fillStyle = sg; this.g.fillRect(0, 0, W, horizon);
+      this.disc(sunX, horizon - 4 * u, 14 * u, 14 * u, "hsla(40,100%,76%,0.26)", this.glow);
+      this.disc(sunX, horizon - 4 * u, 8 * u, 8 * u, "hsl(44,100%,80%)");
+      this.disc(sunX, horizon - 4 * u, 8 * u, 8 * u, "hsla(44,100%,80%,0.5)", this.glow);
+    }
     const eg = this.g.createLinearGradient(0, horizon, 0, deckY);
-    eg.addColorStop(0, "hsl(202,50%,46%)"); eg.addColorStop(1, "hsl(210,44%,34%)");
+    if (night) { eg.addColorStop(0, "hsl(214,44%,22%)"); eg.addColorStop(1, "hsl(218,40%,14%)"); }
+    else { eg.addColorStop(0, "hsl(202,50%,46%)"); eg.addColorStop(1, "hsl(210,44%,34%)"); }
     this.g.fillStyle = eg; this.g.fillRect(0, horizon, W, deckY - horizon);
-    for (let y = horizon; y < deckY; y += 1.4 * u) { const wob = Math.sin(y * 0.5 + t * 2) * 3 * u; this.px(sunX - 4 * u + wob, y, 8 * u, 0.8 * u, "hsla(44,100%,82%,0.5)"); }
+    for (let y = horizon; y < deckY; y += 1.4 * u) { const wob = Math.sin(y * 0.5 + t * 2) * 3 * u; this.px(sunX - 4 * u + wob, y, 8 * u, 0.8 * u, night ? "hsla(210,55%,88%,0.4)" : "hsla(44,100%,82%,0.5)"); }
     for (let i = 0; i < 30; i++) { const wx2 = ((i * 91.7) % 1) * W, wy2 = horizon + 1.5 * u + ((i * 37.3) % 1) * (deckY - horizon - 2 * u); if (Math.sin(t * 2 + i) > 0.4) this.px(wx2, wy2, 2 * u, 0.7 * u, "hsla(0,0%,100%,0.4)"); }
     const bob = Math.sin(t * 0.8) * 1 * u;
     this.g.fillStyle = "hsl(30,34%,40%)"; this.g.fillRect(0, deckY + bob, W, H - deckY);
@@ -2014,9 +2038,16 @@ export class Visualizer {
     const W = this.w, H = this.h;
     const { kick, beat } = this.pulse(t, 120);
     const lawnY = Math.round(H * 0.62);
-    const sg = this.g.createLinearGradient(0, 0, 0, lawnY);
-    sg.addColorStop(0, "hsl(210,68%,64%)"); sg.addColorStop(1, "hsl(202,55%,84%)");
-    this.g.fillStyle = sg; this.g.fillRect(0, 0, W, lawnY);
+    const night = this.isNight(new Date());
+    if (night) {
+      this.nightSky(lawnY);
+      this.skyStars(W, lawnY, u, t);
+      this.skyMoon(W * 0.82, lawnY * 0.28, u);
+    } else {
+      const sg = this.g.createLinearGradient(0, 0, 0, lawnY);
+      sg.addColorStop(0, "hsl(210,68%,64%)"); sg.addColorStop(1, "hsl(202,55%,84%)");
+      this.g.fillStyle = sg; this.g.fillRect(0, 0, W, lawnY);
+    }
     const fw = W * 0.62, fx = W * 0.5 - fw / 2, fy = H * 0.3, fh = lawnY - fy;
     this.px(fx, fy, fw, fh, "hsl(44,18%,93%)");
     this.px(fx, fy, fw, 1.6 * u, "hsl(44,18%,99%)");
@@ -2085,9 +2116,16 @@ export class Visualizer {
     const W = this.w, H = this.h;
     const { kick, beat } = this.pulse(t, 96);
     const groundY = Math.round(H * 0.7);
-    const sg = this.g.createLinearGradient(0, 0, 0, groundY);
-    sg.addColorStop(0, "hsl(212,46%,58%)"); sg.addColorStop(0.5, "hsl(330,50%,74%)"); sg.addColorStop(1, "hsl(28,70%,82%)");
-    this.g.fillStyle = sg; this.g.fillRect(0, 0, W, groundY);
+    const night = this.isNight(new Date());
+    if (night) {
+      this.nightSky(groundY);
+      this.skyStars(W, groundY, u, t);
+      this.skyMoon(W * 0.2, groundY * 0.24, u);
+    } else {
+      const sg = this.g.createLinearGradient(0, 0, 0, groundY);
+      sg.addColorStop(0, "hsl(212,46%,58%)"); sg.addColorStop(0.5, "hsl(330,50%,74%)"); sg.addColorStop(1, "hsl(28,70%,82%)");
+      this.g.fillStyle = sg; this.g.fillRect(0, 0, W, groundY);
+    }
     const mx = W * 0.74, mb = groundY, mh = 34 * u;
     for (let yy = 0; yy < mh; yy++) { const half = (mh - yy) * 1.4; this.px(mx - half, mb - yy, half * 2, 1, yy < 7 * u ? "hsl(210,24%,90%)" : "hsl(250,22%,56%)"); }
     const tx = W * 0.2;
@@ -2138,9 +2176,16 @@ export class Visualizer {
     const W = this.w, H = this.h;
     const { kick, beat } = this.pulse(t, 124);
     const groundY = Math.round(H * 0.68);
-    const sg = this.g.createLinearGradient(0, 0, 0, groundY);
-    sg.addColorStop(0, "hsl(28,70%,60%)"); sg.addColorStop(1, "hsl(40,84%,78%)");
-    this.g.fillStyle = sg; this.g.fillRect(0, 0, W, groundY);
+    const night = this.isNight(new Date());
+    if (night) {
+      this.nightSky(groundY);
+      this.skyStars(W, groundY, u, t);
+      this.skyMoon(W * 0.8, groundY * 0.26, u);
+    } else {
+      const sg = this.g.createLinearGradient(0, 0, 0, groundY);
+      sg.addColorStop(0, "hsl(28,70%,60%)"); sg.addColorStop(1, "hsl(40,84%,78%)");
+      this.g.fillStyle = sg; this.g.fillRect(0, 0, W, groundY);
+    }
     this.tajMahal(W * 0.5, groundY, u);
     this.px(W * 0.5 - 16 * u, groundY - 30 * u, 3 * u, 30 * u, "hsl(36,40%,46%)"); this.px(W * 0.5 + 13 * u, groundY - 30 * u, 3 * u, 30 * u, "hsl(36,40%,46%)");
     for (let i = -6; i <= 6; i++) { const a = (i / 6) * Math.PI * 0.5; this.px(W * 0.5 + Math.sin(a) * 15 * u - 1.4 * u, groundY - 30 * u - Math.cos(a) * 4 * u + 4 * u, 2.8 * u, 2.8 * u, "hsl(36,44%,50%)"); }
@@ -2225,11 +2270,18 @@ export class Visualizer {
   private renderBalloon(u: number, t: number): void {
     const W = this.w, H = this.h;
     const { kick, beat } = this.pulse(t, 96);
-    const sg = this.g.createLinearGradient(0, 0, 0, H);
-    sg.addColorStop(0, "hsl(210,60%,62%)"); sg.addColorStop(0.5, "hsl(28,72%,72%)"); sg.addColorStop(1, "hsl(45,84%,80%)");
-    this.g.fillStyle = sg; this.g.fillRect(0, 0, W, H);
-    this.disc(W * 0.78, H * 0.34, 14 * u, 14 * u, "hsla(45,100%,80%,0.3)", this.glow);
-    this.disc(W * 0.78, H * 0.34, 8 * u, 8 * u, "hsl(46,100%,84%)");
+    const night = this.isNight(new Date());
+    if (night) {
+      this.nightSky(H);
+      this.skyStars(W, H * 0.8, u, t, 46);
+      this.skyMoon(W * 0.78, H * 0.22, u, 6);
+    } else {
+      const sg = this.g.createLinearGradient(0, 0, 0, H);
+      sg.addColorStop(0, "hsl(210,60%,62%)"); sg.addColorStop(0.5, "hsl(28,72%,72%)"); sg.addColorStop(1, "hsl(45,84%,80%)");
+      this.g.fillStyle = sg; this.g.fillRect(0, 0, W, H);
+      this.disc(W * 0.78, H * 0.34, 14 * u, 14 * u, "hsla(45,100%,80%,0.3)", this.glow);
+      this.disc(W * 0.78, H * 0.34, 8 * u, 8 * u, "hsl(46,100%,84%)");
+    }
     const groundFar = H * 0.95;
     this.px(0, groundFar, W, H - groundFar, "hsla(120,28%,56%,0.4)");
     for (let i = 0; i < 22; i++) this.px(i * (W / 22), groundFar + (i % 2) * 1.2 * u, W / 22, 2.2 * u, `hsla(${90 + (i % 4) * 28},32%,${50 + (i % 2) * 8}%,0.35)`);
@@ -2905,21 +2957,31 @@ export class Visualizer {
     const w = Math.round(W * 0.34), h = Math.round(H * 0.40);
     this.px(x - 2.4 * u, y - 2.4 * u, w + 4.8 * u, h + 4.8 * u, "hsl(26,40%,32%)");
     this.px(x - 2.4 * u, y - 2.4 * u, w + 4.8 * u, 1 * u, "hsl(30,44%,46%)");
+    const night = this.isNight(new Date());
     const sg = this.g.createLinearGradient(0, y, 0, y + h);
-    sg.addColorStop(0, "hsl(222,46%,68%)");
-    sg.addColorStop(0.42, "hsl(20,82%,76%)");
-    sg.addColorStop(1, "hsl(40,92%,82%)");
+    if (night) {
+      sg.addColorStop(0, "hsl(234,44%,18%)");
+      sg.addColorStop(1, "hsl(222,38%,30%)");
+    } else {
+      sg.addColorStop(0, "hsl(222,46%,68%)");
+      sg.addColorStop(0.42, "hsl(20,82%,76%)");
+      sg.addColorStop(1, "hsl(40,92%,82%)");
+    }
     this.g.fillStyle = sg;
     this.g.fillRect(x, y, w, h);
     for (let i = 0; i < 7; i++) {
       const bw = w / 7, bx = x + i * bw;
       const bh = (3 + ((i * 37) % 5)) * u;
-      this.px(bx, y + h - bh, bw - 1, bh, "hsla(20,40%,52%,0.7)");
+      this.px(bx, y + h - bh, bw - 1, bh, night ? "hsla(228,28%,20%,0.9)" : "hsla(20,40%,52%,0.7)");
     }
-    const sunX = x + w * 0.62, sunY = y + h * 0.52;
-    this.disc(sunX, sunY, 7 * u, 7 * u, "hsl(48,100%,88%)", this.glow);
-    this.disc(sunX, sunY, 4.4 * u, 4.4 * u, "hsl(45,100%,90%)");
-    this.disc(sunX, sunY, 4.4 * u, 4.4 * u, "hsl(45,100%,90%)", this.glow);
+    if (night) {
+      this.skyMoon(x + w * 0.7, y + h * 0.3, u, 3.2);
+    } else {
+      const sunX = x + w * 0.62, sunY = y + h * 0.52;
+      this.disc(sunX, sunY, 7 * u, 7 * u, "hsl(48,100%,88%)", this.glow);
+      this.disc(sunX, sunY, 4.4 * u, 4.4 * u, "hsl(45,100%,90%)");
+      this.disc(sunX, sunY, 4.4 * u, 4.4 * u, "hsl(45,100%,90%)", this.glow);
+    }
     this.px(x + w / 2 - 0.7 * u, y, 1.4 * u, h, "hsl(28,42%,38%)");
     this.px(x, y + h * 0.46 - 0.7 * u, w, 1.4 * u, "hsl(28,42%,38%)");
     this.px(x + w / 2 - 0.7 * u, y, 0.5 * u, h, "hsl(32,46%,52%)");
@@ -3181,20 +3243,19 @@ export class Visualizer {
     const horizon = Math.round(H * 0.66);
 
     const night = this.isNight(new Date()); // same clock the global grade uses
-    const sg = this.g.createLinearGradient(0, 0, 0, horizon);
     if (night) {
-      sg.addColorStop(0, "hsl(234,46%,15%)"); // deep indigo overhead
-      sg.addColorStop(1, "hsl(220,40%,32%)"); // lighter toward the horizon
+      this.nightSky(horizon);
     } else {
+      const sg = this.g.createLinearGradient(0, 0, 0, horizon);
       sg.addColorStop(0, "hsl(208,76%,66%)");
       sg.addColorStop(1, "hsl(196,70%,84%)");
+      this.g.fillStyle = sg;
+      this.g.fillRect(0, 0, W, horizon);
     }
-    this.g.fillStyle = sg;
-    this.g.fillRect(0, 0, W, horizon);
 
     if (night) {
-      this.parkStars(W, horizon, u, t);
-      this.parkMoon(W * 0.84, H * 0.16, u);
+      this.skyStars(W, horizon, u, t);
+      this.skyMoon(W * 0.84, H * 0.16, u);
     } else {
       this.parkSun(W, H, u, t);
       this.parkClouds(W, u);
@@ -3250,25 +3311,34 @@ export class Visualizer {
     this.disc(cx, cy, 4 * u, 4 * u, "hsl(54,100%,90%)");
   }
 
-  // after dark the sun sets and a pale gibbous moon takes its place
-  private parkMoon(cx: number, cy: number, u: number): void {
+  // after dark the sun sets and a pale gibbous moon takes its place (shared by
+  // every outdoor venue — radius scales for bigger/smaller skies)
+  private skyMoon(cx: number, cy: number, u: number, r = 6): void {
     const g = this.glow;
-    this.disc(cx, cy, 9 * u, 9 * u, "hsla(212,46%,86%,0.16)", g); // soft halo (blooms)
-    this.disc(cx, cy, 6 * u, 6 * u, "hsl(212,26%,88%)");          // body
-    this.disc(cx, cy, 6 * u, 6 * u, "hsla(212,46%,90%,0.4)", g);
-    this.disc(cx - 1.8 * u, cy - 1.4 * u, 1.2 * u, 1.2 * u, "hsla(214,18%,72%,0.7)"); // craters
-    this.disc(cx + 1.9 * u, cy + 0.9 * u, 0.9 * u, 0.9 * u, "hsla(214,18%,72%,0.6)");
-    this.disc(cx + 0.2 * u, cy + 2.2 * u, 0.7 * u, 0.7 * u, "hsla(214,18%,72%,0.5)");
+    this.disc(cx, cy, (r + 3) * u, (r + 3) * u, "hsla(212,46%,86%,0.16)", g); // soft halo (blooms)
+    this.disc(cx, cy, r * u, r * u, "hsl(212,26%,88%)");                       // body
+    this.disc(cx, cy, r * u, r * u, "hsla(212,46%,90%,0.4)", g);
+    this.disc(cx - r * 0.3 * u, cy - r * 0.23 * u, r * 0.2 * u, r * 0.2 * u, "hsla(214,18%,72%,0.7)"); // craters
+    this.disc(cx + r * 0.32 * u, cy + r * 0.15 * u, r * 0.15 * u, r * 0.15 * u, "hsla(214,18%,72%,0.6)");
+    this.disc(cx + r * 0.03 * u, cy + r * 0.37 * u, r * 0.12 * u, r * 0.12 * u, "hsla(214,18%,72%,0.5)");
   }
 
-  private parkStars(W: number, horizon: number, u: number, t: number): void {
-    for (let i = 0; i < 36; i++) {
+  private skyStars(W: number, bottomY: number, u: number, t: number, n = 34): void {
+    for (let i = 0; i < n; i++) {
       const sx = ((i * 97.13) % 1) * W;
-      const sy = ((i * 41.73) % 1) * (horizon - 8 * u);
+      const sy = 2 * u + ((i * 41.73) % 1) * (bottomY - 8 * u);
       const tw = 0.5 + 0.5 * Math.sin(t * 1.6 + i * 1.3); // gentle twinkle
       const sz = i % 6 === 0 ? 1.4 * u : 1 * u;
       this.px(sx, sy, sz, sz, `hsla(210,40%,94%,${(0.3 + tw * 0.55).toFixed(2)})`);
     }
+  }
+
+  // a shared deep-indigo night sky any outdoor venue can fill its sky region with
+  private nightSky(bottomY: number): void {
+    const g = this.g.createLinearGradient(0, 0, 0, bottomY);
+    g.addColorStop(0, "hsl(234,46%,14%)");
+    g.addColorStop(1, "hsl(222,40%,27%)");
+    this.g.fillStyle = g; this.g.fillRect(0, 0, this.w, bottomY);
   }
 
   private parkClouds(W: number, u: number): void {
