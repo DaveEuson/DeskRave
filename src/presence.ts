@@ -16,10 +16,27 @@ export class Presence {
   private detector: FaceDetector | null = null;
   private running = false;
   private lastSeen = 0;
-  private graceMs = 2500; // stay "present" briefly after the last sighting (anti-flicker)
   private lastBoxes: { x: number; y: number; w: number; h: number }[] = [];
   private nativeFaces: { x: number; y: number; s: number }[] = [];
   private native = false;
+  // ── "at desk" score: hysteresis + interaction fusion over the raw detector ──
+  // The kiosk camera sits off-axis (you work at your main monitor), so raw face
+  // detection flickers. Both detector paths feed observe(); state only flips when
+  // the evidence is solid in BOTH directions:
+  //  · absent→present needs CONFIRM consecutive sightings (~0.6s) — a shadow or a
+  //    single misfired frame doesn't wake the DJ…
+  //  · …but touching the screen does, instantly (you can't tap it from another room)
+  //  · present→absent needs absentGraceMs with no face AND no touch — leaning to
+  //    your other monitor for 20s is not leaving
+  private rawStreak = 0; // consecutive positive raw observations
+  private lastInteraction = 0; // last pointer/key on the kiosk
+  private heldCount = 1; // last confirmed face count (held through grace gaps)
+  private readonly CONFIRM = 2;
+  private readonly absentGraceMs = 30000;
+  // signal-quality telemetry: raw detector flips in the last few minutes (high =
+  // bad camera angle). Read by the cam preview; costs nothing to keep.
+  private rawWas = false;
+  private flipLog: number[] = [];
   lastError = "";
   onChange?: (s: PresenceState) => void;
 
@@ -53,8 +70,45 @@ export class Presence {
     }
   }
 
-  // mock for testing the behaviour without a camera
+  // one raw detector reading (from either path) → smoothed presence state
+  private observe(rawCount: number): void {
+    const now = performance.now();
+    const raw = rawCount > 0;
+    if (raw !== this.rawWas) { this.rawWas = raw; this.flipLog.push(now); }
+    if (this.flipLog.length && now - this.flipLog[0] > 300000) this.flipLog = this.flipLog.filter((t) => now - t <= 300000);
+    if (raw) {
+      this.rawStreak++;
+      // from cold, wait for CONFIRM consecutive sightings; once present, any
+      // single sighting keeps the clock fresh
+      if (this.state.present || this.rawStreak >= this.CONFIRM) {
+        this.lastSeen = now;
+        this.heldCount = rawCount;
+      }
+    } else {
+      this.rawStreak = 0;
+    }
+    const seen = Math.max(this.lastSeen, this.lastInteraction);
+    const present = seen > 0 && now - seen < this.absentGraceMs;
+    this.set(present, present ? Math.max(1, this.heldCount) : 0);
+  }
+
+  // a pointer/key on the kiosk is the strongest presence signal there is —
+  // counts as a confirmed sighting and wakes the state immediately
+  noteInteraction(): void {
+    if (!this.running) return; // camera off → callers use the audio fallback
+    this.lastInteraction = performance.now();
+    this.set(true, Math.max(1, this.heldCount));
+  }
+
+  // raw-signal flips over the last 5 min (≳12 means the camera view is choppy)
+  get flipsPer5Min(): number {
+    return this.flipLog.length;
+  }
+
+  // mock for testing the behaviour without a camera — bypasses the hysteresis
+  // on purpose so tests stay deterministic
   setMock(present: boolean, count = present ? 1 : 0): void {
+    if (!present) { this.lastSeen = 0; this.lastInteraction = 0; this.rawStreak = 0; }
     this.set(present, count);
   }
 
@@ -87,10 +141,13 @@ export class Presence {
         const d = await fetch("/api/presence", { cache: "no-store" }).then((r) => r.json());
         const fresh = Date.now() / 1000 - (d.ts ?? 0) < 5;
         this.nativeFaces = fresh && Array.isArray(d.faces) ? d.faces : [];
-        this.set(fresh && !!d.present, fresh ? (d.count ?? 0) : 0);
+        // raw reading → hysteresis; a stale service reads as "no face", which the
+        // absence grace absorbs unless it stays stale for a real stretch
+        this.observe(fresh && d.present ? Math.max(1, d.count ?? 1) : 0);
       } catch {
+        // one failed fetch (dev-server restart, wifi blip) is not "everyone left"
         this.nativeFaces = [];
-        this.set(false, 0);
+        this.observe(0);
       }
       setTimeout(poll, 300);
     };
@@ -165,10 +222,7 @@ export class Presence {
         /* frame not ready */
       }
     }
-    const now = performance.now();
-    if (count > 0) this.lastSeen = now;
-    const present = now - this.lastSeen < this.graceMs;
-    this.set(present, present ? Math.max(1, count) : 0);
+    this.observe(count);
     setTimeout(() => this.loop(), 250); // ~4 Hz — cheap, plenty for presence
   }
 
@@ -178,6 +232,7 @@ export class Presence {
     (this.video?.srcObject as MediaStream | null)?.getTracks().forEach((t) => t.stop());
     this.video = null;
     this.detector = null;
+    this.lastSeen = 0; this.lastInteraction = 0; this.rawStreak = 0; this.flipLog = []; this.rawWas = false;
     this.set(false, 0);
   }
 }

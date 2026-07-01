@@ -407,6 +407,17 @@ presence.onChange = (st) => {
   }
   syncScene();
 };
+// touching the kiosk is the strongest presence signal there is — feed it into
+// the score so the DJ never reads "away" mid-interaction (bad camera angle or not)
+addEventListener("pointerdown", () => presence.noteInteraction(), { passive: true, capture: true });
+addEventListener("keydown", () => presence.noteInteraction(), { passive: true, capture: true });
+// read-only debug handle: lets us measure smoothed-vs-raw signal quality on the
+// kiosk (cdp/console) without a special build
+(window as unknown as { __presence: unknown }).__presence = {
+  state: () => presence.current,
+  active: () => presence.active,
+  flips: () => presence.flipsPer5Min,
+};
 // ── "what the camera sees" privacy preview ──────────────────────────────────
 const camPreview = $("camPreview");
 const camVideo = $<HTMLVideoElement>("camVideo");
@@ -783,9 +794,12 @@ setInterval(() => {
     : `<span class="dt-main">👤 ${fmtDuration(sessionMs)} <em>this session</em></span>` +
       `<span class="dt-sub">🌿 break in ${fmtDuration(Math.max(0, FOCUS_MS - focusMs))} · today ${fmtDuration(todayMs)}</span>`;
   const c = presence.current.count;
-  // framed as the DJ's behaviour, not a watching camera ("I see you" read as creepy)
+  // framed as the DJ's behaviour, not a watching camera ("I see you" read as creepy).
+  // A choppy raw signal (≳12 flips / 5 min) usually means a bad camera angle —
+  // say so in the preview, where someone is already looking at camera stuff.
+  const choppy = presence.flipsPer5Min >= 12 ? " · 📶 view is choppy — adjust the camera?" : "";
   camStatus.textContent = !presence.active ? "camera off"
-    : presence.current.present ? `🎧 playing for you${c > 1 ? ` +${c - 1}` : ""}`
+    : presence.current.present ? `🎧 playing for you${c > 1 ? ` +${c - 1}` : ""}${choppy}`
     : "💤 resting";
 }, 1000);
 
