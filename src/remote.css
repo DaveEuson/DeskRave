@@ -40,3 +40,10 @@ h2 .cred { color: #ffd86a; font-size: 13px; }
 .row .meta { display: flex; flex-direction: column; min-width: 0; }
 .row b { color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row small { color: #8a7fae; font-size: 12px; }
+
+.backup { display: flex; gap: 8px; }
+.backup .bk-save, .backup .bk-load { flex: 1; display: flex; align-items: center; justify-content: center;
+  min-height: 52px; background: #160e26; border: 1px solid #2a2040; border-radius: 12px;
+  color: #e7e0f5; font-size: 13px; cursor: pointer; text-align: center; padding: 8px 10px; }
+.backup .bk-save:active, .backup .bk-load:active { border-color: #d946ef; }
+.bk-note { display: block; color: #6f6494; margin-top: 6px; font-size: 11px; }

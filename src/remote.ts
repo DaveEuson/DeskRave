@@ -7,6 +7,7 @@ import { VENUES, VENUE_ORDER, type VenueId } from "./config";
 interface State {
   venueId: VenueId;
   venueName: string;
+  profileId: string;
   trackIndex: number;
   trackTitle: string | null;
   playing: boolean;
@@ -50,7 +51,13 @@ function render(): void {
     <h2>Store <span class="cred">◈ ${s.cred}</span></h2>
     <div class="grid">${locked.length ? locked.map((id) => `<button class="card store ${s.cred >= VENUES[id].price ? "" : "cant"}" data-buy="${id}" style="--c:${VENUES[id].accent}"><b>${esc(VENUES[id].name)}</b><small>${esc(VENUES[id].genre)}</small><span class="price">◈ ${VENUES[id].price}</span></button>`).join("") : `<div class="allset">Every venue unlocked! 🎉</div>`}</div>
     <h2>Stations &amp; files <label class="up">＋ upload<input type="file" accept="audio/*,.mp3,.wav,.m4a,.flac,.ogg" multiple hidden /></label></h2>
-    <div class="list">${s.tracks.map((t) => `<button class="row ${t.i === s.trackIndex ? "on" : ""}" data-track="${t.i}"><span class="k">${t.station ? "📻" : "♪"}</span><span class="meta"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span></button>`).join("")}</div>`;
+    <div class="list">${s.tracks.map((t) => `<button class="row ${t.i === s.trackIndex ? "on" : ""}" data-track="${t.i}"><span class="k">${t.station ? "📻" : "♪"}</span><span class="meta"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span></button>`).join("")}</div>
+    <h2>Backup</h2>
+    <div class="backup">
+      <button class="bk-save">💾 Save backup to this phone</button>
+      <label class="bk-load">📂 Restore from a backup<input type="file" accept=".json,application/json" hidden /></label>
+    </div>
+    <small class="bk-note">Your DJ, Cred, venues &amp; desk history — keep a copy off the kiosk.</small>`;
 
   app.querySelectorAll<HTMLButtonElement>("[data-cmd]").forEach((b) => (b.onclick = () => send(b.dataset.cmd!, b.dataset.val)));
   app.querySelectorAll<HTMLButtonElement>("[data-venue]").forEach((b) => (b.onclick = () => send("venue", b.dataset.venue)));
@@ -60,6 +67,46 @@ function render(): void {
   if (vol) vol.oninput = () => void fetch("/api/remote", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ cmd: "volume", value: Number(vol.value) / 100 }) }).catch(() => {});
   const up = app.querySelector<HTMLInputElement>(".up input");
   if (up) up.onchange = () => void upload(up.files);
+  const bkSave = app.querySelector<HTMLButtonElement>(".bk-save");
+  if (bkSave) bkSave.onclick = () => void downloadBackup(bkSave);
+  const bkLoad = app.querySelector<HTMLInputElement>(".bk-load input");
+  if (bkLoad) bkLoad.onchange = () => void restoreBackup(bkLoad);
+}
+
+// pull the kiosk's server-side profile and save it as a dated file on THIS
+// device — the one copy that survives the kiosk's SD card dying
+async function downloadBackup(btn: HTMLButtonElement): Promise<void> {
+  if (!state?.profileId) return;
+  try {
+    const p = await fetch(`/api/profile?id=${encodeURIComponent(state.profileId)}`).then((r) => r.json());
+    if (!p || typeof p !== "object") { btn.textContent = "⚠ nothing to back up yet"; return; }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(p, null, 2)], { type: "application/json" }));
+    a.download = `pixel-dj-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    btn.textContent = "✅ backup saved";
+    setTimeout(() => { btn.textContent = "💾 Save backup to this phone"; }, 2500);
+  } catch {
+    btn.textContent = "⚠ kiosk unreachable";
+  }
+}
+
+// send a backup file to the kiosk; it sanitizes, adopts it, and reloads
+async function restoreBackup(input: HTMLInputElement): Promise<void> {
+  const f = input.files?.[0];
+  input.value = ""; // allow re-picking the same file
+  if (!f) return;
+  try {
+    const p = JSON.parse(await f.text()) as { djName?: string; cred?: number; unlocks?: string[] };
+    if (!p || typeof p !== "object" || !("cred" in p) || !Array.isArray(p.unlocks)) {
+      alert("That file doesn't look like a Pixel DJ backup."); return;
+    }
+    const ok = confirm(`Restore "${p.djName ?? "DJ"}" — ◈${Math.floor(p.cred ?? 0)} Cred, ${p.unlocks.length} unlocks?\n\nThis replaces the kiosk's current progress and reloads it.`);
+    if (ok) send("restoreProfile", p);
+  } catch {
+    alert("Couldn't read that file as a backup.");
+  }
 }
 
 async function upload(files: FileList | null): Promise<void> {
