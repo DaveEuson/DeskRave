@@ -1,3 +1,12 @@
+/* Bundled locally (SIL OFL 1.1) — NOT loaded from Google's CDN, so nothing leaks
+   an IP to Google and the pixel look survives offline. Vite hashes + rewrites
+   this url for the correct base (works at itch's nested path). */
+@font-face {
+  font-family: "Press Start 2P";
+  font-style: normal; font-weight: 400; font-display: swap;
+  src: url("./fonts/press-start-2p.woff2") format("woff2");
+}
+
 :root { color-scheme: dark; }
 * { box-sizing: border-box; }
 /* HUD size — Small / Medium / Large (Options). One multiplier scales the
