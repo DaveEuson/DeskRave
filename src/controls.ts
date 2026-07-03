@@ -297,7 +297,11 @@ export class Controls {
     const st = this.p.settings;
     const toggle = (k: keyof Profile["settings"], label: string) =>
       `<label class="cv-opt"><span>${label}</span><input type="checkbox" data-set="${k}" ${st[k] ? "checked" : ""}/></label>`;
+    const sizes: [Profile["settings"]["uiScale"], string][] = [["s", "Small"], ["m", "Medium"], ["l", "Large"]];
+    const uiRow = `<div class="cv-opt cv-optseg"><span>🔎 HUD size</span><div class="cv-seg">${sizes.map(([v, lbl]) =>
+      `<button data-ui="${v}" class="${(st.uiScale ?? "m") === v ? "on" : ""}">${lbl}</button>`).join("")}</div></div>`;
     this.sheetBody.innerHTML = `${toggle("zen", "🧘 Zen mode — hide scores & bonuses, just music")}${toggle("camera", "👁 Camera presence — DJ wakes when it sees you")}${toggle("sound", "🔊 Muffled kick (through the wall)")}`
+      + uiRow
       + `${toggle("weatherAuto", "🌦 Live weather — real rain/snow over the scene")}`
       + `<label class="cv-opt"><span>Weather city</span><input class="cv-city" type="text" placeholder="auto-detect from IP" maxlength="40" value="${esc(st.weatherCity)}" ${st.weatherAuto ? "" : "disabled"}/></label>`
       + `${toggle("showClock", "Desk clock")}${toggle("showDate", "Show date")}${toggle("clock24", "24-hour time")}${toggle("scanlines", "CRT scanlines")}`
@@ -311,6 +315,8 @@ export class Controls {
       + `<div class="cv-cred-foot">Hand-drawn scenes, human-made music, camera stays on-device.</div></div>`;
     this.sheetBody.querySelectorAll<HTMLInputElement>("input[data-set]").forEach((i) =>
       (i.onchange = () => { this.cb.onSettings({ [i.dataset.set as string]: i.checked } as Partial<Profile["settings"]>); if (i.dataset.set === "weatherAuto") this.renderOptions(); }));
+    this.sheetBody.querySelectorAll<HTMLButtonElement>("[data-ui]").forEach((b) =>
+      (b.onclick = () => { this.cb.onSettings({ uiScale: b.dataset.ui as Profile["settings"]["uiScale"] }); this.renderOptions(); }));
     const city = this.sheetBody.querySelector<HTMLInputElement>(".cv-city");
     if (city) city.onchange = () => this.cb.onSettings({ weatherCity: city.value.trim() });
   }

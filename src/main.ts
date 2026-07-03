@@ -68,6 +68,7 @@ function syncScene(): void {
   });
   document.body.classList.toggle("no-scanlines", !profile.settings.scanlines);
   document.body.classList.toggle("zen", zen()); // hides the dock cred/fans chip in CSS
+  document.body.dataset.ui = profile.settings.uiScale ?? "m"; // HUD size (drives --ui in CSS)
 }
 
 // buy + hop to a venue (shared by the Store tab and the phone remote)

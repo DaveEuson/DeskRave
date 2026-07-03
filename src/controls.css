@@ -67,6 +67,10 @@ body.zen .dock-cred { display: none; }
 .cv-seg { display: flex; flex: 1; background: #160e26; border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
 .cv-seg button { flex: 1; background: none; border: 0; color: #8a7fae; padding: 7px; border-radius: 999px; text-transform: capitalize; cursor: pointer; font-size: 13px; }
 .cv-seg button.on { background: linear-gradient(120deg, var(--mag), var(--violet)); color: #fff; }
+/* HUD-size selector sits in an Options row — keep the segment compact on the right */
+.cv-optseg { gap: 12px; }
+.cv-optseg .cv-seg { flex: 0 0 auto; width: 210px; }
+.cv-optseg .cv-seg button { padding: 6px 4px; }
 .cv-listhead { justify-content: space-between; margin-top: 14px; }
 .cv-addbtns { display: flex; gap: 6px; flex: 0 0 auto; }
 .cv-add { background: #221636; border: 1px solid var(--line); color: #e7e0f5; padding: 7px 11px; border-radius: 10px; cursor: pointer; font-size: 13px; }
