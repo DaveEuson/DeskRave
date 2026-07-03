@@ -108,7 +108,7 @@ const controls = new Controls($("controls"), profile, {
     persist(); controls.setProfile(profile); syncScene();
     toast(`🎉 ${pz.name} unlocked!`);
   },
-  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); syncClock(); if ("zen" in patch) controls.setProfile(profile); if ("camera" in patch) void setCamera(!!patch.camera); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); },
+  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); syncClock(); if ("zen" in patch) controls.setProfile(profile); if ("presenceMode" in patch) void setPresence(patch.presenceMode!); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); },
   onSelectTrack: (i) => void audio.select(i),
   onAddFiles: () => fileInput.click(),
   onAddStation: (name: string, url: string, genre: Genre) => {
@@ -558,31 +558,43 @@ function drawCam(): void {
 }
 
 const forceNative = new URLSearchParams(location.search).get("presence") === "native";
-async function setCamera(on: boolean): Promise<void> {
-  if (on) {
-    camPreview.hidden = false; // show it first so the <video> actually decodes frames
-    let mode: "native" | "browser" | "none";
-    if (forceNative) { presence.startNative(); mode = "native"; } // kiosk: on-device only, never touch the camera
-    else mode = await presence.start(camVideo, STANDALONE); // native service if running, else in-browser (standalone skips the /api/presence probe)
-    if (mode === "none") {
-      camPreview.hidden = true;
-      profile.settings.camera = false;
-      controls.setProfile(profile);
-      toast("📷 " + (presence.lastError || "camera unavailable"));
-    } else {
-      presenceDrives = true;
-      const onDevice = mode === "native";
-      camVideo.hidden = onDevice; // native: hide the video; we draw an abstract stick figure
-      camSnap.hidden = true; // snapshot image no longer used
-      toast(`👁 Presence on${onDevice ? " (on-device)" : ""} — the DJ plays when it sees you`);
-    }
-  } else {
-    presenceDrives = false; // set before stop() so the resulting "absent" doesn't pause your music
-    presence.stop();
-    camPreview.hidden = true;
-    camVideo.srcObject = null;
+type PresenceMode = Profile["settings"]["presenceMode"];
+const PRESENCE_TOAST: Record<string, string> = {
+  activity: "⌨ Presence: activity — the DJ plays while you're at the keyboard",
+  mic: "🎙 Presence: microphone — works best with headphones",
+  camera: "👁 Presence: camera — the DJ plays when it sees you",
+};
+// Pick how "are you here?" is sensed. Stops any current sensor first, then starts
+// the chosen one. On the kiosk (?presence=native) the on-device camera service
+// always wins regardless of the picked mode.
+async function setPresence(mode: PresenceMode): Promise<void> {
+  presenceDrives = false; // switch before starting so the transient "absent" doesn't pause your music
+  presence.stop();
+  camPreview.hidden = true; camVideo.srcObject = null;
+  if (mode === "off") { profile.settings.presenceMode = "off"; persist(); controls.setProfile(profile); syncScene(); return; }
+  let ok = false;
+  if (forceNative) { // kiosk: on-device camera service, draw the abstract stick figure
+    camPreview.hidden = false; camVideo.hidden = true; camSnap.hidden = true;
+    presence.startNative(); ok = true;
+  } else if (mode === "camera") {
+    camPreview.hidden = false;
+    ok = await presence.startCamera(camVideo);
+    camVideo.hidden = false; camSnap.hidden = true;
+    if (!ok) camPreview.hidden = true;
+  } else if (mode === "activity") {
+    presence.startActivity(); ok = true;
+  } else if (mode === "mic") {
+    ok = await presence.startMic();
   }
-  persist();
+  if (!ok) {
+    profile.settings.presenceMode = "off";
+    toast("👁 " + (presence.lastError || "that presence source isn't available"));
+  } else {
+    presenceDrives = true;
+    profile.settings.presenceMode = mode;
+    toast(PRESENCE_TOAST[forceNative ? "camera" : mode] ?? "Presence on");
+  }
+  persist(); controls.setProfile(profile); syncScene();
 }
 
 // ── audio events ────────────────────────────────────────────────────────────
@@ -901,7 +913,7 @@ setInterval(() => {
   // A choppy raw signal (≳12 flips / 5 min) usually means a bad camera angle —
   // say so in the preview, where someone is already looking at camera stuff.
   const choppy = presence.flipsPer5Min >= 12 ? " · 📶 view is choppy — adjust the camera?" : "";
-  camStatus.textContent = !presence.active ? "camera off"
+  camStatus.textContent = !presence.active ? "presence off"
     : presence.current.present ? `🎧 playing for you${c > 1 ? ` +${c - 1}` : ""}${choppy}`
     : "💤 resting";
 }, 1000);
@@ -911,7 +923,7 @@ syncScene();
 syncClock(); // paint the clock immediately (before the first 1s tick)
 controls.setProfile(profile);
 toast("👆 Tap the screen to open controls & pick a station");
-if (profile.settings.camera) void setCamera(true); // resume presence if it was on
+if (profile.settings.presenceMode !== "off") void setPresence(profile.settings.presenceMode); // resume the chosen presence source
 void refreshWeather(); // pull live weather now, then keep it fresh
 setInterval(() => void refreshWeather(), 15 * 60_000);
 
