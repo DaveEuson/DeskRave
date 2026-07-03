@@ -1,5 +1,5 @@
 import type { Levels } from "./AudioStream";
-import { CLUB_LOOK, VENUES, VIBES, clockAmbient, type AvatarId, type ClubLook, type VenueId, type VenueMeta, type VibeName, type VibeProfile } from "./config";
+import { CLUB_LOOK, CURFEW, VENUES, VIBES, clockAmbient, type AvatarId, type ClubLook, type VenueId, type VenueMeta, type VibeName, type VibeProfile } from "./config";
 
 export interface SceneState {
   hue: number; // club palette base
@@ -152,6 +152,14 @@ export class Visualizer {
   private fanLevel = 0;
   setFans(n: number): void {
     this.fanLevel = n;
+  }
+
+  // curfew signage for restricted venues — null hides it (calm mode / no curfew).
+  // night adds a blinking beacon; remainSec (set while the cops clock is running)
+  // paints the countdown on the board.
+  private curfewInfo: { night: boolean; remainSec: number | null } | null = null;
+  setCurfew(c: { night: boolean; remainSec: number | null } | null): void {
+    this.curfewInfo = c;
   }
 
   private px(x: number, y: number, w: number, h: number, color: string, g = this.g): void {
@@ -814,6 +822,7 @@ export class Visualizer {
     for (let i = 0; i < 4; i++) this.px(W * 0.08 + 1.5 * u + i * 2.8 * u, roofY - 5 * u, 1.6 * u, 4 * u, "hsl(220,6%,34%)");
     this.px(W * 0.94, roofY - 7 * u, 4 * u, 7 * u, "hsl(16,45%,42%)");
     this.disc(W * 0.94 + 2 * u, roofY - 7 * u, 4 * u, 3 * u, "hsl(128,42%,40%)");
+    this.curfewPost(W * 0.7, H * 0.86, u, t);
     this.barStaff(W * 0.1, H * 0.93, u, t, {
       shirt: "hsl(280,28%,46%)", shirtHi: "hsl(280,34%,58%)", shirtSh: "hsl(280,28%,32%)",
       skin: "hsl(28,44%,64%)", hair: "hsl(24,30%,20%)", machine: "bottles",
@@ -863,6 +872,7 @@ export class Visualizer {
     this.g.fillStyle = dg; this.g.fillRect(0, sandY, W, H - sandY);
     for (let i = 0; i < 50; i++) { const gx = ((i * 71.3) % 1) * W, gy = sandY + 3 * u + ((i * 41.7) % 1) * (H - sandY); this.px(gx, gy, 1, 1, "hsla(30,40%,44%,0.5)"); }
     this.palm(W * 0.12, sandY + 3 * u, u, t);
+    this.curfewPost(W * 0.22, H * 0.84, u, t);
     this.bonfire(W * 0.82, H * 0.9, u, t, kick);
     this.parkLounger(W * 0.9, H * 0.93, u, t, { shirt: "hsl(20,60%,56%)", shirtSh: "hsl(20,56%,42%)", skin: "hsl(28,44%,62%)", hair: "hsl(24,36%,22%)", legs: "hsl(40,30%,46%)" }, 1.3);
     this.parkDancer(W * 0.64, H * 0.92, u, beat, kick, { shirt: "hsl(48,85%,62%)", shirtSh: "hsl(44,80%,46%)", legs: "hsl(190,40%,40%)", skin: "hsl(26,46%,64%)", hair: "hsl(20,30%,16%)" }, 0.6);
@@ -1428,6 +1438,7 @@ export class Visualizer {
     for (const cxp of [W * 0.42, W * 0.58]) { this.px(cxp - 1.4 * u, bw - 1 * u, 2.8 * u, 1.4 * u, "hsl(220,8%,40%)"); }
     this.px(W * 0.5 - 0.8 * u, 2 * u, 1.6 * u, deckY - 4 * u + bob, "hsl(30,30%,30%)");
     this.stringLights(W, u, beat, 44, 3 * u, 8 * u);
+    this.curfewPost(W * 0.9, H * 0.9 + bob, u, t);
     this.djBooth(W * 0.5, H * 0.97, u, t, beat, kick, {
       skin: "hsl(26,46%,62%)", jacket: "hsl(196,46%,50%)", jacketHi: "hsl(196,52%,62%)", jacketSh: "hsl(196,46%,34%)",
       hat: "hsl(40,70%,56%)", cap: true, glow: "hsl(40,92%,62%)", booth: "hsl(204,30%,40%)", boothHi: "hsl(204,36%,50%)", boothSh: "hsl(204,30%,26%)",
@@ -3283,6 +3294,7 @@ export class Visualizer {
     this.parkTree(W * 0.9, horizon + 1 * u, u * 1.45, t, 1.7);
     this.parkTree(W * 0.5, horizon - 2 * u, u * 0.7, t, 2.6);
 
+    this.curfewPost(W * 0.2, H * 0.88, u, t);
     this.parkBlanket(W * 0.74, H * 0.9, u);
     this.parkLounger(W * 0.70, H * 0.9, u, t, { shirt: "hsl(280,40%,58%)", shirtSh: "hsl(280,38%,42%)", skin: "hsl(28,44%,66%)", hair: "hsl(28,40%,26%)" }, 0.5);
     this.parkLounger(W * 0.80, H * 0.92, u, t, { shirt: "hsl(190,55%,52%)", shirtSh: "hsl(190,52%,38%)", skin: "hsl(26,46%,58%)", hair: "hsl(18,30%,16%)" }, 2.2);
@@ -3512,6 +3524,48 @@ export class Visualizer {
     // hands back on top of the decks (drawn last so the scratch still reads)
     this.px(cx - 7.6 * s + scratch, boothTop - 2.8 * s, 2.4 * s, 1.8 * s, o.skin);
     this.px(cx + 5.2 * s, boothTop - 2.8 * s - kick * 1.2 * s, 2.4 * s, 1.8 * s, o.skin);
+  }
+
+  // ── curfew sign — a quiet, in-world posted notice at restricted venues ──────
+  // Day: plain park-board world-building. After dark: a small blinking beacon;
+  // while the cops clock is running, the board shows the countdown in red.
+  private curfewPost(cx: number, baseY: number, u: number, t: number): void {
+    const c = this.curfewInfo;
+    if (!c) return;
+    const bw = 18 * u, bh = 9.5 * u, postH = 6 * u;
+    const boardY = baseY - postH - bh;
+    // post + wooden frame around a dark panel (same idiom as the venue marquees,
+    // so the text survives the night colour grade)
+    this.px(cx - 0.8 * u, baseY - postH, 1.6 * u, postH, "hsl(26,30%,28%)");
+    this.px(cx - 0.8 * u, baseY - postH, 0.6 * u, postH, "hsl(28,34%,38%)");
+    this.block(cx - bw / 2, boardY, bw, bh, "hsl(30,34%,36%)", "hsl(32,40%,46%)", "hsl(24,28%,18%)");
+    this.px(cx - bw / 2 + 1 * u, boardY + 1 * u, bw - 2 * u, bh - 2 * u, "hsl(24,22%,12%)");
+    const g = this.g;
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    const size = Math.max(4, Math.round(2.2 * u));
+    g.font = `${size}px "Press Start 2P", monospace`;
+    g.fillStyle = "hsl(45,70%,88%)";
+    g.fillText("CURFEW", cx, boardY + bh * 0.3);
+    const big = Math.max(5, Math.round(2.9 * u));
+    g.font = `${big}px "Press Start 2P", monospace`;
+    if (c.night && c.remainSec != null) {
+      // cops incoming — countdown replaces the hour, in warning red
+      const m = Math.floor(c.remainSec / 60), s2 = String(c.remainSec % 60).padStart(2, "0");
+      g.fillStyle = Math.sin(t * 4) > 0 ? "hsl(4,95%,72%)" : "hsl(4,80%,58%)";
+      g.fillText(`${m}:${s2}`, cx, boardY + bh * 0.7);
+    } else {
+      g.fillStyle = "hsl(40,60%,74%)";
+      g.fillText(`${CURFEW.startHour % 12 || 12}PM`, cx, boardY + bh * 0.7);
+    }
+    if (c.night) {
+      // small beacon on top, alternating amber/red — noticeable, not alarming
+      const on = Math.sin(t * 4) > 0;
+      const lc = on ? "hsl(0,85%,58%)" : "hsl(35,90%,55%)";
+      this.px(cx - 0.6 * u, boardY - 1.6 * u, 1.2 * u, 1.6 * u, "hsl(220,8%,26%)"); // mount
+      this.disc(cx, boardY - 2.4 * u, 1.1 * u, 1.1 * u, lc);
+      this.disc(cx, boardY - 2.4 * u, 2.2 * u, 2.2 * u, on ? "hsla(0,90%,60%,0.45)" : "hsla(35,90%,60%,0.3)", this.glow);
+    }
   }
 
   // ── sky per venue ──────────────────────────────────────────────────────────

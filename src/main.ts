@@ -311,10 +311,9 @@ function fanPost(): void {
 
 // ── curfew gag: linger at an outdoor venue after dark → 🚓 the cops show up ────
 const cops = $("cops");
-const curfewSign = $("curfewSign");
 const breakSign = $("breakSign"), breakFlash = $("breakFlash");
 let curfewMs = 0, copsActive = false;
-let breakSignOn = false, curfewSignOn = false; // which top-centre alert is showing
+let breakSignOn = false; // the top-centre break alert is showing
 const busted = new Set<VenueId>(); // spots the cops shut down — closed until the curfew lifts at dawn
 function curfewHour(): boolean {
   if (FAST < 1) return true; // ?fast: any time counts as "after dark" so it's testable
@@ -355,26 +354,17 @@ function triggerCops(): void {
     if (safe) { profile.venue = safe as VenueId; persist(); controls.setProfile(profile); syncScene(); toast("🎉 After-party moved to the club!"); }
   }, 3800);
 }
-// posted sign at restricted venues: lists the curfew by day, escalates to a
-// flashing "cops incoming" warning once the sun's down so you can clear out first
-const fmtHour = (h: number) => `${h % 12 || 12}${h < 12 ? "am" : "pm"}`;
-function renderCurfewSign(): void {
+// the curfew notice lives IN the scene (a posted sign the Visualizer draws at
+// restricted venues) rather than on the HUD — world-building by day, a blinking
+// beacon after dark, and the cops countdown on the board while it's running
+function syncCurfewSign(): void {
   const v = currentVenue();
-  const show = !zen() && !!VENUES[v].curfew && !breakSignOn; // a break nudge takes the slot
-  curfewSignOn = show;
-  curfewSign.hidden = !show;
-  if (!show) return;
-  const name = VENUES[v].name;
-  if (curfewHour()) {
-    const remain = Math.max(0, CURFEW.lingerSec * 1000 * FAST - curfewMs);
-    curfewSign.className = "danger";
-    curfewSign.innerHTML = `<span class="cs-tag">🚨 AFTER HOURS</span>`
-      + `<span class="cs-txt">${name} is closed — cops in ${fmtDuration(remain)} 🚓</span>`;
-  } else {
-    curfewSign.className = "warn";
-    curfewSign.innerHTML = `<span class="cs-tag">🌙 CURFEW</span>`
-      + `<span class="cs-txt">${name} closes at ${fmtHour(CURFEW.startHour)} — clear out by dark</span>`;
-  }
+  if (zen() || !VENUES[v].curfew) { scene.setCurfew(null); return; }
+  const night = curfewHour();
+  const remain = night && curfewMs > 0
+    ? Math.max(0, Math.ceil((CURFEW.lingerSec * 1000 * FAST - curfewMs) / 1000))
+    : null;
+  scene.setCurfew({ night, remainSec: remain });
 }
 // break warning — the healthy counterpart to the cops: a prominent, escalating
 // nudge (heads-up → pulsing "BREAK TIME") once a focus block lands. Game-mode
@@ -785,9 +775,9 @@ setInterval(() => {
   controls.setFans(profile.fans);
   venueName.textContent = VENUES[currentVenue()].name; // switcher label
   renderBuffs();
-  renderBreakSign();  // sets breakSignOn — takes the top-centre slot when a break is due
-  renderCurfewSign(); // yields the slot while a break nudge is showing
-  document.body.classList.toggle("topsign", breakSignOn || curfewSignOn);
+  renderBreakSign();  // sets breakSignOn — the top-centre slot is the break's alone now
+  syncCurfewSign();   // the curfew notice is scene art (a posted sign), not HUD
+  document.body.classList.toggle("topsign", breakSignOn);
   updateNowPlaying();
   if (++persistTick >= 20) { persistTick = 0; persist(); } // checkpoint the log ~every 20s
   const todayMs = deskTotals(profile).today * 1000;
