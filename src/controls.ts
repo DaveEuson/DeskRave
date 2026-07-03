@@ -1,4 +1,4 @@
-import { AVATARS, CC_STATION, GENRES, JACKET_HUES, PALETTES, PRIZES, VENUES, VENUE_ORDER, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
+import { AVATARS, CC_ARTISTS, GENRES, JACKET_HUES, PALETTES, PRIZES, VENUES, VENUE_ORDER, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 import { minutesForLevel } from "./xp";
 import { deskTotals, fmtSpan, type Profile } from "./profile";
 import type { Track } from "./tracks";
@@ -298,12 +298,13 @@ export class Controls {
       + `${toggle("weatherAuto", "🌦 Live weather — real rain/snow over the scene")}`
       + `<label class="cv-opt"><span>Weather city</span><input class="cv-city" type="text" placeholder="auto-detect from IP" maxlength="40" value="${esc(st.weatherCity)}" ${st.weatherAuto ? "" : "disabled"}/></label>`
       + `${toggle("showClock", "Desk clock")}${toggle("showDate", "Show date")}${toggle("clock24", "24-hour time")}${toggle("scanlines", "CRT scanlines")}`
-      // CC BY attribution for the bundled soundtrack — the license asks for
-      // credit that travels with the music, so it lives here in the app itself
-      + `<div class="cv-credits"><div class="cv-cred-head">♫ Bundled music</div>`
-      + CC_STATION.tracks.map((t) =>
-          `<a class="cv-cred-row" href="${esc(t.sourceUrl)}" target="_blank" rel="noreferrer">` +
-          `<b>${esc(t.title)}</b> — ${esc(t.artist)} · ${esc(t.license)}</a>`).join("")
+      // CC attribution for the soundtrack — the license asks for credit that
+      // travels with the music, so it lives here in the app (per-artist; each
+      // track's title/artist/license also shows in the now-playing HUD)
+      + `<div class="cv-credits"><div class="cv-cred-head">♫ Music — Creative Commons</div>`
+      + CC_ARTISTS.map((a) =>
+          `<a class="cv-cred-row" href="${esc(a.url)}" target="_blank" rel="noreferrer">` +
+          `<b>${esc(a.artist)}</b> · ${esc(a.license)}</a>`).join("")
       + `<div class="cv-cred-foot">Hand-drawn scenes, human-made music, camera stays on-device.</div></div>`;
     this.sheetBody.querySelectorAll<HTMLInputElement>("input[data-set]").forEach((i) =>
       (i.onchange = () => { this.cb.onSettings({ [i.dataset.set as string]: i.checked } as Partial<Profile["settings"]>); if (i.dataset.set === "weatherAuto") this.renderOptions(); }));

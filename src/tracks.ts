@@ -1,7 +1,7 @@
 // A Track is anything playable: either a curated CC stream from the Internet
 // Archive, or a local file the user dropped in. Both feed the same audio graph,
 // so local files get the full reactive treatment with no DRM or licensing strings.
-import { ACCEPTED_AUDIO, CC_STATION, PALETTES, STANDALONE, STATIONS, radioUrl, type Genre } from "./config";
+import { ACCEPTED_AUDIO, CC_STATION, CC_STREAM, PALETTES, STANDALONE, STATIONS, radioUrl, type Genre } from "./config";
 
 export interface Track {
   src: string; // playable URL — radio proxy, archive.org URL, or a local object URL
@@ -47,8 +47,10 @@ export const STATION_TRACKS: Track[] = STANDALONE ? [] : STATIONS.map((s) => ({
   sourceUrl: "https://somafm.com",
 }));
 
-// The CC-BY station tracks, sourced from the balance config.
-export const CC_TRACKS: Track[] = CC_STATION.tracks.map((t, i) => ({
+// The bundled offline core + the streamed Internet-Archive catalogue → one CC
+// library. Genre + attribution flow straight through from the config; hue is
+// spread across the palette so consecutive tracks don't all glow the same.
+export const CC_TRACKS: Track[] = [...CC_STATION.tracks, ...CC_STREAM].map((t, i) => ({
   ...t,
   hue: PALETTES[i % PALETTES.length].hue,
 }));
