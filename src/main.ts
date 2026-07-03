@@ -4,7 +4,7 @@ import { AudioStream } from "./AudioStream";
 import { Visualizer } from "./Visualizer";
 import { Classifier } from "./classifier";
 import { Controls } from "./controls";
-import { loadProfile, loadProfileSync, saveProfile, dayKey, deskTotals, type Profile } from "./profile";
+import { defaultProfile, loadProfile, loadProfileSync, normalize, saveProfile, dayKey, deskTotals, type Profile } from "./profile";
 import { trackFromStation } from "./tracks";
 import { accrue, unlockLabel } from "./xp";
 import { BALANCE, CURFEW, DAILY_MULT, GENRE_HUE, MATCH_MULT, PRIZES, REWARDS, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
@@ -227,7 +227,24 @@ function applyRemote(cmd: string, value: unknown): void {
     case "mode": profile.settings.zen = value === "calm"; persist(); syncScene(); controls.setProfile(profile); syncModeToggle(); break;
     case "buyVenue": if (typeof value === "string" && value in VENUES) buyVenue(value as VenueId); break;
     case "reloadLibrary": void fetchLibrary().then((lib) => { if (lib.length) { audio.addTracks(lib); controls.setMedia(audio.tracks, audio.index); } }); break;
+    case "restoreProfile": void restoreProfile(value); break;
   }
+}
+// adopt a backup sent from the companion: sanitize it through the same normalize
+// as a regular load, keep THIS device's id, write it to the server + the local
+// mirror, then reload so every subsystem boots from the restored state cleanly
+async function restoreProfile(value: unknown): Promise<void> {
+  if (!value || typeof value !== "object" || !("cred" in (value as object)) || !("unlocks" in (value as object))) {
+    toast("📦 That file doesn't look like a Pixel DJ backup"); return;
+  }
+  const restored = normalize({ ...defaultProfile(), ...(value as Partial<Profile>), id: profile.id } as Profile);
+  toast("📦 Restoring backup — one moment…");
+  try {
+    localStorage.setItem("pixeldj.profile", JSON.stringify(restored));
+    // write the server copy synchronously (saveProfile debounces — a reload would race it)
+    await fetch("/api/profile", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(restored) });
+  } catch { /* offline: the localStorage mirror still carries it through the reload */ }
+  setTimeout(() => location.reload(), 600); // let the toast paint first
 }
 function reportState(): void {
   const c = audio.current;
@@ -235,6 +252,7 @@ function reportState(): void {
     method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify({
       venueId: currentVenue(), venueName: VENUES[currentVenue()].name,
+      profileId: profile.id, // lets the companion fetch the full profile for backup
       trackIndex: audio.index, trackTitle: c?.title ?? null,
       playing: audio.playing, muted: audio.muted, volume: profile.settings.volume,
       mode: zen() ? "calm" : "game", unlocks: profile.unlocks, cred: Math.floor(profile.cred),

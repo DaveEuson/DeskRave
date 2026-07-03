@@ -4,7 +4,8 @@ export interface CustomStation { name: string; stream: string; genre: Genre; hue
 
 // Coerce legacy/invalid data forward: an unknown saved venue (e.g. a retired id)
 // would crash the venue dispatch, so snap it to the club and guarantee starters.
-function normalize(p: Profile): Profile {
+// Exported so a restored backup goes through the same sanitizer as a load.
+export function normalize(p: Profile): Profile {
   if (!p.venue || !(p.venue in VENUES)) p.venue = "club";
   if (!Array.isArray(p.unlocks)) p.unlocks = [];
   for (const v of STARTER_VENUES) if (!p.unlocks.includes(v)) p.unlocks.push(v);
