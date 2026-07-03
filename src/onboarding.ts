@@ -3,10 +3,10 @@
 interface Card { icon: string; title: string; body: string }
 
 const CARDS: Card[] = [
-  { icon: "🎧", title: "Welcome to Pixel DJ", body: "A tiny club on your desk that moves to whatever you play — internet radio or your own files. Tap the scene anytime to open the menu." },
-  { icon: "👁", title: "It knows you're here", body: "Flip on the camera in Options and the DJ wakes when it sees you. You earn Cred just by being at your desk, working." },
-  { icon: "🛒", title: "Unlock the world", body: "Spend Cred in the Store on 40 venues — café, warehouse, space station — plus cosmetic prizes for your DJ." },
-  { icon: "🎯", title: "Play the right vibe", body: "Match the music's genre to the venue for bonus Cred. Today's hot pairing is shown right in the Music tab." },
+  { icon: "🎧", title: "Welcome to Pixel DJ", body: "A tiny club on your desk that moves to whatever you play — a built-in Creative-Commons soundtrack, your own files, or more music you find in Discover. Tap the scene anytime to open the menu." },
+  { icon: "🙌", title: "It knows you're here", body: "The DJ wakes when you're at your desk — by default just from your keyboard and mouse (private, no permissions). Prefer a webcam or mic? Choose it in Options — it all stays on your device, nothing leaves it." },
+  { icon: "🛒", title: "Unlock the world", body: "You earn Cred just by being present and working. Spend it in the Store on 40 venues — a morning café, a neon club, a rooftop at golden hour, a forest rave — plus cosmetic prizes for your DJ." },
+  { icon: "🎯", title: "Play the right vibe", body: "Match the music's genre to the venue for bonus Cred. Today's hot pairing is shown in the Bonuses, top-left." },
   { icon: "🌿", title: "It's got your back", body: "This isn't a leash — after a good focus stretch it nudges you to take a break. Work, vibe, rest, repeat." },
 ];
 

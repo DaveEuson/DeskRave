@@ -27,6 +27,7 @@ export class AudioStream {
   private lastBeat = 0;
   private volume = 0.8;
   private mutedState = false;
+  private errorStreak = 0; // consecutive failed tracks — guards the skip-on-error loop
   index = 0;
   playlist: Track[] = [...STATION_TRACKS, ...CC_TRACKS];
   onTrackChange?: (t: Track) => void;
@@ -53,11 +54,19 @@ export class AudioStream {
 
     this.freq = new Uint8Array(new ArrayBuffer(this.analyser.frequencyBinCount));
     this.el.addEventListener("ended", () => void this.next());
-    this.el.addEventListener("play", () => this.onPlayState?.(true));
+    this.el.addEventListener("play", () => { this.errorStreak = 0; this.onPlayState?.(true); });
     this.el.addEventListener("pause", () => this.onPlayState?.(false));
+    // A dead stream (archive.org hiccup, deleted item) or a codec the browser
+    // can't decode (e.g. .opus on older Safari) must NOT stall the music — skip
+    // to the next track. Only give up (and speak up) once the whole list has failed.
     this.el.addEventListener("error", () => {
       if (!this.el.src) return; // ignore the empty-src reset
-      this.onError?.(`Couldn't play "${this.current?.title ?? "track"}" — that format may be unsupported here`);
+      if (++this.errorStreak < this.playlist.length) {
+        void this.next();
+      } else {
+        this.errorStreak = 0;
+        this.onError?.("Can't reach the music right now — check your connection");
+      }
     });
   }
 
@@ -132,6 +141,13 @@ export class AudioStream {
     }
     this.playlist = [...stations, ...songs];
     this.index = loaded ? Math.max(0, this.playlist.indexOf(cur)) : 0;
+    // Cold start (no stations pinned = the standalone/web build): lead with a
+    // bundled offline track so there's always sound on boot, even with no
+    // connection or if archive.org is down. Streamed variety follows behind it.
+    if (!loaded && !stations.length) {
+      const firstOffline = this.playlist.findIndex((t) => !/^https?:/i.test(t.src));
+      if (firstOffline > 0) this.playlist.unshift(...this.playlist.splice(firstOffline, 1));
+    }
     this.onPlaylistChange?.();
   }
 
