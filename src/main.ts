@@ -893,7 +893,7 @@ setInterval(() => {
       `<span class="dt-main">🌿 take a break</span>` +
       `<span class="dt-sub">step away ≈${BALANCE.breakMin} min to reset</span>`
     : `<span class="dt-main">👤 ${fmtDuration(sessionMs)} <em>this session</em></span>` +
-      `<span class="dt-sub">🌿 break in ${fmtDuration(Math.max(0, FOCUS_MS - focusMs))} · today ${fmtDuration(todayMs)}</span>`;
+      `<span class="dt-sub">🌿 break in <b>${fmtDuration(Math.max(0, FOCUS_MS - focusMs))}</b><span class="dt-today"> · today ${fmtDuration(todayMs)}</span></span>`;
   const c = presence.current.count;
   // framed as the DJ's behaviour, not a watching camera ("I see you" read as creepy).
   // A choppy raw signal (≳12 flips / 5 min) usually means a bad camera angle —
