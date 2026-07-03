@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc && vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "build:itch": "tsc && vite build --mode itch && node -e \"const fs=require('fs');fs.rmSync('dist-itch/media',{recursive:true,force:true});fs.rmSync('dist-itch/sw.js',{force:true});fs.rmSync('dist-itch/manifest.webmanifest',{force:true});\"",
+    "preview": "vite preview --host 0.0.0.0",
+    "preview:itch": "vite preview --mode itch --port 5199"
   },
   "devDependencies": {
     "typescript": "^5.7.2",

@@ -1,4 +1,4 @@
-import { VENUES, STARTER_VENUES, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
+import { STANDALONE, VENUES, STARTER_VENUES, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 
 export interface CustomStation { name: string; stream: string; genre: Genre; hue: number }
 
@@ -153,8 +153,10 @@ export function loadProfileSync(): Profile {
 }
 
 // Load: server is source of truth; fall back to the localStorage mirror, then default.
+// Standalone builds have no server — localStorage IS the store there.
 export async function loadProfile(): Promise<Profile> {
   const id = deviceId();
+  if (STANDALONE) return loadProfileSync();
   try {
     const res = await fetch(`/api/profile?id=${encodeURIComponent(id)}`);
     if (res.ok) {
@@ -186,6 +188,7 @@ export function saveProfile(p: Profile): void {
   } catch {
     /* ignore quota */
   }
+  if (STANDALONE) return; // no server to mirror to — localStorage is the store
   clearTimeout(pending);
   pending = window.setTimeout(() => {
     void fetch("/api/profile", {

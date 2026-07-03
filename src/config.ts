@@ -278,7 +278,14 @@ export function clockAmbient(date = new Date()): number {
   return AMBIENT.troughEnergy + (AMBIENT.peakEnergy - AMBIENT.troughEnergy) * c;
 }
 
-// ── The one CC-BY station for the MVP (attribution shown in HUD) ──────────────
+// ── Build edition ─────────────────────────────────────────────────────────────
+// "standalone" (vite --mode itch) = a pure static build for itch.io/web hosting:
+// no dev-server APIs, no radio proxy, no phone remote. The kiosk keeps them all.
+export const STANDALONE = import.meta.env.MODE === "itch";
+
+// ── Bundled CC-BY soundtrack (attribution shown in the HUD + options credits) ──
+// The files ship IN the build (public/cc/) — redistribution is what CC BY is
+// for, provided the credit stays attached. Same-origin means a clean FFT too.
 export interface StationTrack {
   src: string;
   title: string;
@@ -286,13 +293,13 @@ export interface StationTrack {
   license: string;
   sourceUrl: string;
 }
-const arc = (id: string, file: string) => `https://archive.org/download/${id}/${encodeURIComponent(file)}`;
+const cc = (file: string): string => `${import.meta.env.BASE_URL}cc/${file}`;
 export const CC_STATION = {
-  name: "Internet Archive · Chiptune",
+  name: "Bundled chiptune (CC BY)",
   tracks: [
-    { src: arc("mus-dubious-dream", "Dubious Dream.mp3"), title: "Dubious Dream", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-dubious-dream" },
-    { src: arc("mus-funky-code-mod", "funky code mod.mp3"), title: "funky code mod", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-funky-code-mod" },
-    { src: arc("AAS006", "01_10_PRINT_HELLO_WORLD.mp3"), title: "10 PRINT HELLO WORLD", artist: "Andrey Avkhimovich", license: "CC BY 3.0", sourceUrl: "https://archive.org/details/AAS006" },
+    { src: cc("dubious-dream.mp3"), title: "Dubious Dream", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-dubious-dream" },
+    { src: cc("funky-code-mod.mp3"), title: "funky code mod", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-funky-code-mod" },
+    { src: cc("10-print-hello-world.mp3"), title: "10 PRINT HELLO WORLD", artist: "Andrey Avkhimovich", license: "CC BY 3.0", sourceUrl: "https://archive.org/details/AAS006" },
   ] as StationTrack[],
 };
 
@@ -324,7 +331,12 @@ export const STATIONS: Station[] = [
   { name: "Nightwave Plaza", genre: "synthwave", stream: "https://radio.plaza.one/mp3", hue: 318 },
 ];
 
-export const radioUrl = (stream: string): string => `/api/radio?url=${encodeURIComponent(stream)}`;
+// Kiosk: streams go through the same-origin /api/radio proxy so the AnalyserNode
+// can always read them. Standalone has no proxy — play the stream directly and
+// rely on the station's own CORS headers (most icecast stations send them; ones
+// that don't simply won't play, surfaced by the add-station flow).
+export const radioUrl = (stream: string): string =>
+  STANDALONE ? stream : `/api/radio?url=${encodeURIComponent(stream)}`;
 
 // ── venue × genre Cred multiplier ────────────────────────────────────────────
 // Play music whose genre matches the venue and you earn faster. A native match
