@@ -1,7 +1,7 @@
 // A Track is anything playable: either a curated CC stream from the Internet
 // Archive, or a local file the user dropped in. Both feed the same audio graph,
 // so local files get the full reactive treatment with no DRM or licensing strings.
-import { ACCEPTED_AUDIO, CC_STATION, PALETTES, STATIONS, radioUrl, type Genre } from "./config";
+import { ACCEPTED_AUDIO, CC_STATION, PALETTES, STANDALONE, STATIONS, radioUrl, type Genre } from "./config";
 
 export interface Track {
   src: string; // playable URL — radio proxy, archive.org URL, or a local object URL
@@ -33,7 +33,10 @@ export function trackFromStation(s: { name: string; stream: string; genre: Genre
 }
 
 // Internet radio stations (continuous streams, proxied for CORS).
-export const STATION_TRACKS: Track[] = STATIONS.map((s) => ({
+// Kiosk-only: the SomaFM presets are for the personal device — a distributed
+// build can't ship someone else's streams (licensing), so standalone starts
+// with the bundled CC tracks and the user's own stations/files instead.
+export const STATION_TRACKS: Track[] = STANDALONE ? [] : STATIONS.map((s) => ({
   src: radioUrl(s.stream),
   title: s.name,
   artist: `SomaFM · ${s.genre}`,

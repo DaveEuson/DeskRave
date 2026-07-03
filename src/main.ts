@@ -7,7 +7,7 @@ import { Controls } from "./controls";
 import { defaultProfile, loadProfile, loadProfileSync, normalize, saveProfile, dayKey, deskTotals, type Profile } from "./profile";
 import { trackFromStation } from "./tracks";
 import { accrue, unlockLabel } from "./xp";
-import { BALANCE, CURFEW, DAILY_MULT, GENRE_HUE, MATCH_MULT, PRIZES, REWARDS, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
+import { BALANCE, CURFEW, DAILY_MULT, GENRE_HUE, MATCH_MULT, PRIZES, REWARDS, STANDALONE, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, serverInfo, uploadFile } from "./library";
 import QRCode from "qrcode";
 import { Presence } from "./presence";
@@ -37,6 +37,7 @@ const currentWeather = (): WeatherKind => (isWeather(forcedWeather) ? forcedWeat
 // the scene atmosphere. No-op (stays clear) when the user turns live weather off.
 async function refreshWeather(): Promise<void> {
   if (forcedWeather) { syncScene(); return; } // a URL override wins; skip the fetch
+  if (STANDALONE) return; // live weather needs the kiosk server's /api/weather
   if (!profile.settings.weatherAuto) {
     if (profile.settings.weather !== "clear") { profile.settings.weather = "clear"; persist(); }
     syncScene();
@@ -207,6 +208,7 @@ async function openQr(): Promise<void> {
 qrBtn.onclick = (e) => { e.stopPropagation(); void openQr(); };
 qrOverlay.querySelector(".qr-scrim")?.addEventListener("click", () => (qrOverlay.hidden = true));
 qrOverlay.querySelector(".qr-close")?.addEventListener("click", () => (qrOverlay.hidden = true));
+if (STANDALONE) qrBtn.hidden = true; // no companion server on a static build
 
 // ── remote control: poll the companion command channel + report state back ───
 let remoteSince = 0;
@@ -260,7 +262,7 @@ function reportState(): void {
     }),
   }).catch(() => {});
 }
-setInterval(() => {
+if (!STANDALONE) setInterval(() => { // the command channel needs the kiosk server
   void fetch(`/api/remote?since=${remoteSince}`, { cache: "no-store" })
     .then((r) => r.json())
     .then((r: { latest: number; cmds: { cmd: string; value: unknown }[] }) => {
@@ -853,7 +855,9 @@ function frame(now: number): void {
 requestAnimationFrame(frame);
 
 // ── PWA: register the service worker in production builds (skip in dev/HMR) ──
-if (import.meta.env.PROD && "serviceWorker" in navigator) {
+// no SW on standalone: itch serves from a nested path where a root-scoped worker
+// can't register, and its cache layer has bitten us enough on the kiosk already
+if (import.meta.env.PROD && !STANDALONE && "serviceWorker" in navigator) {
   addEventListener("load", () => void navigator.serviceWorker.register("/sw.js").catch(() => {}));
 }
 

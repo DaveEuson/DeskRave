@@ -293,10 +293,18 @@ function mediaServer(port: number): Plugin {
 
 const PORT = 5190;
 
-export default defineConfig({
-  plugins: [mediaServer(PORT)],
-  server: { port: PORT, host: "0.0.0.0" },
-  preview: { port: PORT, host: "0.0.0.0" },
-  // multi-page: the kiosk app + the phone remote-control companion
-  build: { rollupOptions: { input: { main: "index.html", remote: "remote.html" } } },
-});
+// mode "itch" = the standalone static build (npm run build:itch): relative paths
+// (itch.io serves from a nested path), single page (no phone remote), separate
+// outDir so the kiosk's dist/ is never clobbered. Everything else is the kiosk.
+export default defineConfig(({ mode }) => mode === "itch"
+  ? {
+      base: "./",
+      build: { outDir: "dist-itch", rollupOptions: { input: { main: "index.html" } } },
+    }
+  : {
+      plugins: [mediaServer(PORT)],
+      server: { port: PORT, host: "0.0.0.0" },
+      preview: { port: PORT, host: "0.0.0.0" },
+      // multi-page: the kiosk app + the phone remote-control companion
+      build: { rollupOptions: { input: { main: "index.html", remote: "remote.html" } } },
+    });
