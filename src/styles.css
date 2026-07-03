@@ -103,7 +103,7 @@ body.topsign #deskTimer { top: 98px; }
 #venuePrev, #venueNext { width: 36px; height: 36px; border-radius: 999px; border: 1px solid #34294f; background: rgba(124,58,237,.24);
   color: #e2d8f6; cursor: pointer; font-size: 16px; line-height: 1; padding: 0; flex: 0 0 auto; }
 #venuePrev:hover, #venueNext:hover { background: rgba(124,58,237,.42); color: #fff; }
-#venueName { min-width: 140px; max-width: 360px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+#venueName { width: calc(300px * var(--ui)); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   cursor: pointer; background: none; border: 0; color: #fff; font: 700 calc(24px * var(--ui)) ui-monospace, Consolas, monospace; letter-spacing: .5px;
   padding: 2px 12px; border-radius: 999px; }
 #venueName:hover { background: rgba(255,255,255,.08); }
@@ -229,6 +229,19 @@ body.topsign #deskTimer { top: 98px; }
 .buff-tx { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .buff b { font-family: "Press Start 2P", monospace; font-size: calc(11px * var(--ui)); color: #ffd86a; flex: 0 0 auto; }
 body.zen #buffs { display: none; }
+/* progression meter — Cred left until the next venue unlocks */
+.prog { margin-top: 4px; display: flex; flex-direction: column; gap: 6px;
+  background: rgba(12,9,22,.96); border: 1px solid #4a4270; border-radius: 11px; padding: 8px 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.55); }
+.prog.ready { border-color: #ffd86a; box-shadow: 0 0 16px -4px #ffd86a, 0 2px 8px rgba(0,0,0,.5); }
+.prog-cap { font: 700 calc(10px * var(--ui)) ui-monospace, monospace; text-transform: uppercase; letter-spacing: 1px; color: #a99fce; }
+.prog-top { display: flex; align-items: center; gap: 8px; font: calc(14px * var(--ui)) ui-monospace, monospace; color: #e6ddfb; }
+.prog-ic { flex: 0 0 auto; font-size: calc(15px * var(--ui)); }
+.prog-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prog-top b { flex: 0 0 auto; font-family: "Press Start 2P", monospace; font-size: calc(10px * var(--ui)); color: #ffd86a; }
+.prog-bar { height: calc(7px * var(--ui)); border-radius: 999px; background: rgba(255,255,255,.12); overflow: hidden; }
+.prog-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #7c3aed, #d24fe0); transition: width .4s ease; }
+.prog.ready .prog-bar i { background: linear-gradient(90deg, #ffd86a, #ff9e5e); }
 
 /* fan feed — canned "what people are saying" social posts (Game mode only) */
 #fanFeed { position: absolute; top: 92px; right: 8px; z-index: 11; width: 250px; max-width: 44vw;
@@ -382,13 +395,13 @@ body.zen #fanFeed { display: none; }
 @media (max-width: 430px) {
   #deskTimer { padding: 5px 14px; }
   #deskTimer .dt-main { font-size: calc(20px * var(--ui)); }
-  #venueName { max-width: 200px; font-size: calc(20px * var(--ui)); }
+  #venueName { width: calc(210px * var(--ui)); font-size: calc(20px * var(--ui)); }
   #camPreview { width: 120px; height: 90px; }
 }
 @media (max-width: 380px) {
   #venueNav { padding: 4px 7px; gap: 5px; }
   #venuePrev, #venueNext { width: 32px; height: 32px; }
-  #venueName { max-width: 150px; font-size: calc(18px * var(--ui)); }
+  #venueName { width: calc(150px * var(--ui)); font-size: calc(18px * var(--ui)); }
 }
 
 /* short screens: shrink the fader and timer so they don't overrun the viewport */
