@@ -32,7 +32,9 @@ body.no-scanlines #crt { background: radial-gradient(120% 100% at 50% 42%, trans
 #deskTimer.on { opacity: .92; }
 #deskTimer .dt-main { font: 700 24px ui-monospace, Consolas, monospace; letter-spacing: .5px; }
 #deskTimer .dt-main em { font-size: 13px; font-weight: 400; font-style: normal; opacity: .65; letter-spacing: .5px; }
-#deskTimer .dt-sub { font: 13px ui-monospace, Consolas, monospace; color: #7fc6a6; opacity: .85; letter-spacing: .5px; }
+#deskTimer .dt-sub { font: 700 15px ui-monospace, Consolas, monospace; color: #aef0cf; opacity: .96; letter-spacing: .5px; }
+#deskTimer .dt-sub b { color: #e6fff2; font-size: 16px; }
+#deskTimer .dt-today { font-weight: 400; opacity: .62; }
 #deskTimer.break { color: #ffd08a; border-color: #6a5326; background: rgba(46,32,10,0.72); animation: deskBreathe 1.7s ease-in-out infinite; }
 #deskTimer.break .dt-sub { color: #e7b06e; }
 @keyframes deskBreathe { 0%, 100% { opacity: .95; } 50% { opacity: .5; } }
@@ -165,18 +167,18 @@ body.topsign #deskTimer { top: 98px; }
 .np-sub { font: 13px ui-monospace, Consolas, monospace; color: #cdbff0; }
 
 /* left buff list — active venue×genre bonuses (lit when active) */
-#buffs { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); z-index: 11;
-  display: flex; flex-direction: column; gap: 6px; max-width: 230px; pointer-events: none; }
-.buff-title { font: 11px ui-monospace, monospace; text-transform: uppercase; letter-spacing: 1px; color: #cdbff0;
-  margin-bottom: 2px; text-shadow: 0 1px 3px #000; }
-.buff { display: flex; align-items: center; gap: 6px; font: 12px ui-monospace, monospace; color: #d6cdec;
-  background: rgba(14,10,26,.92); border: 1px solid #3a3258; border-radius: 10px; padding: 6px 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.5); }
-.buff:not(.on) { opacity: .82; }
-.buff.on { border-color: #34d399; color: #fff; box-shadow: 0 0 14px -3px #34d399, 0 2px 8px rgba(0,0,0,.5); }
-.buff-ic { flex: 0 0 auto; }
+#buffs { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); z-index: 11;
+  display: flex; flex-direction: column; gap: 7px; max-width: 288px; pointer-events: none; }
+.buff-title { font: 700 13px ui-monospace, monospace; text-transform: uppercase; letter-spacing: 1px; color: #e4d9ff;
+  margin-bottom: 3px; text-shadow: 0 1px 3px #000; }
+.buff { display: flex; align-items: center; gap: 8px; font: 15px ui-monospace, monospace; color: #e6ddfb;
+  background: rgba(12,9,22,.96); border: 1px solid #4a4270; border-radius: 11px; padding: 9px 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.55); }
+.buff:not(.on) { opacity: .85; }
+.buff.on { border-color: #34d399; color: #fff; box-shadow: 0 0 16px -3px #34d399, 0 2px 8px rgba(0,0,0,.5); }
+.buff-ic { flex: 0 0 auto; font-size: 16px; }
 .buff-tx { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.buff b { font-family: "Press Start 2P", monospace; font-size: 9px; color: #ffd86a; flex: 0 0 auto; }
+.buff b { font-family: "Press Start 2P", monospace; font-size: 11px; color: #ffd86a; flex: 0 0 auto; }
 body.zen #buffs { display: none; }
 
 /* fan feed — canned "what people are saying" social posts (Game mode only) */
