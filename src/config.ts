@@ -476,19 +476,22 @@ export const MATCH_MULT = 1.5;
 export const DAILY_MULT = 3;
 
 // Today's bonus pairing — deterministic per UTC day so it's stable all day and
-// rotates each day. Random-feeling genre × place via a cheap hash of the day.
-export function dailyBonus(date = new Date()): { genre: Genre; venue: VenueId } {
+// rotates each day. The GENRE is shared by everyone (a cheap hash of the day);
+// the VENUE is drawn from the ones YOU'VE UNLOCKED so the bonus is always
+// reachable (no "×3 at a venue you can't visit"). Pass your owned venues in.
+export function dailyBonus(owned: VenueId[], date = new Date()): { genre: Genre; venue: VenueId } {
   const day = Math.floor(date.getTime() / 86400000);
   const genres = [...new Set(STATIONS.map((s) => s.genre))];
   const hash = (n: number) => ((Math.sin(n) * 43758.5453) % 1 + 1) % 1; // 0..1
   const g = genres[Math.floor(hash(day * 2.17) * genres.length)];
-  const v = VENUE_ORDER[Math.floor(hash(day * 7.31 + 11) * VENUE_ORDER.length)];
+  const pool = owned.length ? owned : VENUE_ORDER;
+  const v = pool[Math.floor(hash(day * 7.31 + 11) * pool.length)];
   return { genre: g, venue: v };
 }
 
-export function genreMult(venue: VenueId, stationGenre: Genre | null, date = new Date()): { mult: number; kind: "daily" | "native" | null } {
+export function genreMult(venue: VenueId, stationGenre: Genre | null, owned: VenueId[], date = new Date()): { mult: number; kind: "daily" | "native" | null } {
   if (!stationGenre) return { mult: 1, kind: null };
-  const daily = dailyBonus(date);
+  const daily = dailyBonus(owned, date);
   if (stationGenre === daily.genre && venue === daily.venue) return { mult: DAILY_MULT, kind: "daily" };
   if (stationGenre === VENUES[venue].genre) return { mult: MATCH_MULT, kind: "native" };
   return { mult: 1, kind: null };

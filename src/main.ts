@@ -601,10 +601,11 @@ async function setPresence(mode: PresenceMode): Promise<void> {
 audio.onTrackChange = () => {
   classifier.reset(performance.now());
   controls.setMedia(audio.tracks, audio.index);
+  refreshLibrary();
   syncScene();
 };
-audio.onPlayState = () => { syncScene(); controls.setTransport(audio.playing, audio.muted); };
-audio.onPlaylistChange = () => controls.setMedia(audio.tracks, audio.index);
+audio.onPlayState = () => { syncScene(); controls.setTransport(audio.playing, audio.muted); refreshLibrary(); };
+audio.onPlaylistChange = () => { controls.setMedia(audio.tracks, audio.index); refreshLibrary(); };
 if (profile.customStations.length) audio.addTracks(profile.customStations.map(trackFromStation));
 if (profile.addedTracks.length) audio.addTracks(profile.addedTracks.map(trackFromSaved)); // Discover library
 audio.shuffle(); // fresh random order each session so the big CC library never loops
@@ -778,8 +779,10 @@ function currentGenre(): Genre | null {
 // Reward the CYCLE (finishing a focus block / taking the break) — flat base, capped
 // daily. A venue×genre BONUS multiplies it when you're playing a fitting station
 // (a modest boost on top of the healthy-habit reward; see the buff list on the left).
+// venues you currently own — the daily bonus + match pairing must be reachable
+const ownedVenues = (): VenueId[] => VENUE_ORDER.filter((id) => profile.unlocks.includes(id));
 function award(cred: number, fans: number, msg: string): void {
-  const gm = genreMult(profile.venue, currentGenre());
+  const gm = genreMult(profile.venue, currentGenre(), ownedVenues());
   const boosted = Math.round(cred * gm.mult);
   const today = dayKey();
   if (profile.earnedDate !== today) { profile.earnedDate = today; profile.earnedToday = 0; }
@@ -855,7 +858,7 @@ function flushDesk(): void {
 // ── left buff list (active venue×genre bonuses) + bottom-centre now-playing ───
 const buffs = $("buffs"), nowPlaying = $("nowPlaying");
 function renderBuffs(): void {
-  const g = currentGenre(), daily = dailyBonus(), v = currentVenue();
+  const g = currentGenre(), daily = dailyBonus(ownedVenues()), v = currentVenue();
   const nativeOn = !!g && g === VENUES[v].genre;
   const dailyOn = !!g && g === daily.genre && v === daily.venue;
   buffs.innerHTML =
@@ -870,6 +873,56 @@ function updateNowPlaying(): void {
     (nowPlaying.querySelector(".np-sub") as HTMLElement).textContent = c.artist;
     nowPlaying.hidden = false;
   } else nowPlaying.hidden = true;
+}
+
+// ── library — Winamp/iTunes-style track grid (click the now-playing to open) ──
+const library = $("library");
+const lbGrid = library.querySelector(".lb-grid") as HTMLElement;
+const lbSearch = library.querySelector(".lb-search") as HTMLInputElement;
+const lbCount = library.querySelector(".lb-count") as HTMLElement;
+const trackGlyph = (t: Track): string => (t.station ? "📻" : t.local ? "🎵" : "♪");
+function renderLibrary(filter = ""): void {
+  const q = filter.trim().toLowerCase();
+  const rows = audio.tracks
+    .map((t, i) => ({ t, i }))
+    .filter(({ t }) => !q || t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q));
+  lbCount.textContent = q ? `${rows.length} of ${audio.tracks.length}` : `${audio.tracks.length} tracks`;
+  lbGrid.innerHTML = rows.length
+    ? rows.map(({ t, i }) => {
+        const on = i === audio.index;
+        return `<button class="lb-tile ${on ? "on" : ""}" data-i="${i}" style="--h:${t.hue}">` +
+          `<span class="lb-cover">` +
+            `<span class="lb-glyph">${trackGlyph(t)}</span>` +
+            (t.genre ? `<span class="lb-genre">${escHtml(t.genre)}</span>` : "") +
+            (on ? `<span class="lb-now">${audio.playing ? "▶" : "❚❚"}</span>` : "") +
+          `</span>` +
+          `<span class="lb-t">${escHtml(t.title)}</span>` +
+          `<span class="lb-a">${escHtml(t.artist)}</span>` +
+        `</button>`;
+      }).join("")
+    : `<div class="lb-empty">No tracks match “${escHtml(filter)}”</div>`;
+  lbGrid.querySelectorAll<HTMLButtonElement>(".lb-tile").forEach((b) => {
+    b.onclick = () => { void audio.select(Number(b.dataset.i)); };
+  });
+}
+function openLibrary(): void {
+  renderLibrary(lbSearch.value);
+  library.hidden = false;
+  const cur = lbGrid.querySelector(".lb-tile.on");
+  if (cur) cur.scrollIntoView({ block: "center" });
+  setTimeout(() => lbSearch.focus(), 60);
+}
+const closeLibrary = (): void => { library.hidden = true; };
+lbSearch.oninput = () => renderLibrary(lbSearch.value);
+lbSearch.onkeydown = (e) => { if (e.key === "Escape") closeLibrary(); };
+(library.querySelector(".lb-scrim") as HTMLElement).onclick = closeLibrary;
+(library.querySelector(".lb-close") as HTMLElement).onclick = closeLibrary;
+nowPlaying.onclick = (e) => { e.stopPropagation(); openLibrary(); };
+// hoisted + DOM-guarded: the audio callbacks fire during boot (audio.shuffle/load)
+// before this block's consts initialise, so keep an early call a safe no-op.
+function refreshLibrary(): void {
+  const lib = document.getElementById("library");
+  if (lib && !lib.hidden) renderLibrary(lbSearch.value);
 }
 
 addEventListener("pagehide", () => { flushDesk(); persist(); });
