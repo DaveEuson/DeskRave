@@ -688,7 +688,9 @@ let lastNagMs = 0; // focusMs when we last re-nudged
 
 // genre of the currently-playing station (null for local files / nothing playing)
 function currentGenre(): Genre | null {
-  return audio.playing && audio.current?.station ? (audio.current.genre ?? null) : null;
+  // any tagged track counts toward the venue×genre bonus — the bundled soundtrack
+  // carries genres now, not just internet-radio stations (user files stay null)
+  return audio.playing ? (audio.current?.genre ?? null) : null;
 }
 // Reward the CYCLE (finishing a focus block / taking the break) — flat base, capped
 // daily. A venue×genre BONUS multiplies it when you're playing a fitting station

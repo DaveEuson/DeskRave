@@ -292,14 +292,44 @@ export interface StationTrack {
   artist: string;
   license: string;
   sourceUrl: string;
+  genre?: Genre; // drives the venue×genre Cred bonus
 }
 const cc = (file: string): string => `${import.meta.env.BASE_URL}cc/${file}`;
+// Two self-publishing CC artists: SwapXFO (original chiptune, CC BY 4.0) and Lee
+// Rosevere (ambient/lofi, the plain-CC-BY "Music For Podcasts" set — NOT his
+// BY-NC releases). Every track's license was verified against archive.org's own
+// metadata before bundling; the arrangements of copyrighted game music in
+// SwapXFO's catalogue were deliberately excluded.
 export const CC_STATION = {
-  name: "Bundled chiptune (CC BY)",
+  name: "Bundled soundtrack (CC BY)",
   tracks: [
-    { src: cc("dubious-dream.mp3"), title: "Dubious Dream", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-dubious-dream" },
-    { src: cc("funky-code-mod.mp3"), title: "funky code mod", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-funky-code-mod" },
-    { src: cc("10-print-hello-world.mp3"), title: "10 PRINT HELLO WORLD", artist: "Andrey Avkhimovich", license: "CC BY 3.0", sourceUrl: "https://archive.org/details/AAS006" },
+    { src: cc("dubious-dream.mp3"), title: "Dubious Dream", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-dubious-dream", genre: "synthwave" },
+    { src: cc("funky-code-mod.mp3"), title: "funky code mod", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-funky-code-mod", genre: "house" },
+    { src: cc("10-print-hello-world.mp3"), title: "10 PRINT HELLO WORLD", artist: "Andrey Avkhimovich", license: "CC BY 3.0", sourceUrl: "https://archive.org/details/AAS006", genre: "synthwave" },
+    { src: cc("high-speed-dilemma.mp3"), title: "High-speed Dilemma", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-high-speed-dilemma", genre: "synthwave" },
+    { src: cc("long-lost-home.m4a"), title: "Long Lost Home", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-long-lost-home", genre: "trance" },
+    { src: cc("ground-battery.m4a"), title: "Ground Battery", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-ground-battery", genre: "techno" },
+    { src: cc("liquid-sugar-overload.opus"), title: "Liquid Sugar Overload", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-liquid-sugar-overload", genre: "house" },
+    { src: cc("star-dichotomy.m4a"), title: "Star Dichotomy", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-star-dichotomy", genre: "trance" },
+    { src: cc("50-c.opus"), title: "50ºC", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-50-degrees", genre: "synthwave" },
+    { src: cc("an-insomniac-s-walk-through-the-night.mp3"), title: "An Insomniac's Walk Through the Night", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-an-insomniac-s-walk-through-the-night", genre: "lofi" },
+    { src: cc("fox-s-nest.m4a"), title: "Fox's Nest", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-foxs-nest", genre: "chill" },
+    { src: cc("116112.m4a"), title: "116112", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/116112", genre: "house" },
+    { src: cc("the-beaten-path.m4a"), title: "The Beaten Path", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/the-beaten-path", genre: "downtempo" },
+    { src: cc("dreaming-of-whoever.m4a"), title: "Dreaming of Whoever", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/dreaming-of-whoever", genre: "lofi" },
+    { src: cc("unprecedented-happiness.opus"), title: "Unprecedented Happiness", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/unprecedented-happiness", genre: "house" },
+    { src: cc("project-onto-the-sea.m4a"), title: "Project Onto the Sea", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-project-onto-the-sea", genre: "chill" },
+    { src: cc("ups-and-downs.mp3"), title: "Ups and Downs", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-ups-and-downs", genre: "lofi" },
+    { src: cc("chill-fite.m4a"), title: "Chill Fite", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-chill-fite", genre: "chill" },
+    { src: cc("abstract-space-adventure.mp3"), title: "Abstract Space Adventure", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-abstract-space-adventure", genre: "ambient" },
+    { src: cc("introducing-the-pre-roll.mp3"), title: "Introducing the Pre-roll", artist: "Lee Rosevere", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/leerosevere_musicforpodcasts_5", genre: "ambient" },
+    { src: cc("all-the-answers.mp3"), title: "All the Answers", artist: "Lee Rosevere", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/leerosevere_musicforpodcasts_5", genre: "ambient" },
+    { src: cc("thinking-it-over.mp3"), title: "Thinking It Over", artist: "Lee Rosevere", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/leerosevere_musicforpodcasts_5", genre: "ambient" },
+    { src: cc("you-re-enough.mp3"), title: "You're Enough", artist: "Lee Rosevere", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/leerosevere_musicforpodcasts_5", genre: "ambient" },
+    { src: cc("let-that-sink-in.mp3"), title: "Let That Sink In", artist: "Lee Rosevere", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/leerosevere_musicforpodcasts_6", genre: "lofi" },
+    { src: cc("thought-bubbles.mp3"), title: "Thought Bubbles", artist: "Lee Rosevere", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/leerosevere_musicforpodcasts_6", genre: "lofi" },
+    { src: cc("going-in-circles.mp3"), title: "Going In Circles", artist: "Lee Rosevere", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/leerosevere_musicforpodcasts_6", genre: "lofi" },
+    { src: cc("bigger-questions.mp3"), title: "Bigger Questions", artist: "Lee Rosevere", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/leerosevere_musicforpodcasts_6", genre: "lofi" },
   ] as StationTrack[],
 };
 
