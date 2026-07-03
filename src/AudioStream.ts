@@ -117,6 +117,24 @@ export class AudioStream {
     if (wasPlaying) await this.play();
   }
 
+  // Randomize the song order so a long session never feels like a loop. Keeps
+  // continuous stations pinned to the front (you pick those deliberately) and
+  // shuffles only the finite tracks. If nothing's loaded yet, the first track
+  // becomes random too; if something's playing, it stays put.
+  shuffle(): void {
+    const loaded = !!this.el.src;
+    const cur = this.playlist[this.index];
+    const stations = this.playlist.filter((t) => t.station);
+    const songs = this.playlist.filter((t) => !t.station);
+    for (let i = songs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [songs[i], songs[j]] = [songs[j], songs[i]];
+    }
+    this.playlist = [...stations, ...songs];
+    this.index = loaded ? Math.max(0, this.playlist.indexOf(cur)) : 0;
+    this.onPlaylistChange?.();
+  }
+
   get tracks(): Track[] {
     return this.playlist;
   }

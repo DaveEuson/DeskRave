@@ -526,6 +526,7 @@ audio.onTrackChange = () => {
 audio.onPlayState = () => { syncScene(); controls.setTransport(audio.playing, audio.muted); };
 audio.onPlaylistChange = () => controls.setMedia(audio.tracks, audio.index);
 if (profile.customStations.length) audio.addTracks(profile.customStations.map(trackFromStation));
+audio.shuffle(); // fresh random order each session so the big CC library never loops
 audio.load(0);
 controls.setMedia(audio.tracks, audio.index);
 

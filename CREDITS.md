@@ -42,6 +42,75 @@ no NC/SA/ND, and none of SwapXFO's arrangements of copyrighted game music.
 Attribution also appears inside the app (Options → Bundled music) and in the
 now-playing HUD while a track plays.
 
+### Streamed catalogue (Internet Archive)
+
+Referenced by URL, not bundled — the variety engine. Same verification.
+
+| Track | Artist | License | Source |
+|---|---|---|---|
+| Unfamiliar Metropolis | SwapXFO | CC BY 4.0 | https://archive.org/details/mus-unfamiliar-metropolis |
+| Viewgazing | SwapXFO | CC BY 4.0 | https://archive.org/details/album-intrepid-normalization |
+| Cosmic Compulsion | SwapXFO | CC BY 4.0 | https://archive.org/details/mus-cosmic-compulsion |
+| Pointless Discourse | SwapXFO | CC BY 4.0 | https://archive.org/details/mus-pointless-discourse |
+| Fighting for a Dubious Cause | SwapXFO | CC BY 4.0 | https://archive.org/details/mus-fighting-for-a-dubious-cause |
+| Yellow Twilight | SwapXFO | CC BY 4.0 | https://archive.org/details/mus-yellow-twilight |
+| Bait and Switch | SwapXFO | CC BY 4.0 | https://archive.org/details/mus-bait-and-switch |
+| Returnal | SwapXFO | CC BY 4.0 | https://archive.org/details/mus-returnal |
+| Moonrise | SwapXFO | CC BY 4.0 | https://archive.org/details/mus-moonrise |
+| Cold Sun | SwapXFO | CC BY 4.0 | https://archive.org/details/mus-cold-sun |
+| Street-end Dusk | SwapXFO | CC BY 4.0 | https://archive.org/details/mus-street-end-dusk |
+| Eastern Wind | SwapXFO | CC BY 4.0 | https://archive.org/details/mus-eastern-wind |
+| Preaching to the Choir | SwapXFO | CC BY 4.0 | https://archive.org/details/xfo-preaching-to-the-choir |
+| Pitch Blackkave | SwapXFO | CC BY 4.0 | https://archive.org/details/mus-pitch-blackkave |
+| Opening ! | Komiku | CC0 | https://archive.org/details/Komiku-Poupis_incredible_adventures |
+| Time for the walk of the day | Komiku | CC0 | https://archive.org/details/Komiku-Poupis_incredible_adventures |
+| The weekly fair | Komiku | CC0 | https://archive.org/details/Komiku-Poupis_incredible_adventures |
+| Surfing | Komiku | CC0 | https://archive.org/details/Komiku-Poupis_incredible_adventures |
+| Balance | Komiku | CC0 | https://archive.org/details/Komiku-ItsTimeForAdventureVol2 |
+| Chill Out Theme | Komiku | CC0 | https://archive.org/details/Komiku-ItsTimeForAdventureVol2 |
+| Battle Theme | Komiku | CC0 | https://archive.org/details/Komiku-ItsTimeForAdventureVol2 |
+| Time | Komiku | CC0 | https://archive.org/details/Komiku-ItsTimeForAdventureVol2 |
+| Tale on the Late | Komiku | CC0 | https://archive.org/details/Komiku-TaleOnTheLate |
+| Remember the time we use to play | Komiku | CC0 | https://archive.org/details/Komiku-TaleOnTheLate |
+| The road we use to travel when we were kids | Komiku | CC0 | https://archive.org/details/Komiku-TaleOnTheLate |
+| Friends, 2018 | Komiku | CC0 | https://archive.org/details/Komiku-TaleOnTheLate |
+| The calling | Komiku | CC0 | https://archive.org/details/komiku-the-adventure-goes-on-vol.-1 |
+| On the tracks of the elders | Komiku | CC0 | https://archive.org/details/komiku-the-adventure-goes-on-vol.-1 |
+| The urge of moving, smile on the faces | Komiku | CC0 | https://archive.org/details/komiku-the-adventure-goes-on-vol.-1 |
+| Tonight, we feast ! | Komiku | CC0 | https://archive.org/details/komiku-the-adventure-goes-on-vol.-1 |
+| Introduction to your adventure | Komiku | CC0 | https://archive.org/details/Komiku-ultra_person_vol1 |
+| Level 1 : Jump and shoot stuff 101 | Komiku | CC0 | https://archive.org/details/Komiku-ultra_person_vol1 |
+| Interview in a pub | Komiku | CC0 | https://archive.org/details/Komiku-ultra_person_vol1 |
+| Suburb | Komiku | CC0 | https://archive.org/details/Komiku-ultra_person_vol1 |
+| Fouler l'horizon | Komiku | CC0 | https://archive.org/details/Komikuitstimeforadventure |
+| Le Grand Village | Komiku | CC0 | https://archive.org/details/Komikuitstimeforadventure |
+| Champ de tournesol | Komiku | CC0 | https://archive.org/details/Komikuitstimeforadventure |
+| Barque sur le lac | Komiku | CC0 | https://archive.org/details/Komikuitstimeforadventure |
+| THE GIRL WITH THE BASEBALL BAT - 01 Intro | Komiku | CC0 | https://archive.org/details/Komiku-the-girl-with-the-baseball-bat |
+| THE GIRL WITH THE BASEBALL BAT - 02 Bad Guys HQ | Komiku | CC0 | https://archive.org/details/Komiku-the-girl-with-the-baseball-bat |
+| THE GIRL WITH THE BASEBALL BAT - 03 In the restaurant | Komiku | CC0 | https://archive.org/details/Komiku-the-girl-with-the-baseball-bat |
+| THE GIRL WITH THE BASEBALL BAT - 04 Car chasing pew pew | Komiku | CC0 | https://archive.org/details/Komiku-the-girl-with-the-baseball-bat |
+| Nothing Like Captain Crunch | Broke For Free | CC BY 3.0 | https://archive.org/details/Slam_Funk-7603 |
+| Calm The Fuck Down | Broke For Free | CC BY 3.0 | https://archive.org/details/Slam_Funk-7603 |
+| The Great | Broke For Free | CC BY 3.0 | https://archive.org/details/Slam_Funk-7603 |
+| As Colourful As Ever | Broke For Free | CC BY 3.0 | https://archive.org/details/BrokeForFreeLayers |
+| Knock Knock | Broke For Free | CC BY 3.0 | https://archive.org/details/BrokeForFreeLayers |
+| Only Knows | Broke For Free | CC BY 3.0 | https://archive.org/details/BrokeForFreeLayers |
+| Night Owl | Broke For Free | CC BY 3.0 | https://archive.org/details/DirectionlessEP |
+| My Always Mood | Broke For Free | CC BY 3.0 | https://archive.org/details/DirectionlessEP |
+| Day Bird | Broke For Free | CC BY 3.0 | https://archive.org/details/DirectionlessEP |
+| Direct to Video | Chris Zabriskie | CC BY 3.0 | https://archive.org/details/ChrisZabriskieDirectToVideo |
+| What Does Anybody Know About Anything | Chris Zabriskie | CC BY 3.0 | https://archive.org/details/ChrisZabriskieDirectToVideo |
+| I Don't See the Branches, I See the Leaves | Chris Zabriskie | CC BY 3.0 | https://archive.org/details/ChrisZabriskieDirectToVideo |
+| I Want to Fall in Love on Snapchat | Chris Zabriskie | CC BY 3.0 | https://archive.org/details/ChrisZabriskieDirectToVideo |
+| But Enough About Me, Bill Paxton | Chris Zabriskie | CC BY 3.0 | https://archive.org/details/ChrisZabriskieDirectToVideo |
+| As I Was Saying | Lee Rosevere | CC BY 3.0 | https://archive.org/details/MusicForPodcasts04 |
+| Sad Marimba Planet | Lee Rosevere | CC BY 3.0 | https://archive.org/details/MusicForPodcasts04 |
+| Small Steps | Lee Rosevere | CC BY 3.0 | https://archive.org/details/MusicForPodcasts04 |
+| New Day | Lee Rosevere | CC BY 3.0 | https://archive.org/details/MusicForPodcasts04 |
+| How I Used To See The Stars | Lee Rosevere | CC BY 3.0 | https://archive.org/details/MusicForPodcasts04 |
+| Love Wins | Lee Rosevere | CC BY 4.0 | https://archive.org/details/Love_Wins-18494 |
+
 ## Fonts
 
 - Press Start 2P — CodeMan38, SIL Open Font License 1.1
