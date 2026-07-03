@@ -1,6 +1,8 @@
 import { STANDALONE, VENUES, STARTER_VENUES, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 
 export interface CustomStation { name: string; stream: string; genre: Genre; hue: number }
+// a track the user added from Discover (streamed from its src; survives reload)
+export interface SavedTrack { src: string; title: string; artist: string; license: string; genre?: Genre; sourceUrl?: string }
 
 // Coerce legacy/invalid data forward: an unknown saved venue (e.g. a retired id)
 // would crash the venue dispatch, so snap it to the club and guarantee starters.
@@ -15,6 +17,7 @@ export function normalize(p: Profile): Profile {
   if (typeof p.earnedDate !== "string") p.earnedDate = "";
   if (typeof p.fans !== "number" || !isFinite(p.fans)) p.fans = 0;
   if (!Array.isArray(p.customStations)) p.customStations = [];
+  if (!Array.isArray(p.addedTracks)) p.addedTracks = [];
   // settings merge is shallow, so backfill any keys a stale saved profile lacks
   p.settings = { ...defaultProfile().settings, ...(p.settings ?? {}) };
   return p;
@@ -59,6 +62,7 @@ export interface Profile {
   history: string[]; // last ~6 titles
   deskLog: Record<string, number>; // local date "YYYY-MM-DD" → seconds at desk that day
   customStations: CustomStation[]; // user-added internet-radio stations
+  addedTracks: SavedTrack[]; // tracks added from Discover (streamed CC library)
   settings: Settings;
   lastSeen: string; // ISO — for the away time-lapse (fast-follow)
 }
@@ -134,6 +138,7 @@ export function defaultProfile(): Profile {
     history: [],
     deskLog: {},
     customStations: [],
+    addedTracks: [],
     settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, camera: false, weather: "clear", weatherAuto: true, weatherCity: "", onboarded: false, volume: 0.8, zen: true },
     lastSeen: new Date().toISOString(),
   };

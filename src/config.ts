@@ -296,6 +296,21 @@ export const CC_ARTISTS: { artist: string; license: string; url: string }[] = [
   { artist: "Andrey Avkhimovich", license: "CC BY 3.0", url: "https://archive.org/details/AAS006" },
 ];
 
+// ── Discover: curated "music packs" (one-tap add) + live search ────────────────
+// Each pack is a handful of hand-verified CC-BY/CC0 albums on the Internet
+// Archive; adding one streams its tracks into your library (no download). The
+// Discover panel also runs a live archive.org search behind these. Quality up
+// front, infinite behind it — so the music never runs out.
+export interface MusicPack { name: string; emoji: string; genre: Genre; blurb: string; items: string[]; }
+export const MUSIC_PACKS: MusicPack[] = [
+  { name: "Lofi & Focus", emoji: "🎧", genre: "lofi", blurb: "Calm beats to work to", items: ["MusicForPodcasts04"] },
+  { name: "Chiptune Heroes", emoji: "👾", genre: "synthwave", blurb: "8-bit adventure energy", items: ["Komikuitstimeforadventure", "Komiku-ultra_person_vol1"] },
+  { name: "Deep Ambient", emoji: "🌌", genre: "ambient", blurb: "Spacious, cinematic drift", items: ["ChrisZabriskieDirectToVideo", "KaiEngelTheRun"] },
+  { name: "Downtempo Grooves", emoji: "🕺", genre: "downtempo", blurb: "Laid-back electronic funk", items: ["DirectionlessEP", "BrokeForFreeLayers", "Slam_Funk-7603"] },
+  { name: "Game Music", emoji: "🎮", genre: "chill", blurb: "Playful adventure soundtracks", items: ["Komiku-Poupis_incredible_adventures"] },
+];
+export const PACK_MAX_PER_ITEM = 12; // cap per album so a pack stays a snack, not a firehose
+
 // ── Bundled CC-BY soundtrack (attribution shown in the HUD + options credits) ──
 // The files ship IN the build (public/cc/) — redistribution is what CC BY is
 // for, provided the credit stays attached. Same-origin means a clean FFT too.

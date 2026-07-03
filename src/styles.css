@@ -117,6 +117,43 @@ body.topsign #deskTimer { top: 98px; }
 .qr-url { margin-top: 12px; color: #e7e0f5; font: 14px ui-monospace, Consolas, monospace; word-break: break-all; }
 .qr-panel small { display: block; margin-top: 6px; color: #8a7fae; font-size: 12px; }
 
+/* Discover — "get more music" overlay (curated packs + live archive.org search) */
+#discover { position: fixed; inset: 0; z-index: 42; display: flex; align-items: center; justify-content: center; padding: 18px; }
+#discover[hidden] { display: none; }
+.dv-scrim { position: absolute; inset: 0; background: rgba(4,2,10,.66); backdrop-filter: blur(3px); }
+.dv-panel { position: relative; background: linear-gradient(180deg, #17102a, #100a1e); border: 1px solid #2a2040;
+  border-radius: 18px; box-shadow: 0 18px 60px rgba(0,0,0,.6); width: min(520px, 94vw); max-height: 88vh; display: flex; flex-direction: column; }
+.dv-head { display: flex; justify-content: space-between; align-items: center; color: #cdbff0;
+  font: 600 16px ui-monospace, Consolas, monospace; padding: 14px 16px; border-bottom: 1px solid #1d1533; flex: 0 0 auto; }
+.dv-close { background: rgba(255,255,255,.06); border: 1px solid #2a2040; color: #b9aee0; width: 30px; height: 30px; border-radius: 999px; cursor: pointer; font-size: 13px; }
+.dv-close:hover { color: #fff; background: rgba(255,255,255,.12); }
+.dv-body { padding: 14px 16px 18px; overflow-y: auto; }
+.dv-sec { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #8a7fae; margin: 6px 2px 8px; }
+.dv-sec:not(:first-child) { margin-top: 18px; }
+.dv-pack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.dv-pack { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; cursor: pointer;
+  background: #160e26; border: 1px solid #2a2040; border-radius: 12px; padding: 11px 12px; color: #e7e0f5; box-shadow: inset 3px 0 0 var(--c); }
+.dv-pack:hover { border-color: var(--c); }
+.dv-pack.busy { opacity: .55; pointer-events: none; }
+.dv-pemoji { font-size: 20px; }
+.dv-pack b { color: #fff; font-size: 14px; }
+.dv-pack small { color: #9a8fc0; font-size: 11px; }
+.dv-search { display: flex; gap: 8px; }
+.dv-search input { flex: 1; min-width: 0; background: #0f0b1c; border: 1px solid #2a2040; color: #e7e0f5; border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+.dv-search button { flex: 0 0 auto; background: #221636; border: 1px solid #2a2040; color: #e7e0f5; border-radius: 10px; padding: 0 14px; cursor: pointer; font-size: 16px; }
+.dv-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.dv-chips button { background: #160e26; border: 1px solid #2a2040; color: #b9aee0; border-radius: 999px; padding: 5px 11px; font-size: 12px; cursor: pointer; text-transform: uppercase; letter-spacing: .5px; }
+.dv-chips button.on { background: #d946ef; border-color: #d946ef; color: #fff; }
+.dv-results { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.dv-loading { color: #8a7fae; text-align: center; padding: 18px; font-size: 13px; }
+.dv-res { display: flex; align-items: center; gap: 10px; background: #160e26; border: 1px solid #2a2040; border-radius: 10px; padding: 9px 12px; }
+.dv-res-meta { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.dv-res-meta b { color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dv-res-meta small { color: #8a7fae; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dv-add { flex: 0 0 auto; background: #221636; border: 1px solid #3a2a52; color: #e7e0f5; border-radius: 9px; padding: 7px 12px; cursor: pointer; font-size: 13px; }
+.dv-add:hover { border-color: #d946ef; }
+.dv-add:disabled { color: #6fbf8f; border-color: #2a3a30; cursor: default; }
+
 /* now-playing song / station — bottom-centre, prominent */
 #nowPlaying { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 11;
   display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none;

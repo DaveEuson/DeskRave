@@ -1,7 +1,7 @@
 // A Track is anything playable: either a curated CC stream from the Internet
 // Archive, or a local file the user dropped in. Both feed the same audio graph,
 // so local files get the full reactive treatment with no DRM or licensing strings.
-import { ACCEPTED_AUDIO, CC_STATION, CC_STREAM, PALETTES, STANDALONE, STATIONS, radioUrl, type Genre } from "./config";
+import { ACCEPTED_AUDIO, CC_STATION, CC_STREAM, GENRE_HUE, PALETTES, STANDALONE, STATIONS, radioUrl, type Genre } from "./config";
 
 export interface Track {
   src: string; // playable URL — radio proxy, archive.org URL, or a local object URL
@@ -54,6 +54,15 @@ export const CC_TRACKS: Track[] = [...CC_STATION.tracks, ...CC_STREAM].map((t, i
   ...t,
   hue: PALETTES[i % PALETTES.length].hue,
 }));
+
+// A track saved from Discover (persisted in the profile) → a playable Track.
+export function trackFromSaved(s: { src: string; title: string; artist: string; license: string; genre?: Genre; sourceUrl?: string }): Track {
+  return {
+    src: s.src, title: s.title, artist: s.artist, license: s.license,
+    hue: s.genre ? GENRE_HUE[s.genre] : 200,
+    genre: s.genre, sourceUrl: s.sourceUrl,
+  };
+}
 
 export const isAudioFile = (f: File): boolean =>
   f.type.startsWith("audio/") || ACCEPTED_AUDIO.test(f.name);

@@ -25,6 +25,7 @@ export interface ControlsCallbacks {
   onAddFiles(): void;
   onAddStation(name: string, url: string, genre: Genre): void;
   onRemoveStation(stream: string): void;
+  onDiscover(): void; // open the "get more music" panel (packs + archive.org search)
 }
 
 type View = "music" | "dj" | "store" | "options";
@@ -151,6 +152,7 @@ export class Controls {
         <button class="cv-auto ${this.p.auto ? "on" : ""}" data-act="auto">🤖 AUTO</button>
         <div class="cv-seg">${(["chill", "groove", "rave"] as VibeName[]).map((v) => `<button data-vibe="${v}" class="${this.p.vibe === v ? "on" : ""}">${v}</button>`).join("")}</div>
       </div>
+      <button class="cv-discover" data-act="discover">🎵 Get more music — free packs &amp; search</button>
       <div class="cv-row cv-listhead"><span class="cv-label">Stations &amp; files</span><span class="cv-addbtns"><button class="cv-add" data-act="addstation" title="add a station">📻﹢</button><button class="cv-add" data-act="add" title="add files">📁﹢</button></span></div>
       <form class="cv-addsta" hidden>
         <input class="cv-sta-name" placeholder="Station name" maxlength="40" />
@@ -166,6 +168,7 @@ export class Controls {
     $(this.sheetBody, '[data-act="mute"]').onclick = () => this.cb.onMute();
     $(this.sheetBody, '[data-act="auto"]').onclick = () => this.cb.onAuto(!this.p.auto);
     $(this.sheetBody, '[data-act="add"]').onclick = () => this.cb.onAddFiles();
+    $(this.sheetBody, '[data-act="discover"]').onclick = () => this.cb.onDiscover();
     const form = $<HTMLFormElement>(this.sheetBody, ".cv-addsta");
     $(this.sheetBody, '[data-act="addstation"]').onclick = () => { form.hidden = !form.hidden; if (!form.hidden) $<HTMLInputElement>(form, ".cv-sta-name").focus(); };
     form.onsubmit = (e) => {

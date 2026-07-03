@@ -5,15 +5,17 @@ import { Visualizer } from "./Visualizer";
 import { Classifier } from "./classifier";
 import { Controls } from "./controls";
 import { defaultProfile, loadProfile, loadProfileSync, normalize, saveProfile, dayKey, deskTotals, type Profile } from "./profile";
-import { trackFromStation } from "./tracks";
+import { trackFromSaved, trackFromStation, type Track } from "./tracks";
+import { searchMusic, itemTracks, type ArchiveItem } from "./archive";
 import { accrue, unlockLabel } from "./xp";
-import { BALANCE, CURFEW, DAILY_MULT, GENRE_HUE, MATCH_MULT, PRIZES, REWARDS, STANDALONE, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
+import { BALANCE, CURFEW, DAILY_MULT, GENRE_HUE, GENRES, MATCH_MULT, MUSIC_PACKS, PACK_MAX_PER_ITEM, PRIZES, REWARDS, STANDALONE, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type MusicPack, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, serverInfo, uploadFile } from "./library";
 import QRCode from "qrcode";
 import { Presence } from "./presence";
 import { showOnboarding } from "./onboarding";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+const escHtml = (s: string): string => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
 const audio = new AudioStream();
 const scene = new Visualizer($<HTMLCanvasElement>("c"));
@@ -127,7 +129,72 @@ const controls = new Controls($("controls"), profile, {
     if (i >= 0) audio.removeTrack(i);
     controls.setMedia(audio.tracks, audio.index);
   },
+  onDiscover: () => openDiscover(),
 });
+
+// ── Discover: "get more music" — curated CC packs + live archive.org search ───
+// Adds streamed tracks to the library and persists them to the profile so they
+// survive a reload. All client-side; the archive module keeps it CC-safe.
+const discover = $("discover");
+const dvBody = discover.querySelector<HTMLElement>(".dv-body")!;
+// fold new tracks into the library + the persisted profile (dedup by src)
+function addToLibrary(tracks: Track[]): number {
+  const have = new Set(audio.tracks.map((t) => t.src));
+  const fresh = tracks.filter((t) => t.src && !have.has(t.src));
+  if (!fresh.length) return 0;
+  audio.addTracks(fresh);
+  profile.addedTracks.push(...fresh.map((t) => ({ src: t.src, title: t.title, artist: t.artist, license: t.license, genre: t.genre, sourceUrl: t.sourceUrl })));
+  persist();
+  controls.setMedia(audio.tracks, audio.index);
+  return fresh.length;
+}
+async function addPack(pack: MusicPack, btn: HTMLElement): Promise<void> {
+  btn.classList.add("busy"); btn.setAttribute("aria-busy", "true");
+  const got: Track[] = [];
+  for (const id of pack.items) { try { got.push(...(await itemTracks(id, pack.genre)).slice(0, PACK_MAX_PER_ITEM)); } catch { /* skip a dud item */ } }
+  const n = addToLibrary(got);
+  btn.classList.remove("busy"); btn.removeAttribute("aria-busy");
+  toast(n ? `🎵 Added ${n} tracks — ${pack.name}` : `✓ ${pack.name} already in your library`);
+}
+async function runSearch(query: string, genre: Genre | undefined, results: HTMLElement): Promise<void> {
+  results.innerHTML = `<div class="dv-loading">searching…</div>`;
+  let items: ArchiveItem[] = [];
+  try { items = await searchMusic(query, genre); } catch { results.innerHTML = `<div class="dv-loading">couldn't reach the archive — check your connection</div>`; return; }
+  if (!items.length) { results.innerHTML = `<div class="dv-loading">nothing found — try another word</div>`; return; }
+  results.innerHTML = items.map((it, i) =>
+    `<div class="dv-res"><div class="dv-res-meta"><b>${escHtml(it.title)}</b><small>${escHtml(it.artist)} · ${escHtml(it.license)}</small></div>` +
+    `<button class="dv-add" data-i="${i}">＋ add</button></div>`).join("");
+  results.querySelectorAll<HTMLButtonElement>(".dv-add").forEach((b) => (b.onclick = async () => {
+    const it = items[Number(b.dataset.i)]; b.classList.add("busy"); b.textContent = "…";
+    let n = 0; try { n = addToLibrary(await itemTracks(it.id, genre ?? "chill")); } catch { /* ignore */ }
+    b.classList.remove("busy"); b.textContent = n ? "✓ added" : "✓ have it"; b.disabled = true;
+    if (n) toast(`🎵 Added ${n} track${n > 1 ? "s" : ""} — ${it.title}`);
+  }));
+}
+function openDiscover(): void {
+  let genre: Genre | undefined;
+  dvBody.innerHTML =
+    `<div class="dv-sec">Free packs — one tap adds them all</div>` +
+    `<div class="dv-pack-grid">` + MUSIC_PACKS.map((p, i) =>
+      `<button class="dv-pack" data-pack="${i}" style="--c:hsl(${GENRE_HUE[p.genre]},70%,58%)"><span class="dv-pemoji">${p.emoji}</span><b>${escHtml(p.name)}</b><small>${escHtml(p.blurb)}</small></button>`).join("") + `</div>` +
+    `<div class="dv-sec">Search all Creative-Commons music</div>` +
+    `<form class="dv-search"><input class="dv-q" placeholder="try: chillhop, jazz, synthwave, piano…" /><button type="submit" title="search">🔍</button></form>` +
+    `<div class="dv-chips">${GENRES.map((g) => `<button data-genre="${g}">${g}</button>`).join("")}</div>` +
+    `<div class="dv-results"></div>`;
+  const results = dvBody.querySelector<HTMLElement>(".dv-results")!;
+  const qInput = dvBody.querySelector<HTMLInputElement>(".dv-q")!;
+  dvBody.querySelectorAll<HTMLButtonElement>(".dv-pack").forEach((b) => (b.onclick = () => void addPack(MUSIC_PACKS[Number(b.dataset.pack)], b)));
+  dvBody.querySelector<HTMLFormElement>(".dv-search")!.onsubmit = (e) => { e.preventDefault(); void runSearch(qInput.value, genre, results); };
+  dvBody.querySelectorAll<HTMLButtonElement>("[data-genre]").forEach((b) => (b.onclick = () => {
+    const g = b.dataset.genre as Genre;
+    genre = genre === g ? undefined : g;
+    dvBody.querySelectorAll<HTMLElement>("[data-genre]").forEach((x) => x.classList.toggle("on", x === b && genre !== undefined));
+    void runSearch(qInput.value, genre, results);
+  }));
+  discover.hidden = false;
+}
+discover.querySelector(".dv-scrim")?.addEventListener("click", () => (discover.hidden = true));
+discover.querySelector(".dv-close")?.addEventListener("click", () => (discover.hidden = true));
 
 // ── venue switcher (top-centre): ◀ ▶ instant-cycle owned venues; tap name → board ──
 const venuePrev = $("venuePrev"), venueNext = $("venueNext"), venueName = $("venueName");
@@ -526,6 +593,7 @@ audio.onTrackChange = () => {
 audio.onPlayState = () => { syncScene(); controls.setTransport(audio.playing, audio.muted); };
 audio.onPlaylistChange = () => controls.setMedia(audio.tracks, audio.index);
 if (profile.customStations.length) audio.addTracks(profile.customStations.map(trackFromStation));
+if (profile.addedTracks.length) audio.addTracks(profile.addedTracks.map(trackFromSaved)); // Discover library
 audio.shuffle(); // fresh random order each session so the big CC library never loops
 audio.load(0);
 controls.setMedia(audio.tracks, audio.index);
