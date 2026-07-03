@@ -20,6 +20,12 @@ export function normalize(p: Profile): Profile {
   if (!Array.isArray(p.addedTracks)) p.addedTracks = [];
   // settings merge is shallow, so backfill any keys a stale saved profile lacks
   p.settings = { ...defaultProfile().settings, ...(p.settings ?? {}) };
+  // migrate the old boolean `camera` toggle → the presence-source setting
+  const legacy = p.settings as { camera?: boolean; presenceMode?: string };
+  if (!["off", "activity", "mic", "camera"].includes(legacy.presenceMode ?? "")) {
+    p.settings.presenceMode = legacy.camera ? "camera" : "activity";
+  }
+  delete legacy.camera;
   return p;
 }
 
@@ -31,7 +37,7 @@ export interface Settings {
   clock24: boolean;
   scanlines: boolean;
   sound: boolean;
-  camera: boolean; // presence detection — DJ wakes when it sees you
+  presenceMode: "off" | "activity" | "mic" | "camera"; // how "are you here?" is sensed
   weather: "clear" | "rain" | "snow" | "haze"; // active atmosphere (set by the live feed)
   weatherAuto: boolean; // pull real weather from /api/weather
   weatherCity: string; // manual city override; "" = auto-locate from IP
@@ -140,7 +146,7 @@ export function defaultProfile(): Profile {
     deskLog: {},
     customStations: [],
     addedTracks: [],
-    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, camera: false, weather: "clear", weatherAuto: true, weatherCity: "", onboarded: false, volume: 0.8, zen: true, uiScale: "m" },
+    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, presenceMode: "activity", weather: "clear", weatherAuto: true, weatherCity: "", onboarded: false, volume: 0.8, zen: true, uiScale: "m" },
     lastSeen: new Date().toISOString(),
   };
 }

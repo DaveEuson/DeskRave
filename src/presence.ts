@@ -32,7 +32,20 @@ export class Presence {
   private lastInteraction = 0; // last pointer/key on the kiosk
   private heldCount = 1; // last confirmed face count (held through grace gaps)
   private readonly CONFIRM = 2;
-  private readonly absentGraceMs = 30000;
+  private graceMs = 30000; // how long presence holds after the last signal (per mode)
+  // ── mode: how "are you here?" is sensed ──────────────────────────────────────
+  //  camera   → on-device face detection (a party trick; needs a webcam + permission)
+  //  activity → keyboard/mouse (private, zero permission — the desktop default)
+  //  mic      → room sound level (private-ish; best with headphones so it doesn't
+  //             just hear the app's own music)
+  private mode: "" | "native" | "camera" | "activity" | "mic" = "";
+  private heartbeat = 0; // interval id for the activity/mic tick
+  private micCtx: AudioContext | null = null;
+  private micStream: MediaStream | null = null;
+  private micAnalyser: AnalyserNode | null = null;
+  private micBuf: Float32Array<ArrayBuffer> | null = null;
+  private micLevelRaw = 0; // 0..1 smoothed room-sound level (for the UI meter)
+  private readonly MIC_THRESHOLD = 0.02; // RMS above this = "someone's in the room"
   // signal-quality telemetry: raw detector flips in the last few minutes (high =
   // bad camera angle). Read by the cam preview; costs nothing to keep.
   private rawWas = false;
@@ -88,7 +101,7 @@ export class Presence {
       this.rawStreak = 0;
     }
     const seen = Math.max(this.lastSeen, this.lastInteraction);
-    const present = seen > 0 && now - seen < this.absentGraceMs;
+    const present = seen > 0 && now - seen < this.graceMs;
     this.set(present, present ? Math.max(1, this.heldCount) : 0);
   }
 
@@ -136,6 +149,8 @@ export class Presence {
     if (this.running) return;
     this.running = true;
     this.native = true;
+    this.mode = "native";
+    this.graceMs = 30000;
     const poll = async (): Promise<void> => {
       if (!this.running || !this.native) return;
       try {
@@ -185,6 +200,8 @@ export class Presence {
         minDetectionConfidence: 0.4,
       });
       this.running = true;
+      this.mode = "camera";
+      this.graceMs = 30000; // a face is continuous — short grace
       this.loop();
       return true;
     } catch (e) {
@@ -201,6 +218,68 @@ export class Presence {
       return false;
     }
   }
+
+  // ── Activity mode: presence from keyboard/mouse only (no sensor, no permission).
+  // Interactions arrive via noteInteraction(); a heartbeat re-evaluates so presence
+  // lapses after the (generous) grace when you stop touching things. Best default
+  // for a desktop focus toy — you ARE typing when you're working. ──────────────
+  startActivity(): void {
+    if (this.running) return;
+    this.running = true;
+    this.mode = "activity";
+    this.graceMs = 150000; // 2.5 min — typing is intermittent during focus work
+    this.lastInteraction = performance.now(); // enabling it counts as "you're here"
+    this.set(true, 1);
+    clearInterval(this.heartbeat);
+    this.heartbeat = window.setInterval(() => this.observe(0), 700); // just ages the state
+  }
+
+  // ── Microphone mode: presence from room sound level (RMS over the mic). Private
+  // — no recording, no speech, just a loudness number. Note: on speakers it hears
+  // the app's own music, so it's best with headphones (surfaced in the UI). ────
+  async startMic(): Promise<boolean> {
+    if (this.running) return true;
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      this.lastError = "needs localhost or https"; return false;
+    }
+    try {
+      this.micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, video: false });
+      this.micCtx = new AudioContext();
+      const src = this.micCtx.createMediaStreamSource(this.micStream);
+      this.micAnalyser = this.micCtx.createAnalyser();
+      this.micAnalyser.fftSize = 1024;
+      src.connect(this.micAnalyser); // NOT connected to destination — no feedback loop
+      this.micBuf = new Float32Array(new ArrayBuffer(this.micAnalyser.fftSize * 4));
+      this.running = true;
+      this.mode = "mic";
+      this.graceMs = 60000; // a minute of silence before it counts as "gone"
+      clearInterval(this.heartbeat);
+      this.heartbeat = window.setInterval(() => {
+        if (!this.micAnalyser || !this.micBuf) return;
+        this.micAnalyser.getFloatTimeDomainData(this.micBuf);
+        let sum = 0; for (let i = 0; i < this.micBuf.length; i++) sum += this.micBuf[i] * this.micBuf[i];
+        const rms = Math.sqrt(sum / this.micBuf.length);
+        this.micLevelRaw = this.micLevelRaw * 0.6 + rms * 0.4; // smooth
+        this.observe(this.micLevelRaw > this.MIC_THRESHOLD ? 1 : 0);
+      }, 300);
+      return true;
+    } catch (e) {
+      this.stopMic();
+      const err = e as Error;
+      this.lastError = err?.name === "NotAllowedError" ? "microphone permission was blocked"
+        : err?.name === "NotFoundError" ? "no microphone found" : err?.message || "microphone unavailable";
+      return false;
+    }
+  }
+
+  private stopMic(): void {
+    this.micStream?.getTracks().forEach((t) => t.stop());
+    void this.micCtx?.close().catch(() => {});
+    this.micStream = null; this.micCtx = null; this.micAnalyser = null; this.micBuf = null; this.micLevelRaw = 0;
+  }
+
+  get sensingMode(): string { return this.mode; }
+  get micLevel(): number { return Math.min(1, this.micLevelRaw / (this.MIC_THRESHOLD * 3)); } // 0..1 for a meter
 
   // release the camera before a fresh acquire (defensive; tabs/HMR can leave one open)
   private releaseStream(): void {
@@ -230,6 +309,9 @@ export class Presence {
   stop(): void {
     this.running = false;
     this.native = false;
+    this.mode = "";
+    clearInterval(this.heartbeat); this.heartbeat = 0;
+    this.stopMic();
     (this.video?.srcObject as MediaStream | null)?.getTracks().forEach((t) => t.stop());
     this.video = null;
     this.detector = null;

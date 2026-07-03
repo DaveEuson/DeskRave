@@ -300,7 +300,19 @@ export class Controls {
     const sizes: [Profile["settings"]["uiScale"], string][] = [["s", "Small"], ["m", "Medium"], ["l", "Large"]];
     const uiRow = `<div class="cv-opt cv-optseg"><span>🔎 HUD size</span><div class="cv-seg">${sizes.map(([v, lbl]) =>
       `<button data-ui="${v}" class="${(st.uiScale ?? "m") === v ? "on" : ""}">${lbl}</button>`).join("")}</div></div>`;
-    this.sheetBody.innerHTML = `${toggle("zen", "🧘 Zen mode — hide scores & bonuses, just music")}${toggle("camera", "👁 Camera presence — DJ wakes when it sees you")}${toggle("sound", "🔊 Muffled kick (through the wall)")}`
+    // Presence source — how the DJ knows you're at the desk. All on-device.
+    const pmodes: [Profile["settings"]["presenceMode"], string][] = [["off", "Off"], ["activity", "Activity"], ["mic", "Microphone"], ["camera", "Camera"]];
+    const pnote: Record<string, string> = {
+      off: "The DJ never pauses — just plays. No sensors at all.",
+      activity: "Wakes when you use the keyboard or mouse. No permission, nothing to grant — the private default.",
+      mic: "Wakes to room sound. Needs mic permission; no recording, just a loudness reading. Best with headphones (else it hears the music).",
+      camera: "Wakes when a webcam sees a face. Needs camera permission — 100% on-device, no frames ever leave your machine.",
+    };
+    const pm = st.presenceMode ?? "activity";
+    const presenceRow = `<div class="cv-opt cv-optseg"><span>👁 Presence source</span><select class="cv-presence">${
+      pmodes.map(([v, lbl]) => `<option value="${v}" ${pm === v ? "selected" : ""}>${lbl}</option>`).join("")}</select></div>`
+      + `<div class="cv-presence-note">${esc(pnote[pm])}</div>`;
+    this.sheetBody.innerHTML = `${toggle("zen", "🧘 Zen mode — hide scores & bonuses, just music")}${presenceRow}${toggle("sound", "🔊 Muffled kick (through the wall)")}`
       + uiRow
       + `${toggle("weatherAuto", "🌦 Live weather — real rain/snow over the scene")}`
       + `<label class="cv-opt"><span>Weather city</span><input class="cv-city" type="text" placeholder="auto-detect from IP" maxlength="40" value="${esc(st.weatherCity)}" ${st.weatherAuto ? "" : "disabled"}/></label>`
@@ -317,6 +329,8 @@ export class Controls {
       (i.onchange = () => { this.cb.onSettings({ [i.dataset.set as string]: i.checked } as Partial<Profile["settings"]>); if (i.dataset.set === "weatherAuto") this.renderOptions(); }));
     this.sheetBody.querySelectorAll<HTMLButtonElement>("[data-ui]").forEach((b) =>
       (b.onclick = () => { this.cb.onSettings({ uiScale: b.dataset.ui as Profile["settings"]["uiScale"] }); this.renderOptions(); }));
+    const psel = this.sheetBody.querySelector<HTMLSelectElement>(".cv-presence");
+    if (psel) psel.onchange = () => { this.cb.onSettings({ presenceMode: psel.value as Profile["settings"]["presenceMode"] }); this.renderOptions(); };
     const city = this.sheetBody.querySelector<HTMLInputElement>(".cv-city");
     if (city) city.onchange = () => this.cb.onSettings({ weatherCity: city.value.trim() });
   }
