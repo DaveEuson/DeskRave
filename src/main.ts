@@ -563,7 +563,7 @@ async function setCamera(on: boolean): Promise<void> {
     camPreview.hidden = false; // show it first so the <video> actually decodes frames
     let mode: "native" | "browser" | "none";
     if (forceNative) { presence.startNative(); mode = "native"; } // kiosk: on-device only, never touch the camera
-    else mode = await presence.start(camVideo); // native service if running, else in-browser
+    else mode = await presence.start(camVideo, STANDALONE); // native service if running, else in-browser (standalone skips the /api/presence probe)
     if (mode === "none") {
       camPreview.hidden = true;
       profile.settings.camera = false;
@@ -599,8 +599,9 @@ audio.shuffle(); // fresh random order each session so the big CC library never 
 audio.load(0);
 controls.setMedia(audio.tracks, audio.index);
 
-// load the persisted server library on boot (uploads survive reload)
-void fetchLibrary().then((lib) => { if (lib.length) { audio.addTracks(lib); controls.setMedia(audio.tracks, audio.index); } });
+// load the persisted server library on boot (uploads survive reload) — kiosk only;
+// a static build has no /api/library (the fetch would just 404)
+if (!STANDALONE) void fetchLibrary().then((lib) => { if (lib.length) { audio.addTracks(lib); controls.setMedia(audio.tracks, audio.index); } });
 
 // refresh the server-authoritative profile (the sync boot used the local mirror)
 void loadProfile().then((p) => { profile = p; controls.setProfile(profile); syncScene(); });

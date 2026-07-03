@@ -2,13 +2,13 @@
   "name": "Pixel DJ",
   "short_name": "Pixel DJ",
   "description": "A cute pixel-art music & radio widget — the club reacts to your audio and levels up as you listen.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#08060f",
   "theme_color": "#d946ef",
   "icons": [
-    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }

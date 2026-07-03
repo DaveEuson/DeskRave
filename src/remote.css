@@ -1,3 +1,8 @@
+@font-face {
+  font-family: "Press Start 2P";
+  font-style: normal; font-weight: 400; font-display: swap;
+  src: url("./fonts/press-start-2p.woff2") format("woff2"); /* bundled, not Google CDN */
+}
 :root { color-scheme: dark; }
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; background: #0b0816; color: #e7e0f5;
