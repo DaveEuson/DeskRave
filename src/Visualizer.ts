@@ -247,7 +247,8 @@ export class Visualizer {
     this.g.restore();
 
     if (this.s.weather !== "clear") this.drawWeather();
-    if (this.s.showClock) this.clock(now, u);
+    // the clock is now a crisp DOM overlay (main.ts syncClock) — the canvas
+    // version was fuzzy under the bloom + scanlines
   }
 
   // real-weather atmosphere overlaid on any scene (driven by /api/weather)
@@ -3904,42 +3905,5 @@ export class Visualizer {
     g.fillRect(this.w / 2 - g.measureText(text).width / 2 - 4, y - size, g.measureText(text).width + 8, size * 2);
     g.fillStyle = `hsl(${(this.s.hue + 10) % 360},95%,${60 + this.kick * 20}%)`;
     g.fillText(text, this.w / 2, y);
-  }
-
-  // ── desk clock + date (pixel font, top-right) ───────────────────────────────
-  private clock(now: Date, u: number): void {
-    const g = this.g;
-    let h = now.getHours();
-    const m = now.getMinutes(), sec = now.getSeconds();
-    let suffix = "";
-    if (!this.s.clock24) { suffix = h >= 12 ? " PM" : " AM"; h = h % 12 || 12; }
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const time = `${this.s.clock24 ? pad(h) : h}:${pad(m)}:${pad(sec)}${suffix}`;
-    // tamed: smaller + desaturated than before so it doesn't shout over the scene
-    const size = Math.max(4, Math.round(2.7 * u)), dateSize = Math.max(3, Math.round(2.1 * u));
-    const right = this.w - 4 * u, top = 4 * u, gap = 2 * u;
-    g.textAlign = "right"; g.textBaseline = "top";
-    g.font = `${size}px "Press Start 2P", monospace`;
-    let wmax = g.measureText(time).width, date = "";
-    if (this.s.showDate) {
-      const wd = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][now.getDay()];
-      const mo = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][now.getMonth()];
-      date = `${wd} · ${mo} ${now.getDate()}`;
-      g.font = `${dateSize}px "Press Start 2P", monospace`;
-      wmax = Math.max(wmax, g.measureText(date).width);
-    }
-    // dark backing pill — keeps it legible against bright skies (was washing out)
-    const padX = 2.5 * u, padY = 1.5 * u;
-    const boxH = size + padY * 2 + (date ? gap + dateSize : 0);
-    g.fillStyle = "rgba(8,6,16,0.5)";
-    g.fillRect(right - wmax - padX, top - padY, wmax + padX * 2, boxH);
-    g.font = `${size}px "Press Start 2P", monospace`;
-    g.fillStyle = `hsla(${this.s.hue},35%,84%,0.95)`;
-    g.fillText(time, right, top);
-    if (date) {
-      g.font = `${dateSize}px "Press Start 2P", monospace`;
-      g.fillStyle = `hsla(${this.s.hue},28%,68%,0.85)`;
-      g.fillText(date, right, top + size + gap);
-    }
   }
 }
