@@ -208,6 +208,15 @@ function cycleVenue(dir: number): void {
 }
 venuePrev.onclick = () => cycleVenue(-1);
 venueNext.onclick = () => cycleVenue(1);
+// scroll the wheel over the switcher to flip venues without chasing the arrows
+let venueWheelT = 0;
+$("venueNav").addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const now = performance.now();
+  if (now - venueWheelT < 180) return; // one step per notch, not a stampede
+  venueWheelT = now;
+  cycleVenue(e.deltaY > 0 || e.deltaX > 0 ? 1 : -1);
+}, { passive: false });
 
 // ── Venue Board: a centered, single-purpose venue picker (NOT the options menu) ──
 const venueBoard = $("venueBoard");
@@ -864,7 +873,25 @@ function renderBuffs(): void {
   buffs.innerHTML =
     `<div class="buff-title">Bonuses</div>` +
     `<div class="buff ${nativeOn ? "on" : ""}"><span class="buff-ic">🎧</span><span class="buff-tx">fits ${VENUES[v].name}</span><b>×${MATCH_MULT}</b></div>` +
-    `<div class="buff ${dailyOn ? "on" : ""}"><span class="buff-ic">🔥</span><span class="buff-tx">today · ${daily.genre} @ ${VENUES[daily.venue].name}</span><b>×${DAILY_MULT}</b></div>`;
+    `<div class="buff ${dailyOn ? "on" : ""}"><span class="buff-ic">🔥</span><span class="buff-tx">today · ${daily.genre} @ ${VENUES[daily.venue].name}</span><b>×${DAILY_MULT}</b></div>` +
+    unlockProgressHtml();
+}
+// progression meter — how much Cred until the next (cheapest locked) venue
+function unlockProgressHtml(): string {
+  const locked = VENUE_ORDER
+    .filter((id) => !profile.unlocks.includes(id))
+    .sort((a, b) => VENUES[a].price - VENUES[b].price);
+  if (!locked.length) return `<div class="prog done"><div class="prog-cap">progression</div><div class="prog-top"><span class="prog-ic">🏆</span><span class="prog-name">All venues unlocked!</span></div></div>`;
+  const id = locked[0], price = VENUES[id].price, cred = Math.floor(profile.cred);
+  const left = Math.max(0, price - cred);
+  const pct = Math.round(Math.max(0, Math.min(1, price ? cred / price : 1)) * 100);
+  const ready = left <= 0;
+  return `<div class="prog ${ready ? "ready" : ""}">` +
+    `<div class="prog-cap">next unlock</div>` +
+    `<div class="prog-top"><span class="prog-ic">${ready ? "🔓" : "🔒"}</span><span class="prog-name">${VENUES[id].name}</span>` +
+      `<b>${ready ? "READY" : "◈" + left}</b></div>` +
+    `<div class="prog-bar"><i style="width:${pct}%"></i></div>` +
+  `</div>`;
 }
 function updateNowPlaying(): void {
   const c = audio.current;
