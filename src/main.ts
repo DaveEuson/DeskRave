@@ -105,7 +105,7 @@ const controls = new Controls($("controls"), profile, {
     persist(); controls.setProfile(profile); syncScene();
     toast(`🎉 ${pz.name} unlocked!`);
   },
-  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); if ("zen" in patch) controls.setProfile(profile); if ("camera" in patch) void setCamera(!!patch.camera); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); },
+  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); syncClock(); if ("zen" in patch) controls.setProfile(profile); if ("camera" in patch) void setCamera(!!patch.camera); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); },
   onSelectTrack: (i) => void audio.select(i),
   onAddFiles: () => fileInput.click(),
   onAddStation: (name: string, url: string, genre: Genre) => {
@@ -648,6 +648,25 @@ function tickProgress(dtMs: number): void {
   }
 }
 
+// ── desk clock — crisp DOM text (replaces the fuzzy canvas-drawn clock) ───────
+const deskClock = $("deskClock");
+const dcTime = deskClock.querySelector<HTMLElement>(".dc-time")!;
+const dcDate = deskClock.querySelector<HTMLElement>(".dc-date")!;
+const WD = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const MO = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+function syncClock(): void {
+  const st = profile.settings;
+  deskClock.hidden = !st.showClock;
+  if (!st.showClock) return;
+  const now = new Date();
+  let h = now.getHours();
+  const m = String(now.getMinutes()).padStart(2, "0");
+  const s = String(now.getSeconds()).padStart(2, "0");
+  if (st.clock24) { dcTime.textContent = `${String(h).padStart(2, "0")}:${m}:${s}`; }
+  else { const ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; dcTime.textContent = `${h}:${m}:${s} ${ap}`; }
+  dcDate.textContent = st.showDate ? `${WD[now.getDay()]} · ${MO[now.getMonth()]} ${now.getDate()}` : "";
+}
+
 // ── "time at desk" — live session + persistent daily log ─────────────────────
 const deskTimer = $("deskTimer");
 let sessionMs = 0; // this session — resets on reload
@@ -776,6 +795,7 @@ setInterval(() => {
   controls.setCred(profile.cred);
   controls.setFans(profile.fans);
   venueName.textContent = VENUES[currentVenue()].name; // switcher label
+  syncClock();
   renderBuffs();
   renderBreakSign();  // sets breakSignOn — the top-centre slot is the break's alone now
   syncCurfewSign();   // the curfew notice is scene art (a posted sign), not HUD
@@ -815,6 +835,7 @@ setInterval(() => {
 
 // ── render loop ─────────────────────────────────────────────────────────────
 syncScene();
+syncClock(); // paint the clock immediately (before the first 1s tick)
 controls.setProfile(profile);
 toast("👆 Tap the screen to open controls & pick a station");
 if (profile.settings.camera) void setCamera(true); // resume presence if it was on
