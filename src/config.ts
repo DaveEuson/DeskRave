@@ -302,12 +302,16 @@ export const CC_ARTISTS: { artist: string; license: string; url: string }[] = [
 // Discover panel also runs a live archive.org search behind these. Quality up
 // front, infinite behind it — so the music never runs out.
 export interface MusicPack { name: string; emoji: string; genre: Genre; blurb: string; items: string[]; }
+// Every identifier below was verified against archive.org's metadata API as
+// plain CC BY / CC0 / Public-Domain (NC/SA/ND rejected) AND confirmed to carry
+// playable audio, so a one-tap pack never adds nothing or something unclearable.
 export const MUSIC_PACKS: MusicPack[] = [
-  { name: "Lofi & Focus", emoji: "🎧", genre: "lofi", blurb: "Calm beats to work to", items: ["MusicForPodcasts04"] },
-  { name: "Chiptune Heroes", emoji: "👾", genre: "synthwave", blurb: "8-bit adventure energy", items: ["Komikuitstimeforadventure", "Komiku-ultra_person_vol1"] },
-  { name: "Deep Ambient", emoji: "🌌", genre: "ambient", blurb: "Spacious, cinematic drift", items: ["ChrisZabriskieDirectToVideo", "KaiEngelTheRun"] },
+  { name: "Lofi & Focus", emoji: "🎧", genre: "lofi", blurb: "Calm beats to work to", items: ["MusicForPodcasts04", "MusicForPodcasts03", "MusicForPodcasts02", "MusicForPodcasts01"] },
+  { name: "Chiptune Heroes", emoji: "👾", genre: "synthwave", blurb: "8-bit adventure energy", items: ["Komikuitstimeforadventure", "Komiku-ultra_person_vol1", "Komiku-ultra_person_vol2", "Komiku-ultra_person_vol3"] },
+  { name: "Deep Ambient", emoji: "🌌", genre: "ambient", blurb: "Spacious, cinematic drift", items: ["ChrisZabriskieDirectToVideo", "KaiEngelTheRun", "cz-blackhole", "cz-ogreatqueenelectric"] },
   { name: "Downtempo Grooves", emoji: "🕺", genre: "downtempo", blurb: "Laid-back electronic funk", items: ["DirectionlessEP", "BrokeForFreeLayers", "Slam_Funk-7603"] },
-  { name: "Game Music", emoji: "🎮", genre: "chill", blurb: "Playful adventure soundtracks", items: ["Komiku-Poupis_incredible_adventures"] },
+  { name: "Dancefloor Adventure", emoji: "🪩", genre: "house", blurb: "Upbeat chiptune to move to", items: ["Komiku-HeliceAwesomeDanceAdventure", "komiku-incredible-kart-game", "Komiku-the-girl-with-the-baseball-bat"] },
+  { name: "Game Music", emoji: "🎮", genre: "chill", blurb: "Playful adventure soundtracks", items: ["Komiku-Poupis_incredible_adventures", "Komiku-ItsTimeForAdventureVol2", "Komiku-Its_Time_For_Adventure_Vol4", "komiku-the-adventure-goes-on-vol.-1", "komiku-the-adventure-goes-on-vol.-2"] },
 ];
 export const PACK_MAX_PER_ITEM = 12; // cap per album so a pack stays a snack, not a firehose
 
