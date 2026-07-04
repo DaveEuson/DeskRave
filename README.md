@@ -1,8 +1,8 @@
-# Pixel DJ
+# Desk Rave
 
 **A tiny 16-bit club for your desk that moves to whatever you play — and quietly keeps your focus honest.**
 
-Pixel DJ is a little pixel-art nightclub that lives in a corner of your screen. Play internet
+Desk Rave is a little pixel-art nightclub that lives in a corner of your screen. Play internet
 radio, your own files, or the built-in Creative-Commons soundtrack, and the whole scene *reacts
 to it in real time* — the bass drives the crowd, the highs shimmer the lights, the DJ scratches
 on the beat. It's not a looping animation faking it; it's an actual FFT reading whatever's

@@ -1,9 +1,9 @@
 {
-  "name": "pixel-rave",
+  "name": "desk-rave",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "A pixel rave that streams CC-licensed chiptune and makes the crowd & lights react to it. Sibling experiment to Antfarm.",
+  "description": "A tiny pixel-art club for your desk that reacts to whatever you play, with a Creative-Commons soundtrack and a gentle focus loop.",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc && vite build",

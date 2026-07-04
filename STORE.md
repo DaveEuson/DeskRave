@@ -1,4 +1,4 @@
-# Pixel DJ — store / launch page copy
+# Desk Rave — store / launch page copy
 
 Paste-ready copy for the itch.io page (and reusable for Steam later). Swap the
 `[bracketed]` bits, drop in your GIFs where noted, and tune the voice to yours.
@@ -21,7 +21,7 @@ A pixel-art music toy: the crowd and lights react to your audio in real time, an
 
 > _[GIF 1 here: the club reacting to a track — bass pumping, crowd dancing]_
 
-**Pixel DJ is a little pixel-art club that lives on your desk.**
+**Desk Rave is a little pixel-art club that lives on your desk.**
 
 Play internet radio, your own files, or the built-in soundtrack — and the whole scene *moves to it*. Real audio, real reactions: the bass drives the crowd, the highs shimmer the lights, the DJ scratches on the beat. It's not a looping animation faking it; it's an actual FFT reading whatever's playing.
 
@@ -67,10 +67,10 @@ Open it, tap the scene to bring up the menu, pick a station or drop in a file, a
 - **Kind of project:** HTML — "This file will be played in the browser"
 - **Embed:** ~1280×720, click to launch, **fullscreen button on**, **mobile friendly on**
 - **Pricing:** Free (or "name your own price")
-- Upload `pixel-dj-itch.zip`, set `index.html` as the launch file.
+- Upload `desk-rave-itch.zip`, set `index.html` as the launch file.
 
 ---
 
 ## Camera / microphone privacy note (put this in the description AND itch's "more info")
 
-> **Your privacy, plainly:** Pixel DJ's presence feature can use your keyboard/mouse, your microphone, or your camera — **you pick, and it defaults to keyboard/mouse.** If you choose the camera or microphone, all processing happens **locally in your browser**. No video, no audio, and no images are ever recorded, saved, uploaded, or sent anywhere. There is no account, no tracking, and no analytics. The camera/mic options exist only so the little DJ knows when you've stepped away.
+> **Your privacy, plainly:** Desk Rave's presence feature can use your keyboard/mouse, your microphone, or your camera — **you pick, and it defaults to keyboard/mouse.** If you choose the camera or microphone, all processing happens **locally in your browser**. No video, no audio, and no images are ever recorded, saved, uploaded, or sent anywhere. There is no account, no tracking, and no analytics. The camera/mic options exist only so the little DJ knows when you've stepped away.

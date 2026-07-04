@@ -314,7 +314,7 @@ function applyRemote(cmd: string, value: unknown): void {
 // mirror, then reload so every subsystem boots from the restored state cleanly
 async function restoreProfile(value: unknown): Promise<void> {
   if (!value || typeof value !== "object" || !("cred" in (value as object)) || !("unlocks" in (value as object))) {
-    toast("📦 That file doesn't look like a Pixel DJ backup"); return;
+    toast("📦 That file doesn't look like a Desk Rave backup"); return;
   }
   const restored = normalize({ ...defaultProfile(), ...(value as Partial<Profile>), id: profile.id } as Profile);
   toast("📦 Restoring backup — one moment…");

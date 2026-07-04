@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Pixel DJ — the ONE balance module.
+// Desk Rave — the ONE balance module.
 // Every tunable number (vibes, venues, avatars, palettes, XP curve, FFT bands,
 // timings) lives here so two devs build the same game and balance is one file.
 // Per the handoff README: do not scatter these through the render code.

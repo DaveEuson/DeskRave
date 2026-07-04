@@ -1,4 +1,4 @@
-# Pixel DJ — Credits
+# Desk Rave — Credits
 
 Hand-drawn procedural pixel scenes, human-made music, and a camera that never
 phones home. Made by Dave Euson.
