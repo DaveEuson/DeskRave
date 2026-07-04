@@ -286,10 +286,12 @@ export const STANDALONE = import.meta.env.MODE === "itch";
 // The CC artists behind the soundtrack — shown as a compact per-artist credit in
 // Options (a 89-track per-song list would be absurd; each track's specifics still
 // show in the now-playing HUD). CC BY requires crediting the author; CC0 doesn't,
-// but Komiku gets a thank-you anyway.
+// but the CC0 artists get a thank-you anyway.
 export const CC_ARTISTS: { artist: string; license: string; url: string }[] = [
   { artist: "SwapXFO", license: "CC BY 4.0", url: "https://archive.org/details/@swapxfo" },
-  { artist: "Komiku", license: "CC0 / Public Domain", url: "https://archive.org/details/@komiku" },
+  { artist: "Scott Buckley", license: "CC BY 4.0", url: "https://scottbuckley.com.au" },
+  { artist: "Blue Dot Sessions", license: "CC BY", url: "https://www.sessions.blue" },
+  { artist: "Kevin MacLeod", license: "CC BY / CC0", url: "https://incompetech.com" },
   { artist: "Lee Rosevere", license: "CC BY", url: "https://archive.org/details/@lee_rosevere" },
   { artist: "Broke For Free", license: "CC BY", url: "https://brokeforfree.bandcamp.com" },
   { artist: "Chris Zabriskie", license: "CC BY", url: "https://chriszabriskie.com" },
@@ -307,11 +309,9 @@ export interface MusicPack { name: string; emoji: string; genre: Genre; blurb: s
 // playable audio, so a one-tap pack never adds nothing or something unclearable.
 export const MUSIC_PACKS: MusicPack[] = [
   { name: "Lofi & Focus", emoji: "🎧", genre: "lofi", blurb: "Calm beats to work to", items: ["MusicForPodcasts04", "MusicForPodcasts03", "MusicForPodcasts02", "MusicForPodcasts01"] },
-  { name: "Chiptune Heroes", emoji: "👾", genre: "synthwave", blurb: "8-bit adventure energy", items: ["Komikuitstimeforadventure", "Komiku-ultra_person_vol1", "Komiku-ultra_person_vol2", "Komiku-ultra_person_vol3"] },
   { name: "Deep Ambient", emoji: "🌌", genre: "ambient", blurb: "Spacious, cinematic drift", items: ["ChrisZabriskieDirectToVideo", "KaiEngelTheRun", "cz-blackhole", "cz-ogreatqueenelectric"] },
+  { name: "Quiet Focus", emoji: "🍃", genre: "chill", blurb: "Tasteful, podcast-grade calm", items: ["jamendo-160711", "jamendo-160715", "jamendo-160716", "jamendo-160718"] },
   { name: "Downtempo Grooves", emoji: "🕺", genre: "downtempo", blurb: "Laid-back electronic funk", items: ["DirectionlessEP", "BrokeForFreeLayers", "Slam_Funk-7603"] },
-  { name: "Dancefloor Adventure", emoji: "🪩", genre: "house", blurb: "Upbeat chiptune to move to", items: ["Komiku-HeliceAwesomeDanceAdventure", "komiku-incredible-kart-game", "Komiku-the-girl-with-the-baseball-bat"] },
-  { name: "Game Music", emoji: "🎮", genre: "chill", blurb: "Playful adventure soundtracks", items: ["Komiku-Poupis_incredible_adventures", "Komiku-ItsTimeForAdventureVol2", "Komiku-Its_Time_For_Adventure_Vol4", "komiku-the-adventure-goes-on-vol.-1", "komiku-the-adventure-goes-on-vol.-2"] },
 ];
 export const PACK_MAX_PER_ITEM = 12; // cap per album so a pack stays a snack, not a firehose
 
@@ -369,7 +369,7 @@ export const CC_STATION = {
 // The variety engine: dozens more verified CC-BY/CC0 tracks referenced by URL
 // (archive.org serves CORS * + range requests, so the AnalyserNode reads them
 // like any local file). Needs a connection; the bundled set above is the
-// offline core. Komiku's catalogue is CC0; the rest are plain CC BY.
+// offline core. All plain CC BY / CC0 — curated for quality, not just license.
 export const CC_STREAM: StationTrack[] = [
   { src: "https://archive.org/download/mus-unfamiliar-metropolis/Unfamiliar%20Metropolis.m4a", title: "Unfamiliar Metropolis", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-unfamiliar-metropolis", genre: "synthwave" },
   { src: "https://archive.org/download/album-intrepid-normalization/01%20-%20Viewgazing.mp3", title: "Viewgazing", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/album-intrepid-normalization", genre: "house" },
@@ -385,34 +385,18 @@ export const CC_STREAM: StationTrack[] = [
   { src: "https://archive.org/download/mus-eastern-wind/Eastern%20Wind.m4a", title: "Eastern Wind", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-eastern-wind", genre: "lofi" },
   { src: "https://archive.org/download/xfo-preaching-to-the-choir/Preaching%20to%20the%20Choir.mp3", title: "Preaching to the Choir", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/xfo-preaching-to-the-choir", genre: "synthwave" },
   { src: "https://archive.org/download/mus-pitch-blackkave/Pitch%20Blackkave.m4a", title: "Pitch Blackkave", artist: "SwapXFO", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/mus-pitch-blackkave", genre: "house" },
-  { src: "https://archive.org/download/Komiku-Poupis_incredible_adventures/Komiku-PoupisIncredibleAdventures-01Opening.mp3", title: "Opening !", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-Poupis_incredible_adventures", genre: "chill" },
-  { src: "https://archive.org/download/Komiku-Poupis_incredible_adventures/Komiku-PoupisIncredibleAdventures-03TimeForTheWalkOfTheDay.mp3", title: "Time for the walk of the day", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-Poupis_incredible_adventures", genre: "chill" },
-  { src: "https://archive.org/download/Komiku-Poupis_incredible_adventures/Komiku-PoupisIncredibleAdventures-04TheWeeklyFair.mp3", title: "The weekly fair", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-Poupis_incredible_adventures", genre: "chill" },
-  { src: "https://archive.org/download/Komiku-Poupis_incredible_adventures/Komiku-PoupisIncredibleAdventures-05Surfing.mp3", title: "Surfing", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-Poupis_incredible_adventures", genre: "chill" },
-  { src: "https://archive.org/download/Komiku-ItsTimeForAdventureVol2/Komiku_-_01_-_Balance.mp3", title: "Balance", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-ItsTimeForAdventureVol2", genre: "house" },
-  { src: "https://archive.org/download/Komiku-ItsTimeForAdventureVol2/Komiku_-_02_-_Chill_Out_Theme.mp3", title: "Chill Out Theme", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-ItsTimeForAdventureVol2", genre: "chill" },
-  { src: "https://archive.org/download/Komiku-ItsTimeForAdventureVol2/Komiku_-_03_-_Battle_Theme.mp3", title: "Battle Theme", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-ItsTimeForAdventureVol2", genre: "house" },
-  { src: "https://archive.org/download/Komiku-ItsTimeForAdventureVol2/Komiku_-_04_-_Time.mp3", title: "Time", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-ItsTimeForAdventureVol2", genre: "house" },
-  { src: "https://archive.org/download/Komiku-TaleOnTheLate/Komiku%20-%20Tale%20on%20the%20Late%20-%2001%20Tale%20on%20the%20Late%20%28Main%20Theme%29.mp3", title: "Tale on the Late", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-TaleOnTheLate", genre: "synthwave" },
-  { src: "https://archive.org/download/Komiku-TaleOnTheLate/Komiku%20-%20Tale%20on%20the%20Late%20-%2002%20Remember%20the%20time%20we%20use%20to%20play.mp3", title: "Remember the time we use to play", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-TaleOnTheLate", genre: "synthwave" },
-  { src: "https://archive.org/download/Komiku-TaleOnTheLate/Komiku%20-%20Tale%20on%20the%20Late%20-%2003%20The%20road%20we%20use%20to%20travel%20when%20we%20were%20kids.mp3", title: "The road we use to travel when we were kids", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-TaleOnTheLate", genre: "synthwave" },
-  { src: "https://archive.org/download/Komiku-TaleOnTheLate/Komiku%20-%20Tale%20on%20the%20Late%20-%2004%20Friends%2C%202018.mp3", title: "Friends, 2018", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-TaleOnTheLate", genre: "synthwave" },
-  { src: "https://archive.org/download/komiku-the-adventure-goes-on-vol.-1/Komiku%20-%20The%20adventure%20goes%20on%2C%20vol.1%20-%2001%20The%20calling.mp3", title: "The calling", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/komiku-the-adventure-goes-on-vol.-1", genre: "downtempo" },
-  { src: "https://archive.org/download/komiku-the-adventure-goes-on-vol.-1/Komiku%20-%20The%20adventure%20goes%20on%2C%20vol.1%20-%2002%20On%20the%20tracks%20of%20the%20elders.mp3", title: "On the tracks of the elders", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/komiku-the-adventure-goes-on-vol.-1", genre: "downtempo" },
-  { src: "https://archive.org/download/komiku-the-adventure-goes-on-vol.-1/Komiku%20-%20The%20adventure%20goes%20on%2C%20vol.1%20-%2003%20The%20urge%20of%20moving%2C%20smile%20on%20the%20faces.mp3", title: "The urge of moving, smile on the faces", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/komiku-the-adventure-goes-on-vol.-1", genre: "downtempo" },
-  { src: "https://archive.org/download/komiku-the-adventure-goes-on-vol.-1/Komiku%20-%20The%20adventure%20goes%20on%2C%20vol.1%20-%2004%20Tonight%2C%20we%20feast%20%21.mp3", title: "Tonight, we feast !", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/komiku-the-adventure-goes-on-vol.-1", genre: "downtempo" },
-  { src: "https://archive.org/download/Komiku-ultra_person_vol1/Komiku%20-%20ULTRA%20PERSON%20VOL1%20-%2001%20Introduction%20to%20your%20adventure.mp3", title: "Introduction to your adventure", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-ultra_person_vol1", genre: "trance" },
-  { src: "https://archive.org/download/Komiku-ultra_person_vol1/Komiku%20-%20ULTRA%20PERSON%20VOL1%20-%2002%20Level%201%20-%20Jump%20and%20shoot%20stuff%20101.mp3", title: "Level 1 : Jump and shoot stuff 101", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-ultra_person_vol1", genre: "trance" },
-  { src: "https://archive.org/download/Komiku-ultra_person_vol1/Komiku%20-%20ULTRA%20PERSON%20VOL1%20-%2003%20Interview%20in%20a%20pub.mp3", title: "Interview in a pub", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-ultra_person_vol1", genre: "trance" },
-  { src: "https://archive.org/download/Komiku-ultra_person_vol1/Komiku%20-%20ULTRA%20PERSON%20VOL1%20-%2004%20Suburb.mp3", title: "Suburb", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-ultra_person_vol1", genre: "trance" },
-  { src: "https://archive.org/download/Komikuitstimeforadventure/Komiku_-_01_-_Fouler_lhorizon.mp3", title: "Fouler l'horizon", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komikuitstimeforadventure", genre: "chill" },
-  { src: "https://archive.org/download/Komikuitstimeforadventure/Komiku_-_02_-_Le_Grand_Village.mp3", title: "Le Grand Village", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komikuitstimeforadventure", genre: "chill" },
-  { src: "https://archive.org/download/Komikuitstimeforadventure/Komiku_-_03_-_Champ_de_tournesol.mp3", title: "Champ de tournesol", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komikuitstimeforadventure", genre: "chill" },
-  { src: "https://archive.org/download/Komikuitstimeforadventure/Komiku_-_04_-_Barque_sur_le_lac.mp3", title: "Barque sur le lac", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komikuitstimeforadventure", genre: "chill" },
-  { src: "https://archive.org/download/Komiku-the-girl-with-the-baseball-bat/Komiku-TheGirlWithTheBaseballBat-01Intro.mp3", title: "THE GIRL WITH THE BASEBALL BAT - 01 Intro", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-the-girl-with-the-baseball-bat", genre: "house" },
-  { src: "https://archive.org/download/Komiku-the-girl-with-the-baseball-bat/Komiku-TheGirlWithTheBaseballBat-02BadGuysHq.mp3", title: "THE GIRL WITH THE BASEBALL BAT - 02 Bad Guys HQ", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-the-girl-with-the-baseball-bat", genre: "house" },
-  { src: "https://archive.org/download/Komiku-the-girl-with-the-baseball-bat/Komiku-TheGirlWithTheBaseballBat-03InTheRestaurant.mp3", title: "THE GIRL WITH THE BASEBALL BAT - 03 In the restaurant", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-the-girl-with-the-baseball-bat", genre: "house" },
-  { src: "https://archive.org/download/Komiku-the-girl-with-the-baseball-bat/Komiku-TheGirlWithTheBaseballBat-04CarChasingPewPew.mp3", title: "THE GIRL WITH THE BASEBALL BAT - 04 Car chasing pew pew", artist: "Komiku", license: "CC0", sourceUrl: "https://archive.org/details/Komiku-the-girl-with-the-baseball-bat", genre: "house" },
+  // ── Scott Buckley — cinematic CC-BY, the quality tier ──
+  { src: "https://archive.org/download/sb_legionnaire2022/sb_legionnaire2022.mp3", title: "Legionnaire", artist: "Scott Buckley", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/sb_legionnaire2022", genre: "trance" },
+  { src: "https://archive.org/download/Scott_Buckley-glow/Glow.mp3", title: "Glow", artist: "Scott Buckley", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/Scott_Buckley-glow", genre: "ambient" },
+  { src: "https://archive.org/download/adrift-among-infinite-stars/AdriftAmongInfiniteStars.mp3", title: "Adrift Among Infinite Stars", artist: "Scott Buckley", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/adrift-among-infinite-stars", genre: "ambient" },
+  { src: "https://archive.org/download/sb_reverie/sb_reverie.mp3", title: "Reverie", artist: "Scott Buckley", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/sb_reverie", genre: "ambient" },
+  // ── Blue Dot Sessions — tasteful CC-BY (the stuff podcasts use) ──
+  { src: "https://archive.org/download/jamendo-160711/01-1365346-Blue%20Dot%20Sessions-Red%20City%20Theme.mp3", title: "Red City Theme", artist: "Blue Dot Sessions", license: "CC BY 3.0", sourceUrl: "https://archive.org/details/jamendo-160711", genre: "downtempo" },
+  { src: "https://archive.org/download/jamendo-160715/01-1365382-Blue%20Dot%20Sessions-When%20We%20Set%20Out.mp3", title: "When We Set Out", artist: "Blue Dot Sessions", license: "CC BY 3.0", sourceUrl: "https://archive.org/details/jamendo-160715", genre: "chill" },
+  { src: "https://archive.org/download/jamendo-160718/02-1365409-Blue%20Dot%20Sessions-Tranceless.mp3", title: "Tranceless", artist: "Blue Dot Sessions", license: "CC BY 3.0", sourceUrl: "https://archive.org/details/jamendo-160718", genre: "chill" },
+  // ── Kevin MacLeod — the reliable royalty-free standard ──
+  { src: "https://archive.org/download/come-play-with-me-by-kevin-macleod/come-play-with-me-by-kevin-macleod.mp3", title: "Come Play with Me", artist: "Kevin MacLeod", license: "CC BY 4.0", sourceUrl: "https://archive.org/details/come-play-with-me-by-kevin-macleod", genre: "house" },
+  { src: "https://archive.org/download/kevin-mac-leod-doh-de-oh/Kevin%20MacLeod%20Doh%20De%20Oh.mp3", title: "Doh De Oh", artist: "Kevin MacLeod", license: "CC0", sourceUrl: "https://archive.org/details/kevin-mac-leod-doh-de-oh", genre: "downtempo" },
   { src: "https://archive.org/download/Slam_Funk-7603/Broke_For_Free_-_01_-_Nothing_Like_Captain_Crunch.mp3", title: "Nothing Like Captain Crunch", artist: "Broke For Free", license: "CC BY 3.0", sourceUrl: "https://archive.org/details/Slam_Funk-7603", genre: "downtempo" },
   { src: "https://archive.org/download/Slam_Funk-7603/Broke_For_Free_-_02_-_Calm_The_Fuck_Down.mp3", title: "Calm The Fuck Down", artist: "Broke For Free", license: "CC BY 3.0", sourceUrl: "https://archive.org/details/Slam_Funk-7603", genre: "downtempo" },
   { src: "https://archive.org/download/Slam_Funk-7603/Broke_For_Free_-_03_-_The_Great.mp3", title: "The Great", artist: "Broke For Free", license: "CC BY 3.0", sourceUrl: "https://archive.org/details/Slam_Funk-7603", genre: "downtempo" },
