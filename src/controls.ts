@@ -26,6 +26,7 @@ export interface ControlsCallbacks {
   onAddStation(name: string, url: string, genre: Genre): void;
   onRemoveStation(stream: string): void;
   onDiscover(): void; // open the "get more music" panel (packs + archive.org search)
+  onBrowse(): void; // open the Library (the browse-and-play music hub)
 }
 
 type View = "music" | "dj" | "store" | "options";
@@ -141,8 +142,9 @@ export class Controls {
         <button class="cv-auto ${this.p.auto ? "on" : ""}" data-act="auto">🤖 AUTO</button>
         <div class="cv-seg">${(["chill", "groove", "rave"] as VibeName[]).map((v) => `<button data-vibe="${v}" class="${this.p.vibe === v ? "on" : ""}">${v}</button>`).join("")}</div>
       </div>
+      <button class="cv-browse" data-act="browse">📚 Browse &amp; play — open the Library</button>
       <button class="cv-discover" data-act="discover">🎵 Get more music — free packs &amp; search</button>
-      <div class="cv-row cv-listhead"><span class="cv-label">Stations &amp; files</span><span class="cv-addbtns"><button class="cv-add" data-act="addstation" title="add your own station by URL">📻﹢ station</button><button class="cv-add" data-act="add" title="add files">📁﹢ files</button></span></div>
+      <div class="cv-row cv-listhead"><span class="cv-label">Add music</span><span class="cv-addbtns"><button class="cv-add" data-act="addstation" title="add your own station by URL">📻﹢ station</button><button class="cv-add" data-act="add" title="add files">📁﹢ files</button></span></div>
       <div class="cv-suggest"><span class="cv-suglabel">📻 Radio — one tap to tune in</span>${SUGGESTED_STATIONS.map((s, i) => `<button type="button" class="cv-sug" data-sug="${i}" style="--c:hsl(${GENRE_HUE[s.genre]},70%,58%)">${esc(s.name)} <em>${s.genre}</em></button>`).join("")}</div>
       <form class="cv-addsta" hidden>
         <input class="cv-sta-name" placeholder="Station name" maxlength="40" />
@@ -150,8 +152,8 @@ export class Controls {
         <div class="cv-sta-row"><select class="cv-sta-genre">${GENRES.map((g) => `<option value="${g}">${g}</option>`).join("")}</select><button type="submit" class="cv-sta-add">Add</button></div>
         <small>direct mp3 / icecast streams only — not YouTube links</small>
       </form>
-      <div class="cv-fit">🎚 <b>${esc(VENUES[this.p.venue].name)}</b> sounds best with <b>${VENUES[this.p.venue].genre}</b> — ✓ marks a good fit</div>
-      <div class="cv-list">${this.tracks.map((t, i) => this.trackRow(t, i)).join("")}</div>`;
+      <div class="cv-fit">🎚 <b>${esc(VENUES[this.p.venue].name)}</b> sounds best with <b>${VENUES[this.p.venue].genre}</b></div>
+      ${(() => { const mine = this.tracks.map((t, i) => ({ t, i })).filter(({ t }) => t.custom); return mine.length ? `<div class="cv-row cv-listhead"><span class="cv-label">Your stations</span></div><div class="cv-list">${mine.map(({ t, i }) => this.trackRow(t, i)).join("")}</div>` : ""; })()}`;
     $(this.sheetBody, ".cv-vol").oninput = (e) => this.cb.onVolume(Number((e.target as HTMLInputElement).value) / 100);
     $(this.sheetBody, '[data-act="prev"]').onclick = () => this.cb.onPrev();
     $(this.sheetBody, '[data-act="next"]').onclick = () => this.cb.onNext();
@@ -159,6 +161,7 @@ export class Controls {
     $(this.sheetBody, '[data-act="auto"]').onclick = () => this.cb.onAuto(!this.p.auto);
     $(this.sheetBody, '[data-act="add"]').onclick = () => this.cb.onAddFiles();
     $(this.sheetBody, '[data-act="discover"]').onclick = () => this.cb.onDiscover();
+    $(this.sheetBody, '[data-act="browse"]').onclick = () => this.cb.onBrowse();
     const form = $<HTMLFormElement>(this.sheetBody, ".cv-addsta");
     $(this.sheetBody, '[data-act="addstation"]').onclick = () => { form.hidden = !form.hidden; if (!form.hidden) $<HTMLInputElement>(form, ".cv-sta-name").focus(); };
     form.onsubmit = (e) => {

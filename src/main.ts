@@ -135,6 +135,7 @@ const controls = new Controls($("controls"), profile, {
     controls.setMedia(audio.tracks, audio.index);
   },
   onDiscover: () => openDiscover(),
+  onBrowse: () => openLibrary(),
 });
 
 // ── Discover: "get more music" — curated CC packs + live archive.org search ───
