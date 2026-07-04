@@ -54,7 +54,7 @@ export class Controls {
           <button data-view="music" class="on">♪ Music</button>
           <button data-view="dj">🎧 DJ</button>
           <button data-view="store">🛒 Store</button>
-          <button data-view="options" class="nav-gear" title="options">⚙</button>
+          <button data-view="options" class="nav-gear" title="settings">⚙ Settings</button>
         </div>
         <div class="sheet-body"></div>
       </div>
@@ -142,13 +142,13 @@ export class Controls {
         <div class="cv-seg">${(["chill", "groove", "rave"] as VibeName[]).map((v) => `<button data-vibe="${v}" class="${this.p.vibe === v ? "on" : ""}">${v}</button>`).join("")}</div>
       </div>
       <button class="cv-discover" data-act="discover">🎵 Get more music — free packs &amp; search</button>
-      <div class="cv-row cv-listhead"><span class="cv-label">Stations &amp; files</span><span class="cv-addbtns"><button class="cv-add" data-act="addstation" title="add a station">📻﹢</button><button class="cv-add" data-act="add" title="add files">📁﹢</button></span></div>
+      <div class="cv-row cv-listhead"><span class="cv-label">Stations &amp; files</span><span class="cv-addbtns"><button class="cv-add" data-act="addstation" title="add your own station by URL">📻﹢ station</button><button class="cv-add" data-act="add" title="add files">📁﹢ files</button></span></div>
+      <div class="cv-suggest"><span class="cv-suglabel">📻 Radio — one tap to tune in</span>${SUGGESTED_STATIONS.map((s, i) => `<button type="button" class="cv-sug" data-sug="${i}" style="--c:hsl(${GENRE_HUE[s.genre]},70%,58%)">${esc(s.name)} <em>${s.genre}</em></button>`).join("")}</div>
       <form class="cv-addsta" hidden>
         <input class="cv-sta-name" placeholder="Station name" maxlength="40" />
         <input class="cv-sta-url" placeholder="https://stream.example/mp3" />
         <div class="cv-sta-row"><select class="cv-sta-genre">${GENRES.map((g) => `<option value="${g}">${g}</option>`).join("")}</select><button type="submit" class="cv-sta-add">Add</button></div>
         <small>direct mp3 / icecast streams only — not YouTube links</small>
-        <div class="cv-suggest"><span class="cv-suglabel">Suggested — one tap to add</span>${SUGGESTED_STATIONS.map((s, i) => `<button type="button" class="cv-sug" data-sug="${i}" style="--c:hsl(${GENRE_HUE[s.genre]},70%,58%)">${esc(s.name)} <em>${s.genre}</em></button>`).join("")}</div>
       </form>
       <div class="cv-fit">🎚 <b>${esc(VENUES[this.p.venue].name)}</b> sounds best with <b>${VENUES[this.p.venue].genre}</b> — ✓ marks a good fit</div>
       <div class="cv-list">${this.tracks.map((t, i) => this.trackRow(t, i)).join("")}</div>`;
@@ -168,7 +168,7 @@ export class Controls {
       const genre = $<HTMLSelectElement>(form, ".cv-sta-genre").value as Genre;
       this.cb.onAddStation(name, url, genre);
     };
-    form.querySelectorAll<HTMLButtonElement>(".cv-sug").forEach((b) => (b.onclick = () => {
+    this.sheetBody.querySelectorAll<HTMLButtonElement>(".cv-sug").forEach((b) => (b.onclick = () => {
       const s = SUGGESTED_STATIONS[Number(b.dataset.sug)];
       this.cb.onAddStation(s.name, s.stream, s.genre); // one-tap add a curated station
     }));

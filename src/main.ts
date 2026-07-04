@@ -916,17 +916,20 @@ function renderLibrary(filter = ""): void {
     .map((t, i) => ({ t, i }))
     .filter(({ t }) => !q || t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q));
   lbCount.textContent = q ? `${rows.length} of ${audio.tracks.length}` : `${audio.tracks.length} tracks`;
+  // details rows, not icon tiles — there's no album art, so a grid of swatches
+  // reads as noise; a list shows title/artist/genre at a glance like a player
   lbGrid.innerHTML = rows.length
     ? rows.map(({ t, i }) => {
         const on = i === audio.index;
         return `<button class="lb-tile ${on ? "on" : ""}" data-i="${i}" style="--h:${t.hue}">` +
           `<span class="lb-cover">` +
-            `<span class="lb-glyph">${trackGlyph(t)}</span>` +
-            (t.genre ? `<span class="lb-genre">${escHtml(t.genre)}</span>` : "") +
-            (on ? `<span class="lb-now">${audio.playing ? "▶" : "❚❚"}</span>` : "") +
+            `<span class="lb-glyph">${on ? (audio.playing ? "▶" : "❚❚") : trackGlyph(t)}</span>` +
           `</span>` +
-          `<span class="lb-t">${escHtml(t.title)}</span>` +
-          `<span class="lb-a">${escHtml(t.artist)}</span>` +
+          `<span class="lb-meta">` +
+            `<span class="lb-t">${escHtml(t.title)}</span>` +
+            `<span class="lb-a">${escHtml(t.artist)}</span>` +
+          `</span>` +
+          (t.genre ? `<span class="lb-genre">${escHtml(t.genre)}</span>` : "") +
         `</button>`;
       }).join("")
     : `<div class="lb-empty">No tracks match “${escHtml(filter)}”</div>`;
