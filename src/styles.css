@@ -380,6 +380,15 @@ body.zen #fanFeed { display: none; }
 .ob-nav button { font: inherit; font-size: 14px; cursor: pointer; border-radius: 10px; padding: 12px 18px; }
 .ob-back { background: transparent; border: 1px solid #34294f; color: #b9aee0; }
 .ob-next { background: linear-gradient(90deg, #7c3aed, #d946ef); border: none; color: #fff; font-weight: bold; flex: 1; }
+.ob-start { background: linear-gradient(90deg, #7c3aed, #d946ef); border: none; color: #fff; font-weight: bold; flex: 1; }
+/* first-run setup: presence-source picker */
+.ob-opts { display: flex; flex-direction: column; gap: 8px; margin: 0 0 18px; text-align: left; }
+.ob-opt { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; cursor: pointer; font: inherit;
+  background: rgba(255,255,255,.03); border: 1px solid #34294f; border-radius: 11px; color: #cdbff0; }
+.ob-opt:hover { border-color: #6d5a9e; }
+.ob-opt.on { border-color: #d946ef; background: rgba(217,70,239,.12); box-shadow: 0 0 0 1px #d946ef; }
+.ob-opt b { color: #fff; font-size: 14px; }
+.ob-opt small { color: #9a8fc0; font-size: 12px; line-height: 1.4; }
 
 /* dev-only progression tester (DEV builds only) */
 .dev-time { position: absolute; top: 10px; left: 10px; z-index: 20; font: inherit;

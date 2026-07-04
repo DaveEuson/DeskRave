@@ -477,6 +477,7 @@ function triggerBreak(): void {
 // ── presence: the DJ wakes (and plays) when the camera sees you ──────────────
 let presenceDrives = false; // does presence control playback right now?
 let awayPauseTimer = 0;
+let pausedByAbsence = false; // true only when presence paused playing music — so presence RESUMES what you had going, never cold-starts audio on launch
 // Forgive a long absence before stopping the music. Deep work means sitting still,
 // glancing at a second screen, or stepping away for a minute — none of that should
 // cut the audio. Only a real, sustained departure winds it down.
@@ -486,10 +487,11 @@ presence.onChange = (st) => {
   if (presenceDrives) {
     if (st.present) {
       clearTimeout(awayPauseTimer);
-      if (!audio.playing && audio.current) void audio.play(); // you're back → resume
+      // resume ONLY music that presence itself wound down — never cold-start on launch
+      if (pausedByAbsence && !audio.playing && audio.current) void audio.play();
     } else if (audio.playing) {
       clearTimeout(awayPauseTimer);
-      awayPauseTimer = window.setTimeout(() => audio.pause(), AWAY_PAUSE_MS); // gone a while → wind down
+      awayPauseTimer = window.setTimeout(() => { audio.pause(); pausedByAbsence = true; }, AWAY_PAUSE_MS); // gone a while → wind down
     }
   }
   syncScene();
@@ -613,7 +615,7 @@ audio.onTrackChange = () => {
   refreshLibrary();
   syncScene();
 };
-audio.onPlayState = () => { syncScene(); controls.setTransport(audio.playing, audio.muted); refreshLibrary(); };
+audio.onPlayState = () => { if (audio.playing) pausedByAbsence = false; syncScene(); controls.setTransport(audio.playing, audio.muted); refreshLibrary(); };
 audio.onPlaylistChange = () => { controls.setMedia(audio.tracks, audio.index); refreshLibrary(); };
 if (profile.customStations.length) audio.addTracks(profile.customStations.map(trackFromStation));
 if (profile.addedTracks.length) audio.addTracks(profile.addedTracks.map(trackFromSaved)); // Discover library
@@ -1007,9 +1009,13 @@ if (profile.settings.presenceMode !== "off") void setPresence(profile.settings.p
 void refreshWeather(); // pull live weather now, then keep it fresh
 setInterval(() => void refreshWeather(), 15 * 60_000);
 
-// first-run intro (once, or forced with ?onboard=1)
+// first-run intro + setup (once, or forced with ?onboard=1)
 if (new URLSearchParams(location.search).has("onboard") || !profile.settings.onboarded) {
-  showOnboarding(() => { profile.settings.onboarded = true; persist(); });
+  showOnboarding(({ presenceMode, start }) => {
+    profile.settings.onboarded = true;
+    void setPresence(presenceMode);   // apply + persist the chosen presence source
+    if (start) void audio.play();     // begin the music on the explicit "Start" click — never a surprise on launch
+  });
 }
 let lastT = performance.now();
 let frames = 0;
