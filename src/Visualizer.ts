@@ -3744,6 +3744,9 @@ export class Visualizer {
     this.px(cx - bw / 2 - u, boothTop - u, bw + 2 * u, 11 * u + u, jacketSh); // outline
     this.px(cx - bw / 2, boothTop, bw, 11 * u, "#0c0a16"); // body
     this.px(cx - bw / 2, boothTop, bw, 0.8 * u, `hsl(${this.s.hue},55%,32%)`); // subtle lit top edge
+    // punch the DJ + booth out of the bloom buffer so the EQ wall's glow (drawn
+    // behind it) doesn't bleed through the decks — bloom is composited over all.
+    this.glow.clearRect(cx - bw / 2 - 2 * u, stageY - 26 * u, bw + 4 * u, 26 * u);
 
     const labelHue = (this.s.hue + 30) % 360;
     const pcy = boothTop + 5 * u;

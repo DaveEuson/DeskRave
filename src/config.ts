@@ -488,7 +488,12 @@ export function dailyBonus(owned: VenueId[], date = new Date()): { genre: Genre;
   const genres = [...new Set(STATIONS.map((s) => s.genre))];
   const hash = (n: number) => ((Math.sin(n) * 43758.5453) % 1 + 1) % 1; // 0..1
   const g = genres[Math.floor(hash(day * 2.17) * genres.length)];
-  const pool = owned.length ? owned : VENUE_ORDER;
+  // draw the venue from spots you can commit to ALL DAY: owned AND not a curfew
+  // venue (parks/rooftops/beaches shut down after dark), so the ×3 is never
+  // stranded behind a curfew.
+  const base = owned.length ? owned : VENUE_ORDER;
+  const open = base.filter((id) => !VENUES[id].curfew);
+  const pool = open.length ? open : base; // never empty
   const v = pool[Math.floor(hash(day * 7.31 + 11) * pool.length)];
   return { genre: g, venue: v };
 }
