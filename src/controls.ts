@@ -38,7 +38,6 @@ export class Controls {
   private view: View = "music";
   private tracks: Track[] = [];
   private currentIndex = 0;
-  private nowVibe: VibeName = "groove";
   private playing = false;
   private muted = false;
   private vol = 0.8; // 0..1 — reflected by the menu volume slider
@@ -64,8 +63,7 @@ export class Controls {
         <button class="dock-pp" data-act="pp" title="play / pause">▶</button>
         <button class="dock-btn" data-act="next" title="next">⏭</button>
         <button class="dock-btn" data-act="mute" title="mute">🔊</button>
-        <div class="dock-now" data-act="toggle"><b class="dock-title">—</b><span class="dock-sub">tap to open the menu</span></div>
-        <div class="dock-eq" data-act="toggle">${"<i></i>".repeat(6)}</div>
+        <div class="dock-eq" data-act="toggle" title="open the menu">${"<i></i>".repeat(6)}</div>
         <div class="dock-cred" data-act="toggle" title="Cred to spend · fans you've drawn"><span class="ds-cred">◈ <b class="cv-cred-val">0</b></span><span class="ds-fans">👥 <b class="cv-fans-val">0</b></span></div>
         <button class="dock-toggle" data-act="toggle" title="menu">☰</button>
       </div>`;
@@ -106,9 +104,9 @@ export class Controls {
     this.setOpen(true);
   }
 
-  setProfile(p: Profile): void { this.p = p; if (this.open) this.renderBody(); this.renderDock(); }
-  setMedia(tracks: Track[], current: number): void { this.tracks = tracks; this.currentIndex = current; if (this.open && this.view === "music") this.renderBody(); this.renderDock(); }
-  setNowPlaying(vibe: VibeName, current: number): void { this.nowVibe = vibe; this.currentIndex = current; this.renderDock(); if (this.open && this.view === "music") this.renderBody(); }
+  setProfile(p: Profile): void { this.p = p; if (this.open) this.renderBody(); }
+  setMedia(tracks: Track[], current: number): void { this.tracks = tracks; this.currentIndex = current; if (this.open && this.view === "music") this.renderBody(); }
+  setNowPlaying(_vibe: VibeName, current: number): void { this.currentIndex = current; if (this.open && this.view === "music") this.renderBody(); }
   setTransport(playing: boolean, muted: boolean): void {
     this.playing = playing; this.muted = muted;
     this.root.querySelectorAll<HTMLElement>('[data-act="pp"]').forEach((b) => (b.textContent = playing ? "⏸" : "▶"));
@@ -116,14 +114,6 @@ export class Controls {
   }
   setEq(spectrum: number[]): void {
     this.root.querySelectorAll<HTMLElement>(".dock-eq i").forEach((bar, i) => (bar.style.height = `${3 + (spectrum[i * 3] ?? 0) * 18}px`));
-  }
-
-  private renderDock(): void {
-    const cur = this.tracks[this.currentIndex];
-    const t = this.root.querySelector(".dock-title");
-    const s = this.root.querySelector(".dock-sub");
-    if (t) t.textContent = cur ? cur.title : "—";
-    if (s) s.textContent = cur ? `${cur.artist} · 🤖 ${this.nowVibe}` : "tap to open";
   }
 
   private renderNav(): void {
@@ -136,7 +126,6 @@ export class Controls {
     else if (this.view === "dj") this.renderDJ();
     else if (this.view === "store") this.renderStore();
     else this.renderOptions();
-    this.renderDock();
   }
 
   private renderMusic(): void {
