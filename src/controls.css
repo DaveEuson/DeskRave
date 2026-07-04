@@ -85,6 +85,12 @@ body.zen .dock-cred { display: none; }
 .cv-sta-row select { flex: 1; min-width: 0; }
 .cv-sta-add { background: var(--cyan); border: none; color: #08121a; font-weight: 700; border-radius: 9px; padding: 8px 16px; cursor: pointer; font-size: 13px; }
 .cv-addsta small { color: #7a6fa0; font-size: 11px; }
+.cv-suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.cv-suglabel { flex: 0 0 100%; color: #7a6fa0; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+.cv-sug { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-family: inherit; font-size: 12px;
+  background: #221636; border: 1px solid var(--line); color: #e7e0f5; border-radius: 999px; padding: 6px 11px; }
+.cv-sug:hover { border-color: var(--c); background: #2a1c44; }
+.cv-sug em { font-style: normal; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--c); }
 .cv-del { font-size: 13px; color: #b59; flex: 0 0 auto; align-self: center; padding: 4px 8px; margin: -4px -6px -4px 0; border-radius: 8px; line-height: 1; }
 .cv-del:hover { color: #ff7ad0; background: #2a1530; }
 /* Lane B: calm venue↔genre guidance (no scoring, no min-maxing) */

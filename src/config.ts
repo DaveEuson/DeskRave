@@ -452,8 +452,28 @@ export const STATIONS: Station[] = [
 // can always read them. Standalone has no proxy — play the stream directly and
 // rely on the station's own CORS headers (most icecast stations send them; ones
 // that don't simply won't play, surfaced by the add-station flow).
+// Tauri desktop shell? It wraps the standalone build, so we detect at runtime.
+// The desktop app runs a tiny Rust proxy that re-serves radio streams same-origin
+// with open CORS, which is what the AnalyserNode needs to make them reactive.
+export const DESKTOP = typeof window !== "undefined" && ("__TAURI_INTERNALS__" in window || "__TAURI__" in window);
+export const RADIO_PROXY_PORT = 8787;
 export const radioUrl = (stream: string): string =>
-  STANDALONE ? stream : `/api/radio?url=${encodeURIComponent(stream)}`;
+  DESKTOP ? `http://127.0.0.1:${RADIO_PROXY_PORT}/?url=${encodeURIComponent(stream)}`
+  : STANDALONE ? stream
+  : `/api/radio?url=${encodeURIComponent(stream)}`;
+
+// One-tap curated internet radio. On desktop these route through the Rust proxy
+// (reactive visuals); on the kiosk through /api/radio; on the plain web build they
+// play but only react if the stream serves CORS (most don't). Genre drives the
+// venue bonus + the scene hue.
+export const SUGGESTED_STATIONS: { name: string; stream: string; genre: Genre }[] = [
+  { name: "SomaFM · Groove Salad", stream: "https://ice1.somafm.com/groovesalad-128-mp3", genre: "downtempo" },
+  { name: "SomaFM · Drone Zone", stream: "https://ice1.somafm.com/dronezone-128-mp3", genre: "ambient" },
+  { name: "SomaFM · Beat Blender", stream: "https://ice1.somafm.com/beatblender-128-mp3", genre: "house" },
+  { name: "SomaFM · DEF CON", stream: "https://ice1.somafm.com/defcon-128-mp3", genre: "techno" },
+  { name: "Nightwave Plaza", stream: "https://radio.plaza.one/mp3", genre: "synthwave" },
+  { name: "Radio Paradise · Mellow", stream: "https://stream.radioparadise.com/mellow-192", genre: "chill" },
+];
 
 // ── venue × genre Cred multiplier ────────────────────────────────────────────
 // Play music whose genre matches the venue and you earn faster. A native match

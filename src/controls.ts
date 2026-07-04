@@ -1,4 +1,4 @@
-import { AVATARS, CC_ARTISTS, GENRES, JACKET_HUES, PALETTES, PRIZES, VENUES, VENUE_ORDER, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
+import { AVATARS, CC_ARTISTS, GENRE_HUE, GENRES, JACKET_HUES, PALETTES, PRIZES, SUGGESTED_STATIONS, VENUES, VENUE_ORDER, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 import { minutesForLevel } from "./xp";
 import { deskTotals, fmtSpan, type Profile } from "./profile";
 import type { Track } from "./tracks";
@@ -159,6 +159,7 @@ export class Controls {
         <input class="cv-sta-url" placeholder="https://stream.example/mp3" />
         <div class="cv-sta-row"><select class="cv-sta-genre">${GENRES.map((g) => `<option value="${g}">${g}</option>`).join("")}</select><button type="submit" class="cv-sta-add">Add</button></div>
         <small>direct mp3 / icecast streams only — not YouTube links</small>
+        <div class="cv-suggest"><span class="cv-suglabel">Suggested — one tap to add</span>${SUGGESTED_STATIONS.map((s, i) => `<button type="button" class="cv-sug" data-sug="${i}" style="--c:hsl(${GENRE_HUE[s.genre]},70%,58%)">${esc(s.name)} <em>${s.genre}</em></button>`).join("")}</div>
       </form>
       <div class="cv-fit">🎚 <b>${esc(VENUES[this.p.venue].name)}</b> sounds best with <b>${VENUES[this.p.venue].genre}</b> — ✓ marks a good fit</div>
       <div class="cv-list">${this.tracks.map((t, i) => this.trackRow(t, i)).join("")}</div>`;
@@ -178,6 +179,10 @@ export class Controls {
       const genre = $<HTMLSelectElement>(form, ".cv-sta-genre").value as Genre;
       this.cb.onAddStation(name, url, genre);
     };
+    form.querySelectorAll<HTMLButtonElement>(".cv-sug").forEach((b) => (b.onclick = () => {
+      const s = SUGGESTED_STATIONS[Number(b.dataset.sug)];
+      this.cb.onAddStation(s.name, s.stream, s.genre); // one-tap add a curated station
+    }));
     this.sheetBody.querySelectorAll<HTMLButtonElement>("[data-vibe]").forEach((b) => (b.onclick = () => this.cb.onVibe(b.dataset.vibe as VibeName)));
     this.sheetBody.querySelectorAll<HTMLElement>(".cv-del").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); this.cb.onRemoveStation(b.dataset.del ?? ""); }));
     this.sheetBody.querySelectorAll<HTMLButtonElement>(".cv-track").forEach((b) => (b.onclick = () => this.cb.onSelectTrack(Number(b.dataset.i))));
