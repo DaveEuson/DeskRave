@@ -1,4 +1,4 @@
-# Pixel DJ — promo shot-list
+# Desk Rave — promo shot-list
 
 Real captures of the app are your best promo assets: the pixel art *is* the selling point, and
 it dodges the "AI slop" contradiction. This is the exact list of shots to grab, how to frame

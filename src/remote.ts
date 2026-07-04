@@ -35,7 +35,7 @@ function render(): void {
   const locked = VENUE_ORDER.filter((id) => !s.unlocks.includes(id)).sort((a, b) => VENUES[a].price - VENUES[b].price);
   app.innerHTML = `
     <header>
-      <h1>🎧 Pixel DJ — Remote</h1>
+      <h1>🎧 Desk Rave — Remote</h1>
       <div class="now">${s.playing ? "▶" : "⏸"} <b>${esc(s.trackTitle || "—")}</b> · ${esc(s.venueName)}</div>
     </header>
     <div class="transport">
@@ -82,7 +82,7 @@ async function downloadBackup(btn: HTMLButtonElement): Promise<void> {
     if (!p || typeof p !== "object") { btn.textContent = "⚠ nothing to back up yet"; return; }
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([JSON.stringify(p, null, 2)], { type: "application/json" }));
-    a.download = `pixel-dj-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `desk-rave-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
     btn.textContent = "✅ backup saved";
@@ -100,7 +100,7 @@ async function restoreBackup(input: HTMLInputElement): Promise<void> {
   try {
     const p = JSON.parse(await f.text()) as { djName?: string; cred?: number; unlocks?: string[] };
     if (!p || typeof p !== "object" || !("cred" in p) || !Array.isArray(p.unlocks)) {
-      alert("That file doesn't look like a Pixel DJ backup."); return;
+      alert("That file doesn't look like a Desk Rave backup."); return;
     }
     const ok = confirm(`Restore "${p.djName ?? "DJ"}" — ◈${Math.floor(p.cred ?? 0)} Cred, ${p.unlocks.length} unlocks?\n\nThis replaces the kiosk's current progress and reloads it.`);
     if (ok) send("restoreProfile", p);

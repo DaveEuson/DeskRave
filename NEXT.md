@@ -1,7 +1,7 @@
-# Pixel DJ — direction & backlog
+# Desk Rave — direction & backlog
 
 > **Product rule (tape this to the monitor):**
-> **Pixel DJ may reward healthy work rhythms. It must NOT reward compulsively engaging with Pixel DJ.**
+> **Desk Rave may reward healthy work rhythms. It must NOT reward compulsively engaging with Desk Rave.**
 
 ## The thesis (corrected, 2026-06-27)
 
@@ -43,7 +43,7 @@ Test affordance: `?fast=1` shrinks the Pomodoro timings ~60× so the full cycle 
 ## Dogfood protocol (do THIS, not building)
 
 Run it on the kiosk during real work ~3 weeks. Keep one note:
-- Did I do real work, or did I fiddle with Pixel DJ? (the core failure mode)
+- Did I do real work, or did I fiddle with Desk Rave? (the core failure mode)
 - Did the break nudge land, and did I take it?
 - Could I forget it existed for an hour and still benefit? (if no → too salient)
 - Did the music ever cut out while I was right there? (presence-grace check; grace is 60s)

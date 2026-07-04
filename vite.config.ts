@@ -207,7 +207,7 @@ const mediaApi = (port: number): Connect.NextHandleFunction => {
         return res.end("station not allowed");
       }
       try {
-        const up = await fetch(target, { headers: { "user-agent": "PixelDJ/0.1", icy: "0" } });
+        const up = await fetch(target, { headers: { "user-agent": "DeskRave/0.1", icy: "0" } });
         res.setHeader("content-type", up.headers.get("content-type") || "audio/mpeg");
         res.setHeader("access-control-allow-origin", "*");
         res.setHeader("cache-control", "no-store");
@@ -281,7 +281,7 @@ const mediaApi = (port: number): Connect.NextHandleFunction => {
 
 function mediaServer(port: number): Plugin {
   return {
-    name: "pixel-rave-media",
+    name: "desk-rave-media",
     configureServer(server) {
       server.middlewares.use(mediaApi(port));
     },

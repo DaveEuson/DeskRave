@@ -27,7 +27,7 @@ interface LoungerColors { shirt: string; shirtSh: string; legs?: string; skin: s
 interface DancerColors { shirt: string; shirtSh: string; legs: string; skin: string; hair: string; }
 interface BoothOpts { skin: string; skinSh?: string; jacket: string; jacketHi: string; jacketSh: string; hat?: string; cap?: boolean; hair?: string; glow: string; booth?: string; boothHi?: string; boothSh?: string; riser?: string; riserHi?: string; scale?: number; }
 
-// The Pixel DJ desk scene. Low-res backbuffer + additive bloom. Driven by the live
+// The Desk Rave desk scene. Low-res backbuffer + additive bloom. Driven by the live
 // AnalyserNode while a track plays; falls back to a real-clock idle "closing time"
 // wash when nothing is playing.
 export class Visualizer {

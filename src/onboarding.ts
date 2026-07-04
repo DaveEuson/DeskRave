@@ -3,7 +3,7 @@
 interface Card { icon: string; title: string; body: string }
 
 const CARDS: Card[] = [
-  { icon: "🎧", title: "Welcome to Pixel DJ", body: "A tiny club on your desk that moves to whatever you play — a built-in Creative-Commons soundtrack, your own files, or more music you find in Discover. Tap the scene anytime to open the menu." },
+  { icon: "🎧", title: "Welcome to Desk Rave", body: "A tiny club on your desk that moves to whatever you play — a built-in Creative-Commons soundtrack, your own files, or more music you find in Discover. Tap the scene anytime to open the menu." },
   { icon: "🙌", title: "It knows you're here", body: "The DJ wakes when you're at your desk — by default just from your keyboard and mouse (private, no permissions). Prefer a webcam or mic? Choose it in Options — it all stays on your device, nothing leaves it." },
   { icon: "🛒", title: "Unlock the world", body: "You earn Cred just by being present and working. Spend it in the Store on 40 venues — a morning café, a neon club, a rooftop at golden hour, a forest rave — plus cosmetic prizes for your DJ." },
   { icon: "🎯", title: "Play the right vibe", body: "Match the music's genre to the venue for bonus Cred. Today's hot pairing is shown in the Bonuses, top-left." },

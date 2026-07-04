@@ -1,6 +1,6 @@
 {
-  "name": "Pixel DJ",
-  "short_name": "Pixel DJ",
+  "name": "Desk Rave",
+  "short_name": "Desk Rave",
   "description": "A cute pixel-art music & radio widget — the club reacts to your audio and levels up as you listen.",
   "start_url": "./",
   "scope": "./",

@@ -1,7 +1,7 @@
 // Minimal service worker — enough for installability + a fast shell.
 // Caches the app shell; network-first for navigations so updates land, with the
 // cached shell as the offline fallback. Streams/media are never cached.
-const CACHE = "pixeldj-v1";
+const CACHE = "deskrave-v1";
 const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg"];
 
 self.addEventListener("install", (e) => {
