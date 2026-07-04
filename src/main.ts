@@ -116,12 +116,16 @@ const controls = new Controls($("controls"), profile, {
     try { host = new URL(url.trim()).hostname; } catch { /* invalid */ }
     if (!host) { toast("⚠ Enter a valid stream URL (https://…)"); return; }
     const s = { name: name.trim() || host, stream: url.trim(), genre, hue: GENRE_HUE[genre] };
-    if (profile.customStations.some((c) => c.stream === s.stream)) { toast("Already added"); return; }
-    profile.customStations.push(s);
-    persist();
-    audio.addTracks([trackFromStation(s)]);
-    controls.setMedia(audio.tracks, audio.index);
-    toast(`📻 Added ${s.name}`);
+    if (!profile.customStations.some((c) => c.stream === s.stream)) {
+      profile.customStations.push(s);
+      persist();
+      audio.addTracks([trackFromStation(s)]);
+      controls.setMedia(audio.tracks, audio.index);
+    }
+    // tune in NOW — tapping a station means "play this", not just "save it"
+    const i = audio.tracks.findIndex((t) => t.src === radioUrl(s.stream));
+    if (i >= 0) void audio.select(i);
+    toast(`📻 ${s.name}`);
   },
   onRemoveStation: (stream: string) => {
     profile.customStations = profile.customStations.filter((c) => c.stream !== stream);
@@ -914,7 +918,8 @@ function renderLibrary(filter = ""): void {
   const q = filter.trim().toLowerCase();
   const rows = audio.tracks
     .map((t, i) => ({ t, i }))
-    .filter(({ t }) => !q || t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q));
+    .filter(({ t }) => !q || t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q))
+    .sort((a, b) => (b.t.station ? 1 : 0) - (a.t.station ? 1 : 0)); // radio stations pinned to the top of the browser
   lbCount.textContent = q ? `${rows.length} of ${audio.tracks.length}` : `${audio.tracks.length} tracks`;
   // details rows, not icon tiles — there's no album art, so a grid of swatches
   // reads as noise; a list shows title/artist/genre at a glance like a player
