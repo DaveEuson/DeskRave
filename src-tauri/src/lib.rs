@@ -6,11 +6,43 @@ fn cors_header() -> Header {
     Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap()
 }
 
+// Only the Desk Rave app itself may use this proxy. A browser cross-origin request
+// always carries an Origin header, so a malicious web page (which sends its own
+// public origin) is rejected; the app's webview — tauri://localhost or
+// http(s)://tauri.localhost — is allowed. A missing Origin is not a browser
+// cross-site request, so it passes (a local native caller could reach the upstream
+// directly anyway). This stops the loopback proxy being an open SSRF/CORS relay.
+fn origin_ok(origin: Option<&str>) -> bool {
+    match origin {
+        None => true,
+        Some(o) => {
+            o.starts_with("tauri://")
+                || o.contains("tauri.localhost")
+                || o.starts_with("http://localhost")
+                || o.starts_with("https://localhost")
+                || o.starts_with("http://127.0.0.1")
+                || o.starts_with("https://127.0.0.1")
+        }
+    }
+}
+
 // Re-serve an upstream radio stream same-origin with open CORS so the webview's
 // AnalyserNode can read it (WebView2/WKWebView enforce CORS on cross-origin audio
 // analysis, and most icecast streams send no CORS headers). Streams live, so the
 // upstream reader is piped straight through — never buffered.
 fn handle(request: tiny_http::Request) {
+    // reject anything that isn't the Desk Rave webview (blocks web-page abuse)
+    let origin = request
+        .headers()
+        .iter()
+        .find(|h| h.field.equiv("Origin"))
+        .map(|h| h.value.as_str().to_string());
+    if !origin_ok(origin.as_deref()) {
+        let mut r = Response::from_string("forbidden").with_status_code(403);
+        r.add_header(cors_header());
+        let _ = request.respond(r);
+        return;
+    }
     // preflight
     if request.method() == &Method::Options {
         let mut r = Response::from_string("").with_status_code(204);
