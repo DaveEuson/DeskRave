@@ -91,8 +91,16 @@ saves — ready to zip and upload to itch.io or drop on any static host.
 - Rough flow: `AudioStream` (sources → AnalyserNode → `Levels`) → `Classifier` (auto-vibe) →
   `Visualizer` (the scene); `Presence` gates it on "are you here?"; `main.ts` is the entry point.
 
-## Credits & license
+## Credits
 
-Made by Dave Euson. The **source code** is released under the [MIT license](LICENSE). The
-**bundled music** is the work of third-party artists under their own Creative Commons licenses
-(CC-BY / CC0) and is *not* covered by MIT — see [CREDITS.md](CREDITS.md) for per-track attribution.
+- **Music** — SwapXFO, Komiku, Broke For Free, Chris Zabriskie, Lee Rosevere, and Andrey
+  Avkhimovich, under their own CC-BY / CC0 licenses. Full list and sources in [CREDITS.md](CREDITS.md).
+- **Font** — Press Start 2P by CodeMan38 (SIL Open Font License 1.1).
+- **Face detection** — MediaPipe Tasks Vision (Apache 2.0), loaded only if you enable the camera.
+- **Art & code** — hand-drawn and hand-coded by Dave Euson.
+
+## License
+
+The **source code** is released under the [MIT license](LICENSE). The **bundled music** is the
+work of third-party artists under their own Creative Commons licenses (CC-BY / CC0) and is *not*
+covered by MIT — see [CREDITS.md](CREDITS.md) for per-track attribution.
