@@ -901,43 +901,52 @@ function unlockProgressHtml(): string {
 }
 function updateNowPlaying(): void {
   const c = audio.current;
-  if (audio.playing && c) {
-    (nowPlaying.querySelector(".np-title") as HTMLElement).textContent = c.title;
-    (nowPlaying.querySelector(".np-sub") as HTMLElement).textContent = c.artist;
-    nowPlaying.hidden = false;
-  } else nowPlaying.hidden = true;
+  const title = c ? c.title : "Library";
+  const sub = c ? (audio.playing ? c.artist : `${c.artist} · paused`) : "browse & play";
+  (nowPlaying.querySelector(".np-title") as HTMLElement).textContent = title;
+  (nowPlaying.querySelector(".np-sub") as HTMLElement).textContent = sub;
+  nowPlaying.hidden = false; // always visible — the library is always one tap away
 }
 
-// ── library — Winamp/iTunes-style track grid (click the now-playing to open) ──
+// ── library — the music hub: browse, filter by genre, see the source, play ──
 const library = $("library");
 const lbGrid = library.querySelector(".lb-grid") as HTMLElement;
 const lbSearch = library.querySelector(".lb-search") as HTMLInputElement;
 const lbCount = library.querySelector(".lb-count") as HTMLElement;
+const lbFilters = library.querySelector(".lb-filters") as HTMLElement;
+let lbGenre = "all"; // active genre filter chip
 const trackGlyph = (t: Track): string => (t.station ? "📻" : t.local ? "🎵" : "♪");
+const trackKind = (t: Track): string => (t.station ? "radio" : t.local ? "your file" : t.license); // the "source" metadata
+function renderFilters(): void {
+  const genres = [...new Set(audio.tracks.map((t) => t.genre).filter(Boolean))] as string[];
+  if (!genres.includes(lbGenre) && lbGenre !== "all") lbGenre = "all"; // filter no longer applies
+  lbFilters.innerHTML = ["all", ...genres]
+    .map((g) => `<button class="lb-fchip ${g === lbGenre ? "on" : ""}" data-g="${g}"${g === "all" ? "" : ` style="--c:hsl(${GENRE_HUE[g as Genre]},70%,60%)"`}>${g === "all" ? "All" : escHtml(g)}</button>`)
+    .join("");
+  lbFilters.querySelectorAll<HTMLButtonElement>(".lb-fchip").forEach((b) => (b.onclick = () => { lbGenre = b.dataset.g!; renderLibrary(lbSearch.value); }));
+}
 function renderLibrary(filter = ""): void {
   const q = filter.trim().toLowerCase();
   const rows = audio.tracks
     .map((t, i) => ({ t, i }))
-    .filter(({ t }) => !q || t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q))
-    .sort((a, b) => (b.t.station ? 1 : 0) - (a.t.station ? 1 : 0)); // radio stations pinned to the top of the browser
-  lbCount.textContent = q ? `${rows.length} of ${audio.tracks.length}` : `${audio.tracks.length} tracks`;
-  // details rows, not icon tiles — there's no album art, so a grid of swatches
-  // reads as noise; a list shows title/artist/genre at a glance like a player
+    .filter(({ t }) => (lbGenre === "all" || t.genre === lbGenre) && (!q || t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q)))
+    .sort((a, b) => (b.t.station ? 1 : 0) - (a.t.station ? 1 : 0)); // radio stations pinned to the top
+  renderFilters();
+  lbCount.textContent = (q || lbGenre !== "all") ? `${rows.length} of ${audio.tracks.length}` : `${audio.tracks.length} tracks`;
+  // details rows, not icon tiles — no album art, so title / artist · source / genre reads like a player
   lbGrid.innerHTML = rows.length
     ? rows.map(({ t, i }) => {
         const on = i === audio.index;
         return `<button class="lb-tile ${on ? "on" : ""}" data-i="${i}" style="--h:${t.hue}">` +
-          `<span class="lb-cover">` +
-            `<span class="lb-glyph">${on ? (audio.playing ? "▶" : "❚❚") : trackGlyph(t)}</span>` +
-          `</span>` +
+          `<span class="lb-cover"><span class="lb-glyph">${on ? (audio.playing ? "▶" : "❚❚") : trackGlyph(t)}</span></span>` +
           `<span class="lb-meta">` +
             `<span class="lb-t">${escHtml(t.title)}</span>` +
-            `<span class="lb-a">${escHtml(t.artist)}</span>` +
+            `<span class="lb-a">${escHtml(t.artist)} · <span class="lb-lic">${escHtml(trackKind(t))}</span></span>` +
           `</span>` +
           (t.genre ? `<span class="lb-genre">${escHtml(t.genre)}</span>` : "") +
         `</button>`;
       }).join("")
-    : `<div class="lb-empty">No tracks match “${escHtml(filter)}”</div>`;
+    : `<div class="lb-empty">No tracks match your filters</div>`;
   lbGrid.querySelectorAll<HTMLButtonElement>(".lb-tile").forEach((b) => {
     b.onclick = () => { void audio.select(Number(b.dataset.i)); };
   });
