@@ -59,6 +59,11 @@ Full attribution is in the app (Options → credits) and in [CREDITS.md](CREDITS
 There is **no AI-generated art or music** here — the scenes are hand-coded pixel by pixel, and
 the music is made by real people.
 
+> **🎧 Are you a musician?** Desk Rave gives your tracks a room that dances to them — and
+> credits you everywhere they play. If you make instrumental electronic music (house, techno,
+> trance, dnb, synthwave, lofi, chill, downtempo, ambient) and you're up for CC-BY/CC0
+> licensing, **[we'd love your music →](CONTRIBUTING-MUSIC.md)**
+
 ## Privacy
 
 The presence feature can use your keyboard/mouse, microphone, or camera — **you pick, and it
