@@ -10,9 +10,14 @@ dist
 *.zip
 _design_handoff/
 
-# debug screenshots pulled off devices
+# debug screenshots + camera captures pulled off devices (never commit)
 jetson-shot*.png
 pdj-shot*.png
+jetson-cam*.png
+presence.jpg
+
+# stray binaries — nothing executable belongs in this repo
+*.exe
 
 # user-uploaded music — keep the folder, ignore its contents
 public/media/*
