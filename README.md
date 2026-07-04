@@ -1,4 +1,12 @@
-# Desk Rave
+<p align="center">
+  <img src="promo/hero.svg" alt="Desk Rave" width="760">
+</p>
+
+<p align="center">
+  <a href="https://github.com/DaveEuson/DeskRave/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/DaveEuson/DeskRave?color=d24fe0&label=release"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/DaveEuson/DeskRave?color=7c3aed"></a>
+  <a href="https://github.com/DaveEuson/DeskRave/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/DaveEuson/DeskRave/total?color=ffd86a"></a>
+</p>
 
 **A tiny 16-bit club for your desk that moves to whatever you play — and quietly keeps your focus honest.**
 
