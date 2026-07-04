@@ -12,6 +12,7 @@
     "preview:itch": "vite preview --mode itch --port 5199"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
     "typescript": "^5.7.2",
     "vite": "^6.0.5"
   },

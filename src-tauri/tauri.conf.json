@@ -1,0 +1,42 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Desk Rave",
+  "version": "0.1.0",
+  "identifier": "com.daveeuson.deskrave",
+  "build": {
+    "frontendDist": "../dist-itch",
+    "devUrl": "http://localhost:5199",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build:itch"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Desk Rave",
+        "width": 1000,
+        "height": 620,
+        "minWidth": 480,
+        "minHeight": 360,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "android": {
+      "debugApplicationIdSuffix": ".debug"
+    }
+  }
+}
