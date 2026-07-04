@@ -93,5 +93,6 @@ saves — ready to zip and upload to itch.io or drop on any static host.
 
 ## Credits & license
 
-Made by Dave Euson. Music is Creative Commons — see [CREDITS.md](CREDITS.md) for per-track
-attribution. The code is © its author; the bundled music remains under its respective CC licenses.
+Made by Dave Euson. The **source code** is released under the [MIT license](LICENSE). The
+**bundled music** is the work of third-party artists under their own Creative Commons licenses
+(CC-BY / CC0) and is *not* covered by MIT — see [CREDITS.md](CREDITS.md) for per-track attribution.
