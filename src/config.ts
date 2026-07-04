@@ -312,6 +312,12 @@ export const MUSIC_PACKS: MusicPack[] = [
   { name: "Deep Ambient", emoji: "🌌", genre: "ambient", blurb: "Spacious, cinematic drift", items: ["ChrisZabriskieDirectToVideo", "KaiEngelTheRun", "cz-blackhole", "cz-ogreatqueenelectric"] },
   { name: "Quiet Focus", emoji: "🍃", genre: "chill", blurb: "Tasteful, podcast-grade calm", items: ["jamendo-160711", "jamendo-160715", "jamendo-160716", "jamendo-160718"] },
   { name: "Downtempo Grooves", emoji: "🕺", genre: "downtempo", blurb: "Laid-back electronic funk", items: ["DirectionlessEP", "BrokeForFreeLayers", "Slam_Funk-7603"] },
+  // ── the dance floor — netlabel-era EDM, ear-vetted (AUDITION round 2026-07-04) ──
+  { name: "House Sessions", emoji: "🪩", genre: "house", blurb: "Melodic house mixes & grooves", items: ["Prototype202Departures", "Prototype202AfternoonMix", "Prototype202MelodicSessions_WhiteIsleMix", "Prototype202SummerBreezeMix", "Prototype202IbizaSunrise", "gt373TheRogueSources-Honey", "tou227", "unfound53"] },
+  { name: "Techno Warehouse", emoji: "🏭", genre: "techno", blurb: "Netlabel techno, raw & driving", items: ["onmp163", "BLUnderwood_Geo_Sync_Deluxe", "shoki005g", "unfound88"] },
+  { name: "Trance Voyage", emoji: "🌀", genre: "trance", blurb: "Deep progressive journeys", items: ["gt536Maelstrom-ThePassage", "gt458SteamFlow-WithTrainsAndBones", "gt459AnchoreState-ChangesOfLifeEp", "gt450FieldExperience", "wontolla-the-white-stag"] },
+  { name: "Bass & Breaks", emoji: "🔊", genre: "dnb", blurb: "Drum & bass, jungle, breaks", items: ["yarn014", "pcfree", "indastreetz", "quarkstar", "onmp215a"] },
+  { name: "IDM Lab", emoji: "🧪", genre: "downtempo", blurb: "Glitchy, heady electronica", items: ["USR-019", "USR-017", "USR-021", "acediamusic038"] },
 ];
 export const PACK_MAX_PER_ITEM = 12; // cap per album so a pack stays a snack, not a firehose
 
