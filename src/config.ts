@@ -156,8 +156,13 @@ export const CRED_PER_MIN = 0.25; // (legacy; no longer used — earning is even
 // no multipliers to min-max, and a daily cap so the carrot ENDS (a natural stop,
 // which a dopamine-seeking brain needs). The break pays more than staying.
 export const REWARDS = {
-  focusBlock: 8, // Cred for completing a healthy focus block
-  takeBreak: 14, // Cred for actually taking the break (> staying — un-breaks the break)
+  // continuous trickle: the counters move from the first minute so it never reads
+  // as "broken". Fans tick up ~1/min (visible fast); Cred ~0.3/min (a whole Cred
+  // every ~3 min). The block/break lumps below are bonuses on top of the trickle.
+  credPerMin: 0.3, // Cred earned per minute while focused / playing
+  fansPerMin: 1, // fans earned per minute while focused / playing
+  focusBlock: 8, // bonus Cred for completing a healthy focus block
+  takeBreak: 14, // bonus Cred for actually taking the break (> staying — un-breaks the break)
   focusFans: 3, // crowd that shows up when you do the work
   breakFans: 2,
   dailyCap: 60, // "you've banked today's max" — ≈2–3 cycles, then rest easy

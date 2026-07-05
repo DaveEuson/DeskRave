@@ -796,10 +796,31 @@ function award(cred: number, fans: number, msg: string): void {
   controls.setCred(profile.cred); controls.setFans(profile.fans);
   persist();
 }
+// Continuous earning: while you're focused (or music's playing on a camera-less
+// setup) fans/Cred tick up every frame, so the counters move from the first minute
+// instead of sitting at 0 until a 50-min block completes. Honors the venue×genre
+// bonus and the daily Cred cap, same as the lump awards. No toast (that'd spam).
+let trickleCredI = -1, trickleFansI = -1; // last displayed integers → only touch DOM/disk on change
+function trickle(dt: number): void {
+  const today = dayKey();
+  if (profile.earnedDate !== today) { profile.earnedDate = today; profile.earnedToday = 0; }
+  const min = dt / 60000;
+  const gm = genreMult(profile.venue, currentGenre(), ownedVenues());
+  const room = Math.max(0, REWARDS.dailyCap - profile.earnedToday);
+  const cred = Math.min(REWARDS.credPerMin * min * gm.mult, room);
+  profile.cred += cred; profile.earnedToday += cred;
+  profile.fans += REWARDS.fansPerMin * min; // fans never cap and never decay
+  const ci = Math.floor(profile.cred), fi = Math.round(profile.fans);
+  const credChanged = ci !== trickleCredI, fansChanged = fi !== trickleFansI;
+  if (credChanged) { trickleCredI = ci; controls.setCred(profile.cred); }
+  if (fansChanged) { trickleFansI = fi; controls.setFans(profile.fans); scene.setFans(profile.fans); }
+  if (credChanged || fansChanged) persist(); // cheap: fires ≤1×/min, not per frame
+}
 function updateBalance(dt: number, here: boolean): void {
   if (here) {
     if (onBreak) { onBreak = false; toast("✨ Welcome back — refreshed!"); }
     focusMs += dt; awayMs = 0;
+    trickle(dt);
     if (focusMs >= FOCUS_MS) {
       if (!breakDue) {
         breakDue = true; lastNagMs = focusMs;
