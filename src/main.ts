@@ -105,7 +105,7 @@ const controls = new Controls($("controls"), profile, {
     persist(); controls.setProfile(profile); syncScene();
     toast(`🎉 ${pz.name} unlocked!`);
   },
-  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); syncClock(); if ("presenceMode" in patch) void setPresence(patch.presenceMode!); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); },
+  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); syncClock(); if ("presenceMode" in patch) void setPresence(patch.presenceMode!); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); if ("startFullscreen" in patch) void applyFullscreen(!!patch.startFullscreen); if ("autostart" in patch) void applyAutostart(!!patch.autostart); },
   onSelectTrack: (i) => void audio.select(i),
   onAddFiles: () => fileInput.click(),
   onAddStation: (name: string, url: string, genre: Genre) => tuneStation(name, url, genre),
@@ -1085,9 +1085,12 @@ setInterval(() => void refreshWeather(), 15 * 60_000);
 
 // first-run intro + setup (once, or forced with ?onboard=1)
 if (new URLSearchParams(location.search).has("onboard") || !profile.settings.onboarded) {
-  showOnboarding(({ presenceMode, start }) => {
+  showOnboarding(({ presenceMode, start, startFullscreen, autostart }) => {
     profile.settings.onboarded = true;
+    profile.settings.startFullscreen = startFullscreen;
+    profile.settings.autostart = autostart;
     void setPresence(presenceMode);   // apply + persist the chosen presence source
+    if (DESKTOP) { if (startFullscreen) void applyFullscreen(true); void applyAutostart(autostart); }
     if (start) void audio.play();     // begin the music on the explicit "Start" click — never a surprise on launch
   });
 }
@@ -1125,6 +1128,33 @@ requestAnimationFrame(frame);
 // can't register, and its cache layer has bitten us enough on the kiosk already
 if (import.meta.env.PROD && !STANDALONE && "serviceWorker" in navigator) {
   addEventListener("load", () => void navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
+
+// ── desktop appliance: fullscreen + launch-on-boot ──────────────────────────
+// Both are desktop-app (Tauri) only and no-op on web/kiosk. Dynamically imported
+// so the Tauri APIs never enter the web/itch bundle. Driven by the two settings
+// toggles (and the first-run setup step).
+async function applyFullscreen(on: boolean): Promise<void> {
+  if (!DESKTOP) return;
+  try {
+    const { getCurrentWindow } = await import("@tauri-apps/api/window");
+    await getCurrentWindow().setFullscreen(on);
+  } catch (e) { console.info("fullscreen toggle skipped:", e); }
+}
+async function applyAutostart(on: boolean): Promise<void> {
+  if (!DESKTOP) return;
+  try {
+    const { enable, disable, isEnabled } = await import("@tauri-apps/plugin-autostart");
+    const already = await isEnabled();
+    if (on && !already) await enable();
+    else if (!on && already) await disable();
+  } catch (e) { console.info("autostart toggle skipped:", e); }
+}
+// apply the saved appliance prefs at boot (fullscreen now; keep the OS login item
+// in sync with the toggle in case it was changed on another machine / cleared)
+if (DESKTOP) {
+  if (profile.settings.startFullscreen) void applyFullscreen(true);
+  void applyAutostart(profile.settings.autostart);
 }
 
 // ── desktop auto-update ─────────────────────────────────────────────────────

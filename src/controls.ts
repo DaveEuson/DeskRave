@@ -1,4 +1,4 @@
-import { AVATARS, CC_ARTISTS, GENRE_HUE, GENRES, JACKET_HUES, PALETTES, PRIZES, SUGGESTED_STATIONS, VENUES, VENUE_ORDER, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
+import { AVATARS, CC_ARTISTS, DESKTOP, GENRE_HUE, GENRES, JACKET_HUES, PALETTES, PRIZES, SUGGESTED_STATIONS, VENUES, VENUE_ORDER, type AvatarId, type Genre, type VenueId, type VibeName } from "./config";
 import { minutesForLevel } from "./xp";
 import { deskTotals, fmtSpan, type Profile } from "./profile";
 import type { Track } from "./tracks";
@@ -308,7 +308,12 @@ export class Controls {
     const presenceRow = `<div class="cv-opt cv-optseg"><span>👁 Presence source</span><select class="cv-presence">${
       pmodes.map(([v, lbl]) => `<option value="${v}" ${pm === v ? "selected" : ""}>${lbl}</option>`).join("")}</select></div>`
       + `<div class="cv-presence-note">${esc(pnote[pm])}</div>`;
+    // desktop app only: run as a fullscreen appliance that launches on boot
+    const applianceRows = DESKTOP
+      ? `${toggle("startFullscreen", "⛶ Start in fullscreen")}${toggle("autostart", "🚀 Launch on startup")}`
+      : "";
     this.sheetBody.innerHTML = `${presenceRow}${toggle("sound", "🔊 Muffled kick (through the wall)")}`
+      + applianceRows
       + uiRow
       + `${toggle("weatherAuto", "🌦 Live weather — real rain/snow over the scene")}`
       + `<label class="cv-opt"><span>Weather city</span><input class="cv-city" type="text" placeholder="auto-detect from IP" maxlength="40" value="${esc(st.weatherCity)}" ${st.weatherAuto ? "" : "disabled"}/></label>`

@@ -47,6 +47,8 @@ export interface Settings {
   onboarded: boolean; // has seen the first-run intro
   volume: number; // master playback volume 0..1 (remembered across sessions)
   uiScale: "s" | "m" | "l"; // HUD size — scales the readable overlays
+  startFullscreen: boolean; // desktop app only: open fullscreen (kiosk/appliance)
+  autostart: boolean; // desktop app only: launch when the computer starts
 }
 
 export interface Profile {
@@ -152,7 +154,7 @@ export function defaultProfile(): Profile {
     deskLog: {},
     customStations: [],
     addedTracks: [],
-    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, presenceMode: "activity", weather: "clear", weatherAuto: true, weatherCity: "", onboarded: false, volume: 0.8, uiScale: "m" },
+    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, presenceMode: "activity", weather: "clear", weatherAuto: true, weatherCity: "", onboarded: false, volume: 0.8, uiScale: "m", startFullscreen: false, autostart: false },
     lastSeen: new Date().toISOString(),
   };
 }

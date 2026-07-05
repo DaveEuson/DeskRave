@@ -2,6 +2,8 @@
 // presence source, then Start — so the music begins on the user's click, never a
 // surprise on launch). Shown once (gated by profile.settings.onboarded);
 // ?onboard=1 forces it back for testing.
+import { DESKTOP } from "./config";
+
 type PresenceMode = "off" | "activity" | "mic" | "camera";
 interface Card { icon: string; title: string; body: string }
 
@@ -19,14 +21,15 @@ const PRESENCE_OPTS: { id: PresenceMode; label: string; note: string }[] = [
   { id: "off", label: "🚫 Off — just music", note: "No sensing. The music plays until you stop it." },
 ];
 
-export function showOnboarding(onDone: (setup: { presenceMode: PresenceMode; start: boolean }) => void): void {
+export function showOnboarding(onDone: (setup: { presenceMode: PresenceMode; start: boolean; startFullscreen: boolean; autostart: boolean }) => void): void {
   let i = 0;
   let chosen: PresenceMode = "activity";
+  let fs = false, boot = false; // desktop appliance prefs (only shown on the desktop app)
   const total = CARDS.length + 1; // info cards + the setup step
   const root = document.createElement("div");
   root.id = "onboard";
   document.body.appendChild(root);
-  const finish = (start: boolean): void => { root.remove(); onDone({ presenceMode: chosen, start }); };
+  const finish = (start: boolean): void => { root.remove(); onDone({ presenceMode: chosen, start, startFullscreen: fs, autostart: boot }); };
   const dots = (): string => `<div class="ob-dots">${Array.from({ length: total }, (_, k) => `<span class="${k === i ? "on" : ""}"></span>`).join("")}</div>`;
 
   const render = (): void => {
@@ -41,6 +44,10 @@ export function showOnboarding(onDone: (setup: { presenceMode: PresenceMode; sta
           <div class="ob-opts">
             ${PRESENCE_OPTS.map((o) => `<button class="ob-opt ${o.id === chosen ? "on" : ""}" data-p="${o.id}" type="button"><b>${o.label}</b><small>${o.note}</small></button>`).join("")}
           </div>
+          ${DESKTOP ? `<div class="ob-appliance">
+            <label class="ob-check"><input type="checkbox" class="ob-fs" ${fs ? "checked" : ""}/><span>⛶ Start in fullscreen</span></label>
+            <label class="ob-check"><input type="checkbox" class="ob-boot" ${boot ? "checked" : ""}/><span>🚀 Launch when my computer starts</span></label>
+          </div>` : ""}
           ${dots()}
           <div class="ob-nav">
             <button class="ob-back" type="button">Back</button>
@@ -48,6 +55,10 @@ export function showOnboarding(onDone: (setup: { presenceMode: PresenceMode; sta
           </div>
         </div>`;
       root.querySelectorAll<HTMLButtonElement>(".ob-opt").forEach((b) => (b.onclick = () => { chosen = b.dataset.p as PresenceMode; render(); }));
+      const fsEl = root.querySelector(".ob-fs") as HTMLInputElement | null;
+      if (fsEl) fsEl.onchange = () => { fs = fsEl.checked; };
+      const bootEl = root.querySelector(".ob-boot") as HTMLInputElement | null;
+      if (bootEl) bootEl.onchange = () => { boot = bootEl.checked; };
       (root.querySelector(".ob-start") as HTMLElement).onclick = () => finish(true);
       (root.querySelector(".ob-skip") as HTMLElement).onclick = () => finish(false);
       (root.querySelector(".ob-back") as HTMLElement).onclick = () => { i--; render(); };
