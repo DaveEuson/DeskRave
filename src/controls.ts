@@ -42,7 +42,6 @@ export class Controls {
   private playing = false;
   private muted = false;
   private vol = 0.8; // 0..1 — reflected by the menu volume slider
-  private get zenOn(): boolean { return this.p.settings.zen; }
 
   constructor(root: HTMLElement, private p: Profile, private cb: ControlsCallbacks) {
     this.root = root;
@@ -200,9 +199,9 @@ export class Controls {
     this.sheetBody.innerHTML = `
       ${this.unlockBar()}
       <div class="cv-level">
-        <div class="cv-lvlrow"><b>Level ${this.p.level}</b>${this.zenOn ? "" : `<span>👥 <b class="cv-fans-val">${Math.round(this.p.fans)}</b></span>`}</div>
+        <div class="cv-lvlrow"><b>Level ${this.p.level}</b><span>👥 <b class="cv-fans-val">${Math.round(this.p.fans)}</b></span></div>
         <div class="cv-bar"><i style="width:${Math.round(this.p.xp * 100)}%"></i></div>
-        <small>${this.p.listenedMinutes} min listened${this.zenOn ? "" : ` · next level in ~${Math.max(0, Math.round(need - need * this.p.xp))} min of play`}</small>
+        <small>${this.p.listenedMinutes} min listened · next level in ~${Math.max(0, Math.round(need - need * this.p.xp))} min of play</small>
       </div>
       <span class="cv-label">Time at desk</span>
       ${(() => { const d = deskTotals(this.p); return `<div class="cv-stats">
@@ -309,7 +308,7 @@ export class Controls {
     const presenceRow = `<div class="cv-opt cv-optseg"><span>👁 Presence source</span><select class="cv-presence">${
       pmodes.map(([v, lbl]) => `<option value="${v}" ${pm === v ? "selected" : ""}>${lbl}</option>`).join("")}</select></div>`
       + `<div class="cv-presence-note">${esc(pnote[pm])}</div>`;
-    this.sheetBody.innerHTML = `${toggle("zen", "🧘 Zen mode — hide scores & bonuses, just music")}${presenceRow}${toggle("sound", "🔊 Muffled kick (through the wall)")}`
+    this.sheetBody.innerHTML = `${presenceRow}${toggle("sound", "🔊 Muffled kick (through the wall)")}`
       + uiRow
       + `${toggle("weatherAuto", "🌦 Live weather — real rain/snow over the scene")}`
       + `<label class="cv-opt"><span>Weather city</span><input class="cv-city" type="text" placeholder="auto-detect from IP" maxlength="40" value="${esc(st.weatherCity)}" ${st.weatherAuto ? "" : "disabled"}/></label>`

@@ -26,8 +26,6 @@
 .dock-cred .ds-fans { color: #ff9ad0; font-size: 14px; }
 .dock-cred b { font-family: "Press Start 2P", monospace; font-size: 11px; }
 .dock-toggle { background: rgba(124,58,237,.18); border: 1px solid #34294f; color: #cdbff0; font-size: 20px; line-height: 1; cursor: pointer; padding: 9px 13px; border-radius: 10px; flex: 0 0 auto; }
-/* Zen mode hides the always-on currency hook (Cred/fans chip) from the dock */
-body.zen .dock-cred { display: none; }
 .dock-toggle:hover { background: rgba(124,58,237,.34); color: #fff; }
 
 /* draw the eye until the user first opens the controls */

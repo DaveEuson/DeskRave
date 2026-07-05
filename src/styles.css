@@ -108,12 +108,6 @@ body.topsign #deskTimer { top: 98px; }
   padding: 2px 12px; border-radius: 999px; }
 #venueName:hover { background: rgba(255,255,255,.08); }
 
-/* one-tap Game / Calm toggle (top-left) */
-#modeToggle { position: absolute; top: 10px; left: 10px; z-index: 12; width: 38px; height: 38px;
-  border-radius: 999px; border: 1px solid #3a3258; background: rgba(10,8,20,.86); color: #e2d8f6;
-  font-size: 18px; line-height: 1; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.45); }
-#modeToggle:hover { background: rgba(124,58,237,.32); }
-
 /* 📱 QR-to-phone button + overlay */
 #qrBtn { position: absolute; top: 10px; left: 56px; z-index: 12; width: 38px; height: 38px;
   border-radius: 999px; border: 1px solid #3a3258; background: rgba(10,8,20,.86); color: #e2d8f6;
@@ -253,7 +247,6 @@ body.topsign #deskTimer { top: 98px; }
 .buff-ic { flex: 0 0 auto; font-size: calc(16px * var(--ui)); }
 .buff-tx { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .buff b { font-family: "Press Start 2P", monospace; font-size: calc(11px * var(--ui)); color: #ffd86a; flex: 0 0 auto; }
-body.zen #buffs { display: none; }
 /* progression meter — Cred left until the next venue unlocks */
 .prog { margin-top: 4px; display: flex; flex-direction: column; gap: 6px;
   background: rgba(12,9,22,.96); border: 1px solid #4a4270; border-radius: 11px; padding: 8px 12px;
@@ -271,7 +264,6 @@ body.zen #buffs { display: none; }
 /* fan feed — canned "what people are saying" social posts (Game mode only) */
 #fanFeed { position: absolute; top: 92px; right: 8px; z-index: 11; width: 250px; max-width: 44vw;
   display: flex; flex-direction: column; gap: 7px; pointer-events: none; }
-body.zen #fanFeed { display: none; }
 .fan-post { display: flex; gap: 8px; align-items: flex-start; background: rgba(14,10,26,.9); border: 1px solid #3a3258;
   border-radius: 12px; padding: 8px 10px; box-shadow: 0 4px 14px rgba(0,0,0,.45); animation: fanIn .35s ease; }
 .fan-post.out { animation: fanOut .6s ease forwards; }

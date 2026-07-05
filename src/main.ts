@@ -26,8 +26,6 @@ let profile: Profile = loadProfileSync(); // instant boot from the mirror
 // venue drives the scene; the real clock only grades it (day/night). ?venue= forces one for testing
 const forcedVenue = new URLSearchParams(location.search).get("venue") as VenueId | null;
 const currentVenue = (): VenueId => (forcedVenue && forcedVenue in VENUES ? forcedVenue : profile.venue);
-// Zen (calm) mode: hide the score/economy layer + drop all penalties. Default on.
-const zen = (): boolean => profile.settings.zen;
 
 // ?weather=rain|snow|haze|clear forces the atmosphere (testing / manual)
 type WeatherKind = "clear" | "rain" | "snow" | "haze";
@@ -67,7 +65,6 @@ function syncScene(): void {
     clock24: profile.settings.clock24, live: audio.playing,
   });
   document.body.classList.toggle("no-scanlines", !profile.settings.scanlines);
-  document.body.classList.toggle("zen", zen()); // hides the dock cred/fans chip in CSS
   document.body.dataset.ui = profile.settings.uiScale ?? "m"; // HUD size (drives --ui in CSS)
 }
 
@@ -108,7 +105,7 @@ const controls = new Controls($("controls"), profile, {
     persist(); controls.setProfile(profile); syncScene();
     toast(`🎉 ${pz.name} unlocked!`);
   },
-  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); syncClock(); if ("zen" in patch) controls.setProfile(profile); if ("presenceMode" in patch) void setPresence(patch.presenceMode!); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); },
+  onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); syncClock(); if ("presenceMode" in patch) void setPresence(patch.presenceMode!); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); },
   onSelectTrack: (i) => void audio.select(i),
   onAddFiles: () => fileInput.click(),
   onAddStation: (name: string, url: string, genre: Genre) => tuneStation(name, url, genre),
@@ -239,23 +236,6 @@ venueName.onclick = () => openVenueBoard();
 venueBoard.querySelector(".vb-scrim")?.addEventListener("click", closeVenueBoard);
 venueBoard.querySelector(".vb-close")?.addEventListener("click", closeVenueBoard);
 
-// ── one-tap Game / Calm toggle — flips Zen (hides the game HUD for heads-down) ──
-const modeToggle = $("modeToggle");
-function syncModeToggle(): void {
-  modeToggle.textContent = zen() ? "🌿" : "🎮";
-  modeToggle.title = zen() ? "Calm view — tap for Game" : "Game view — tap for Calm";
-}
-modeToggle.onclick = (e) => {
-  e.stopPropagation();
-  profile.settings.zen = !profile.settings.zen;
-  persist();
-  syncScene(); // toggles body.zen → shows/hides buffs, Cred chip, desk counter
-  controls.setProfile(profile);
-  syncModeToggle();
-  toast(zen() ? "🌿 Calm view" : "🎮 Game view");
-};
-syncModeToggle();
-
 // ── 📱 QR → the phone REMOTE that controls this kiosk (/remote.html) ──────────
 const qrBtn = $("qrBtn"), qrOverlay = $("qrOverlay");
 let qrReady = false;
@@ -293,7 +273,6 @@ function applyRemote(cmd: string, value: unknown): void {
     case "prev": void audio.prev(); break;
     case "volume": if (typeof value === "number") applyVolume(Math.max(0, Math.min(1, value))); break;
     case "mute": audio.toggleMute(); syncMuteIcon(); controls.setTransport(audio.playing, audio.muted); break;
-    case "mode": profile.settings.zen = value === "calm"; persist(); syncScene(); controls.setProfile(profile); syncModeToggle(); break;
     case "buyVenue": if (typeof value === "string" && value in VENUES) buyVenue(value as VenueId); break;
     case "reloadLibrary": void fetchLibrary().then((lib) => { if (lib.length) { audio.addTracks(lib); controls.setMedia(audio.tracks, audio.index); } }); break;
     case "restoreProfile": void restoreProfile(value); break;
@@ -324,7 +303,7 @@ function reportState(): void {
       profileId: profile.id, // lets the companion fetch the full profile for backup
       trackIndex: audio.index, trackTitle: c?.title ?? null,
       playing: audio.playing, muted: audio.muted, volume: profile.settings.volume,
-      mode: zen() ? "calm" : "game", unlocks: profile.unlocks, cred: Math.floor(profile.cred),
+      mode: "game", unlocks: profile.unlocks, cred: Math.floor(profile.cred),
       tracks: audio.tracks.map((t, i) => ({ i, title: t.title, artist: t.artist, station: !!t.station })),
     }),
   }).catch(() => {});
@@ -375,7 +354,7 @@ function fanPost(): void {
   setTimeout(() => { card.classList.add("out"); setTimeout(() => card.remove(), 600); }, 7000);
 }
 (function scheduleFan() {
-  setTimeout(() => { if (!zen() && audio.playing) fanPost(); scheduleFan(); }, (20 + Math.random() * 18) * 1000);
+  setTimeout(() => { if (audio.playing) fanPost(); scheduleFan(); }, (20 + Math.random() * 18) * 1000);
 })();
 
 // ── curfew gag: linger at an outdoor venue after dark → 🚓 the cops show up ────
@@ -400,7 +379,7 @@ function curfewBlock(id: VenueId): boolean {
 }
 function updateCurfew(dt: number): void {
   if (!curfewHour() && busted.size) busted.clear(); // dawn — the raided spots reopen
-  if (copsActive || zen()) return; // a Game-mode gag — never interrupts Calm/focus
+  if (copsActive) return; // don't stack a second raid while one's playing out
   const v = currentVenue();
   if (VENUES[v].curfew && curfewHour() && (presence.current.present || audio.playing)) {
     curfewMs += dt;
@@ -428,7 +407,7 @@ function triggerCops(): void {
 // beacon after dark, and the cops countdown on the board while it's running
 function syncCurfewSign(): void {
   const v = currentVenue();
-  if (zen() || !VENUES[v].curfew) { scene.setCurfew(null); return; }
+  if (!VENUES[v].curfew) { scene.setCurfew(null); return; }
   const night = curfewHour();
   const remain = night && curfewMs > 0
     ? Math.max(0, Math.ceil((CURFEW.lingerSec * 1000 * FAST - curfewMs) / 1000))
@@ -436,12 +415,11 @@ function syncCurfewSign(): void {
   scene.setCurfew({ night, remainSec: remain });
 }
 // break warning — the healthy counterpart to the cops: a prominent, escalating
-// nudge (heads-up → pulsing "BREAK TIME") once a focus block lands. Game-mode
-// only; Calm mode keeps the quiet deskTimer nudge.
+// nudge (heads-up → pulsing "BREAK TIME") once a focus block lands.
 function renderBreakSign(): void {
   const present = presence.active ? presence.current.present : audio.playing;
   let state = "";
-  if (!zen() && present && !onBreak) {
+  if (present && !onBreak) {
     if (breakDue) state = "due";
     else if (focusMs > 0 && FOCUS_MS - focusMs <= SOON_MS) state = "soon";
   }
@@ -457,9 +435,8 @@ function renderBreakSign(): void {
       + `<span class="cs-txt">a good stopping point in ${fmtDuration(Math.max(0, FOCUS_MS - focusMs))}</span>`;
   }
 }
-// a brief teal "you earned it" flash when a block first completes (Game mode)
+// a brief teal "you earned it" flash when a block first completes
 function triggerBreak(): void {
-  if (zen()) return;
   breakFlash.classList.add("on");
   setTimeout(() => breakFlash.classList.remove("on"), 2800);
 }
@@ -1067,11 +1044,9 @@ setInterval(() => {
   updateNowPlaying();
   if (++persistTick >= 20) { persistTick = 0; persist(); } // checkpoint the log ~every 20s
   const todayMs = deskTotals(profile).today * 1000;
-  // Zen: the desk timer only surfaces for the gentle break nudge — no always-on
-  // session counter to glance at.
   // keep the session timer on screen through an active session (or while music plays)
   // so a glance at your main monitor doesn't make it vanish + read as a reset
-  deskTimer.classList.toggle("on", breakDue || (!zen() && (presence.current.present || focusMs > 0 || audio.playing)));
+  deskTimer.classList.toggle("on", breakDue || presence.current.present || focusMs > 0 || audio.playing);
   deskTimer.classList.toggle("break", breakDue);
   const atDesk = presence.active ? presence.current.present : audio.playing;
   deskTimer.innerHTML = breakDue && !atDesk

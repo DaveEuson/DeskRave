@@ -172,8 +172,7 @@ export const REWARDS = {
 // A crowd that never shrinks makes the fan count meaningless — you'd only ever
 // climb. So if you don't show up for a while, some of the room drifts away. It's
 // gentle and grace-buffered (a normal day off costs nothing), and only touches
-// fans — Cred is money you earned, it never evaporates. Not a Pomodoro penalty,
-// so it applies in both zen and game modes.
+// fans — Cred is money you earned, it never evaporates.
 export const DECAY = {
   graceHours: 20, // no crowd loss if you were last here within ~a day
   retainPerDay: 0.85, // fraction of fans kept per full idle day past the grace (≈15%/day)

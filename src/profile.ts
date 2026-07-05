@@ -28,6 +28,7 @@ export function normalize(p: Profile): Profile {
     p.settings.presenceMode = legacy.camera ? "camera" : "activity";
   }
   delete legacy.camera;
+  delete (p.settings as { zen?: boolean }).zen; // zen mode retired — one consistent game view now
   return p;
 }
 
@@ -45,7 +46,6 @@ export interface Settings {
   weatherCity: string; // manual city override; "" = auto-locate from IP
   onboarded: boolean; // has seen the first-run intro
   volume: number; // master playback volume 0..1 (remembered across sessions)
-  zen: boolean; // calm mode — hides the score/economy layer, no penalties (default on)
   uiScale: "s" | "m" | "l"; // HUD size — scales the readable overlays
 }
 
@@ -152,7 +152,7 @@ export function defaultProfile(): Profile {
     deskLog: {},
     customStations: [],
     addedTracks: [],
-    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, presenceMode: "activity", weather: "clear", weatherAuto: true, weatherCity: "", onboarded: false, volume: 0.8, zen: true, uiScale: "m" },
+    settings: { showClock: true, showDate: true, clock24: false, scanlines: true, sound: false, presenceMode: "activity", weather: "clear", weatherAuto: true, weatherCity: "", onboarded: false, volume: 0.8, uiScale: "m" },
     lastSeen: new Date().toISOString(),
   };
 }
