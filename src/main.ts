@@ -864,9 +864,13 @@ function renderBuffs(): void {
   const dailyOn = !!g && g === daily.genre && v === daily.venue;
   buffs.innerHTML =
     `<div class="buff-title">Bonuses</div>` +
-    `<div class="buff ${nativeOn ? "on" : ""}"><span class="buff-ic">🎧</span><span class="buff-tx">fits ${VENUES[v].name}</span><b>×${MATCH_MULT}</b></div>` +
-    `<div class="buff ${dailyOn ? "on" : ""}"><span class="buff-ic">🔥</span><span class="buff-tx">today · ${daily.genre} @ ${VENUES[daily.venue].name}</span><b>×${DAILY_MULT}</b></div>` +
+    `<button class="buff ${nativeOn ? "on" : ""}" data-venue="${v}" data-genre="${VENUES[v].genre}" title="browse ${VENUES[v].genre} for this bonus"><span class="buff-ic">🎧</span><span class="buff-tx">fits ${VENUES[v].name}</span><b>×${MATCH_MULT}</b></button>` +
+    `<button class="buff ${dailyOn ? "on" : ""}" data-venue="${daily.venue}" data-genre="${daily.genre}" title="go to ${VENUES[daily.venue].name} + browse ${daily.genre}"><span class="buff-ic">🔥</span><span class="buff-tx">today · ${daily.genre} @ ${VENUES[daily.venue].name}</span><b>×${DAILY_MULT}</b></button>` +
     unlockProgressHtml();
+  buffs.querySelectorAll<HTMLButtonElement>(".buff[data-venue]").forEach((b) => (b.onclick = () => {
+    pickVenue(b.dataset.venue as VenueId); // take me to the bonus venue
+    browseGenre(b.dataset.genre!);         // then open the library filtered to the bonus genre
+  }));
 }
 // progression meter — how much Cred until the next (cheapest locked) venue
 function unlockProgressHtml(): string {
@@ -992,6 +996,8 @@ function openLibrary(): void {
   if (cur) cur.scrollIntoView({ block: "center" });
   setTimeout(() => lbSearch.focus(), 60);
 }
+// open the library pre-filtered to a genre (used by the clickable Bonuses)
+function browseGenre(g: string): void { lbGenre = g; openLibrary(); }
 const closeLibrary = (): void => { library.hidden = true; };
 lbSearch.oninput = () => renderLibrary(lbSearch.value);
 lbSearch.onkeydown = (e) => { if (e.key === "Escape") closeLibrary(); };
