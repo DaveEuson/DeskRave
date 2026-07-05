@@ -1,6 +1,6 @@
 {
   "name": "desk-rave",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "A tiny pixel-art club for your desk that reacts to whatever you play, with a Creative-Commons soundtrack and a gentle focus loop.",
