@@ -9,7 +9,8 @@
     "build": "tsc && vite build",
     "build:itch": "tsc && vite build --mode itch && node -e \"const fs=require('fs');fs.rmSync('dist-itch/media',{recursive:true,force:true});fs.rmSync('dist-itch/sw.js',{force:true});\"",
     "preview": "vite preview --host 0.0.0.0",
-    "preview:itch": "vite preview --mode itch --port 5199"
+    "preview:itch": "vite preview --mode itch --port 5199",
+    "tauri": "tauri"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.4",
