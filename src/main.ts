@@ -8,7 +8,7 @@ import { defaultProfile, loadProfile, loadProfileSync, normalize, saveProfile, d
 import { trackFromSaved, trackFromStation, type Track } from "./tracks";
 import { searchMusic, itemTracks, type ArchiveItem } from "./archive";
 import { accrue, unlockLabel } from "./xp";
-import { BALANCE, CURFEW, DAILY_MULT, DESKTOP, GENRE_HUE, GENRES, MATCH_MULT, MUSIC_PACKS, PACK_MAX_PER_ITEM, PRIZES, REWARDS, STANDALONE, SUGGESTED_STATIONS, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type MusicPack, type VenueId, type VibeName } from "./config";
+import { BALANCE, CURFEW, DAILY_MULT, DECAY, DESKTOP, GENRE_HUE, GENRES, MATCH_MULT, MUSIC_PACKS, PACK_MAX_PER_ITEM, PRIZES, REWARDS, STANDALONE, SUGGESTED_STATIONS, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type MusicPack, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, serverInfo, uploadFile } from "./library";
 import QRCode from "qrcode";
 import { Presence } from "./presence";
@@ -802,6 +802,8 @@ function award(cred: number, fans: number, msg: string): void {
 // bonus and the daily Cred cap, same as the lump awards. No toast (that'd spam).
 let trickleCredI = -1, trickleFansI = -1; // last displayed integers → only touch DOM/disk on change
 function trickle(dt: number): void {
+  const now = Date.now();
+  profile.lastActive = now; profile.lastDecay = now; // you're here → reset the crowd-decay baseline
   const today = dayKey();
   if (profile.earnedDate !== today) { profile.earnedDate = today; profile.earnedToday = 0; }
   const min = dt / 60000;
@@ -815,6 +817,23 @@ function trickle(dt: number): void {
   if (credChanged) { trickleCredI = ci; controls.setCred(profile.cred); }
   if (fansChanged) { trickleFansI = fi; controls.setFans(profile.fans); scene.setFans(profile.fans); }
   if (credChanged || fansChanged) persist(); // cheap: fires ≤1×/min, not per frame
+}
+// Crowd drifts away while you're gone: fans *= retain^(idle days past the grace).
+// Charges each idle window exactly once (via lastDecay), never touches Cred, floors
+// at 0. Runs on boot (the "haven't opened it in days" case) and on a slow interval
+// (a long idle with the app left open). No-op while you're active (lastActive fresh).
+function decayCrowd(): void {
+  const now = Date.now();
+  const from = Math.max(profile.lastDecay, profile.lastActive + DECAY.graceHours * 3_600_000);
+  if (now <= from) return; // still inside the grace window, or already charged up to now
+  const before = profile.fans;
+  profile.fans = Math.max(0, profile.fans * Math.pow(DECAY.retainPerDay, (now - from) / 86_400_000));
+  profile.lastDecay = now;
+  trickleFansI = Math.round(profile.fans); // keep the trickle display tracker in sync
+  controls.setFans(profile.fans); scene.setFans(profile.fans);
+  const lost = Math.round(before) - Math.round(profile.fans);
+  if (lost >= 1) toast(`👋 ${lost} of the crowd drifted off while you were away`);
+  persist();
 }
 function updateBalance(dt: number, here: boolean): void {
   if (here) {
@@ -1082,6 +1101,8 @@ setInterval(() => {
 syncScene();
 syncClock(); // paint the clock immediately (before the first 1s tick)
 controls.setProfile(profile);
+decayCrowd(); // charge any crowd that drifted off while the app was closed
+setInterval(decayCrowd, 60_000); // and keep thinning a long idle with the app left open
 toast("👆 Tap the screen to open controls & pick a station");
 if (profile.settings.presenceMode !== "off") void setPresence(profile.settings.presenceMode); // resume the chosen presence source
 void refreshWeather(); // pull live weather now, then keep it fresh
@@ -1158,7 +1179,7 @@ if (DESKTOP) {
 
 // ── dev-only helpers (stripped from production builds) ──────────────────────
 if (import.meta.env.DEV) {
-  (window as unknown as { __pr: unknown }).__pr = { scene, audio, controls, presence, profile: () => profile };
+  (window as unknown as { __pr: unknown }).__pr = { scene, audio, controls, presence, profile: () => profile, decayCrowd };
   const dev = document.createElement("button");
   dev.textContent = "+30 min";
   dev.className = "dev-time";

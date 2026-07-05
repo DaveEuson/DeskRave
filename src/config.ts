@@ -168,6 +168,17 @@ export const REWARDS = {
   dailyCap: 60, // "you've banked today's max" — ≈2–3 cycles, then rest easy
 };
 
+// ── Crowd decay ──────────────────────────────────────────────────────────────
+// A crowd that never shrinks makes the fan count meaningless — you'd only ever
+// climb. So if you don't show up for a while, some of the room drifts away. It's
+// gentle and grace-buffered (a normal day off costs nothing), and only touches
+// fans — Cred is money you earned, it never evaporates. Not a Pomodoro penalty,
+// so it applies in both zen and game modes.
+export const DECAY = {
+  graceHours: 20, // no crowd loss if you were last here within ~a day
+  retainPerDay: 0.85, // fraction of fans kept per full idle day past the grace (≈15%/day)
+};
+
 // ── Balance / anti-burnout (Pomodoro) ────────────────────────────────────────
 // A healthy focus block earns full Cred; overstay it and the rate soft-decays to
 // a floor (a nudge, not a punishment); a real break away from the desk resets it.
@@ -478,16 +489,46 @@ export const radioUrl = (stream: string): string =>
 // play but only react if the stream serves CORS (most don't). Genre drives the
 // venue bonus + the scene hue.
 // One per genre, so every venue affinity has a matching station to tune in.
+// A curated dial: multiple live stations per genre so every venue affinity has
+// choices, not just one. All URLs verified reachable (200/206) at build time;
+// SomaFM + Radio Paradise are listener-supported and free to stream. Grouped by
+// genre in the GENRES order so the dropdown reads tidily.
 export const SUGGESTED_STATIONS: { name: string; stream: string; genre: Genre }[] = [
+  // lofi
   { name: "Lofi Radio", stream: "https://lofi.stream.laut.fm/lofi", genre: "lofi" },
+  { name: "SomaFM · Fluid", stream: "https://ice1.somafm.com/fluid-128-mp3", genre: "lofi" },
+  // chill
   { name: "Radio Paradise · Mellow", stream: "https://stream.radioparadise.com/mellow-192", genre: "chill" },
+  { name: "Radio Paradise · Main", stream: "https://stream.radioparadise.com/mp3-192", genre: "chill" },
+  { name: "SomaFM · Lush", stream: "https://ice1.somafm.com/lush-128-mp3", genre: "chill" },
+  { name: "SomaFM · Secret Agent", stream: "https://ice1.somafm.com/secretagent-128-mp3", genre: "chill" },
+  // downtempo
   { name: "SomaFM · Groove Salad", stream: "https://ice1.somafm.com/groovesalad-128-mp3", genre: "downtempo" },
+  { name: "SomaFM · Space Station", stream: "https://ice1.somafm.com/spacestation-128-mp3", genre: "downtempo" },
+  { name: "Radio Paradise · Global", stream: "https://stream.radioparadise.com/global-192", genre: "downtempo" },
+  // house
   { name: "SomaFM · Beat Blender", stream: "https://ice1.somafm.com/beatblender-128-mp3", genre: "house" },
+  { name: "SomaFM · PopTron", stream: "https://ice1.somafm.com/poptron-128-mp3", genre: "house" },
+  { name: "SomaFM · Seven Inch Soul", stream: "https://ice1.somafm.com/7soul-128-mp3", genre: "house" },
+  // techno
   { name: "SomaFM · DEF CON", stream: "https://ice1.somafm.com/defcon-128-mp3", genre: "techno" },
+  { name: "SomaFM · cliqhop idm", stream: "https://ice1.somafm.com/cliqhop-128-mp3", genre: "techno" },
+  { name: "SomaFM · n5MD", stream: "https://ice1.somafm.com/n5md-128-mp3", genre: "techno" },
+  // trance
   { name: "SomaFM · The Trip", stream: "https://ice1.somafm.com/thetrip-128-mp3", genre: "trance" },
+  { name: "SomaFM · Suburbs of Goa", stream: "https://ice1.somafm.com/suburbsofgoa-128-mp3", genre: "trance" },
+  // dnb
   { name: "BassDrive", stream: "http://ice.bassdrive.net/stream", genre: "dnb" },
+  { name: "SomaFM · Dub Step Beyond", stream: "https://ice1.somafm.com/dubstep-128-mp3", genre: "dnb" },
+  // ambient
   { name: "SomaFM · Drone Zone", stream: "https://ice1.somafm.com/dronezone-128-mp3", genre: "ambient" },
+  { name: "SomaFM · Deep Space One", stream: "https://ice1.somafm.com/deepspaceone-128-mp3", genre: "ambient" },
+  { name: "SomaFM · Mission Control", stream: "https://ice1.somafm.com/missioncontrol-128-mp3", genre: "ambient" },
+  { name: "SomaFM · Synphaera", stream: "https://ice1.somafm.com/synphaera-128-mp3", genre: "ambient" },
+  // synthwave
   { name: "Nightwave Plaza", stream: "https://radio.plaza.one/mp3", genre: "synthwave" },
+  { name: "SomaFM · Underground 80s", stream: "https://ice1.somafm.com/u80s-128-mp3", genre: "synthwave" },
+  { name: "SomaFM · Vaporwaves", stream: "https://ice1.somafm.com/vaporwaves-128-mp3", genre: "synthwave" },
 ];
 
 // ── venue × genre Cred multiplier ────────────────────────────────────────────

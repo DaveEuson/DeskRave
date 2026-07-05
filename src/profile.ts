@@ -16,6 +16,8 @@ export function normalize(p: Profile): Profile {
   if (typeof p.earnedToday !== "number" || !isFinite(p.earnedToday)) p.earnedToday = 0;
   if (typeof p.earnedDate !== "string") p.earnedDate = "";
   if (typeof p.fans !== "number" || !isFinite(p.fans)) p.fans = 0;
+  if (typeof p.lastActive !== "number" || !isFinite(p.lastActive)) p.lastActive = Date.now();
+  if (typeof p.lastDecay !== "number" || !isFinite(p.lastDecay)) p.lastDecay = Date.now();
   if (!Array.isArray(p.customStations)) p.customStations = [];
   if (!Array.isArray(p.addedTracks)) p.addedTracks = [];
   // settings merge is shallow, so backfill any keys a stale saved profile lacks
@@ -64,7 +66,9 @@ export interface Profile {
   cred: number; // spendable currency earned by completing focus/break cycles
   earnedToday: number; // Cred earned today — enforces the daily satiation cap
   earnedDate: string; // local day key the earnedToday counter belongs to
-  fans: number; // crowd that grows as you build a healthy practice (no decay)
+  fans: number; // crowd that grows as you build a healthy practice; drifts away if you vanish
+  lastActive: number; // epoch ms of the last focused/playing moment — the decay baseline
+  lastDecay: number; // epoch ms up to which crowd decay has been charged (no double-charging)
   peakCrowd: number;
   history: string[]; // last ~6 titles
   deskLog: Record<string, number>; // local date "YYYY-MM-DD" → seconds at desk that day
@@ -141,6 +145,8 @@ export function defaultProfile(): Profile {
     earnedToday: 0,
     earnedDate: "",
     fans: 0,
+    lastActive: Date.now(),
+    lastDecay: Date.now(),
     peakCrowd: 0,
     history: [],
     deskLog: {},
