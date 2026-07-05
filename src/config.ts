@@ -472,13 +472,17 @@ export const radioUrl = (stream: string): string =>
 // (reactive visuals); on the kiosk through /api/radio; on the plain web build they
 // play but only react if the stream serves CORS (most don't). Genre drives the
 // venue bonus + the scene hue.
+// One per genre, so every venue affinity has a matching station to tune in.
 export const SUGGESTED_STATIONS: { name: string; stream: string; genre: Genre }[] = [
+  { name: "Lofi Radio", stream: "https://lofi.stream.laut.fm/lofi", genre: "lofi" },
+  { name: "Radio Paradise · Mellow", stream: "https://stream.radioparadise.com/mellow-192", genre: "chill" },
   { name: "SomaFM · Groove Salad", stream: "https://ice1.somafm.com/groovesalad-128-mp3", genre: "downtempo" },
-  { name: "SomaFM · Drone Zone", stream: "https://ice1.somafm.com/dronezone-128-mp3", genre: "ambient" },
   { name: "SomaFM · Beat Blender", stream: "https://ice1.somafm.com/beatblender-128-mp3", genre: "house" },
   { name: "SomaFM · DEF CON", stream: "https://ice1.somafm.com/defcon-128-mp3", genre: "techno" },
+  { name: "SomaFM · The Trip", stream: "https://ice1.somafm.com/thetrip-128-mp3", genre: "trance" },
+  { name: "BassDrive", stream: "http://ice.bassdrive.net/stream", genre: "dnb" },
+  { name: "SomaFM · Drone Zone", stream: "https://ice1.somafm.com/dronezone-128-mp3", genre: "ambient" },
   { name: "Nightwave Plaza", stream: "https://radio.plaza.one/mp3", genre: "synthwave" },
-  { name: "Radio Paradise · Mellow", stream: "https://stream.radioparadise.com/mellow-192", genre: "chill" },
 ];
 
 // ── venue × genre Cred multiplier ────────────────────────────────────────────
