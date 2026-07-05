@@ -8,7 +8,7 @@ import { defaultProfile, loadProfile, loadProfileSync, normalize, saveProfile, d
 import { trackFromSaved, trackFromStation, type Track } from "./tracks";
 import { searchMusic, itemTracks, type ArchiveItem } from "./archive";
 import { accrue, unlockLabel } from "./xp";
-import { BALANCE, CURFEW, DAILY_MULT, GENRE_HUE, GENRES, MATCH_MULT, MUSIC_PACKS, PACK_MAX_PER_ITEM, PRIZES, REWARDS, STANDALONE, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type MusicPack, type VenueId, type VibeName } from "./config";
+import { BALANCE, CURFEW, DAILY_MULT, GENRE_HUE, GENRES, MATCH_MULT, MUSIC_PACKS, PACK_MAX_PER_ITEM, PRIZES, REWARDS, STANDALONE, SUGGESTED_STATIONS, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type MusicPack, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, serverInfo, uploadFile } from "./library";
 import QRCode from "qrcode";
 import { Presence } from "./presence";
@@ -111,22 +111,7 @@ const controls = new Controls($("controls"), profile, {
   onSettings: (patch) => { Object.assign(profile.settings, patch); persist(); syncScene(); syncClock(); if ("zen" in patch) controls.setProfile(profile); if ("presenceMode" in patch) void setPresence(patch.presenceMode!); if ("weatherAuto" in patch || "weatherCity" in patch) void refreshWeather(); },
   onSelectTrack: (i) => void audio.select(i),
   onAddFiles: () => fileInput.click(),
-  onAddStation: (name: string, url: string, genre: Genre) => {
-    let host = "";
-    try { host = new URL(url.trim()).hostname; } catch { /* invalid */ }
-    if (!host) { toast("⚠ Enter a valid stream URL (https://…)"); return; }
-    const s = { name: name.trim() || host, stream: url.trim(), genre, hue: GENRE_HUE[genre] };
-    if (!profile.customStations.some((c) => c.stream === s.stream)) {
-      profile.customStations.push(s);
-      persist();
-      audio.addTracks([trackFromStation(s)]);
-      controls.setMedia(audio.tracks, audio.index);
-    }
-    // tune in NOW — tapping a station means "play this", not just "save it"
-    const i = audio.tracks.findIndex((t) => t.src === radioUrl(s.stream));
-    if (i >= 0) void audio.select(i);
-    toast(`📻 ${s.name}`);
-  },
+  onAddStation: (name: string, url: string, genre: Genre) => tuneStation(name, url, genre),
   onRemoveStation: (stream: string) => {
     profile.customStations = profile.customStations.filter((c) => c.stream !== stream);
     persist();
@@ -918,8 +903,53 @@ const lbFilters = library.querySelector(".lb-filters") as HTMLElement;
 let lbGenre = "all"; // active genre filter chip
 const trackGlyph = (t: Track): string => (t.station ? "📻" : t.local ? "🎵" : "♪");
 const trackKind = (t: Track): string => (t.station ? "radio" : t.local ? "your file" : t.license); // the "source" metadata
+
+// add a station if new, then tune into it — shared by the Music-tab form and the
+// library's radio dropdown. Tapping a station means "play this now".
+function tuneStation(name: string, url: string, genre: Genre): void {
+  let host = "";
+  try { host = new URL(url.trim()).hostname; } catch { /* invalid */ }
+  if (!host) { toast("⚠ Enter a valid stream URL (https://…)"); return; }
+  const s = { name: name.trim() || host, stream: url.trim(), genre, hue: GENRE_HUE[genre] };
+  if (!profile.customStations.some((c) => c.stream === s.stream)) {
+    profile.customStations.push(s);
+    persist();
+    audio.addTracks([trackFromStation(s)]);
+    controls.setMedia(audio.tracks, audio.index);
+  }
+  const i = audio.tracks.findIndex((t) => t.src === radioUrl(s.stream));
+  if (i >= 0) void audio.select(i);
+  toast(`📻 ${s.name}`);
+}
+
+// ── radio: a collapsible dropdown pinned to the top of the library ──
+const lbRadio = library.querySelector(".lb-radio") as HTMLElement;
+let lbRadioOpen = false;
+function renderRadio(): void {
+  const cur = audio.current?.src;
+  const radios = [
+    ...SUGGESTED_STATIONS,
+    ...profile.customStations
+      .filter((cs) => !SUGGESTED_STATIONS.some((s) => s.stream === cs.stream))
+      .map((cs) => ({ name: cs.name, stream: cs.stream, genre: cs.genre })),
+  ];
+  lbRadio.innerHTML =
+    `<button class="lb-radio-head ${lbRadioOpen ? "open" : ""}"><span class="lb-radio-t">📻 Radio</span><span class="lb-radio-n">${radios.length} stations</span><span class="lb-radio-chev">▾</span></button>` +
+    (lbRadioOpen
+      ? `<div class="lb-radio-body">` +
+          radios.map((s) => {
+            const on = cur === radioUrl(s.stream);
+            return `<button class="lb-radio-row ${on ? "on" : ""}" data-st="${escHtml(s.stream)}" data-nm="${escHtml(s.name)}" data-g="${escHtml(s.genre)}" style="--c:hsl(${GENRE_HUE[s.genre]},70%,60%)">` +
+              `<span class="lb-radio-ic">${on && audio.playing ? "▶" : "📻"}</span>` +
+              `<span class="lb-radio-nm">${escHtml(s.name)}</span><span class="lb-radio-g">${escHtml(s.genre)}</span></button>`;
+          }).join("") +
+        `</div>`
+      : "");
+  (lbRadio.querySelector(".lb-radio-head") as HTMLElement).onclick = () => { lbRadioOpen = !lbRadioOpen; renderRadio(); };
+  lbRadio.querySelectorAll<HTMLButtonElement>(".lb-radio-row").forEach((b) => (b.onclick = () => tuneStation(b.dataset.nm!, b.dataset.st!, b.dataset.g as Genre)));
+}
 function renderFilters(): void {
-  const genres = [...new Set(audio.tracks.map((t) => t.genre).filter(Boolean))] as string[];
+  const genres = [...new Set(audio.tracks.filter((t) => !t.station).map((t) => t.genre).filter(Boolean))] as string[];
   if (!genres.includes(lbGenre) && lbGenre !== "all") lbGenre = "all"; // filter no longer applies
   lbFilters.innerHTML = ["all", ...genres]
     .map((g) => `<button class="lb-fchip ${g === lbGenre ? "on" : ""}" data-g="${g}"${g === "all" ? "" : ` style="--c:hsl(${GENRE_HUE[g as Genre]},70%,60%)"`}>${g === "all" ? "All" : escHtml(g)}</button>`)
@@ -928,12 +958,14 @@ function renderFilters(): void {
 }
 function renderLibrary(filter = ""): void {
   const q = filter.trim().toLowerCase();
+  // the grid is the MUSIC — radio lives in the dropdown above it
   const rows = audio.tracks
     .map((t, i) => ({ t, i }))
-    .filter(({ t }) => (lbGenre === "all" || t.genre === lbGenre) && (!q || t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q)))
-    .sort((a, b) => (b.t.station ? 1 : 0) - (a.t.station ? 1 : 0)); // radio stations pinned to the top
+    .filter(({ t }) => !t.station && (lbGenre === "all" || t.genre === lbGenre) && (!q || t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q)));
+  renderRadio();
   renderFilters();
-  lbCount.textContent = (q || lbGenre !== "all") ? `${rows.length} of ${audio.tracks.length}` : `${audio.tracks.length} tracks`;
+  const total = audio.tracks.filter((t) => !t.station).length;
+  lbCount.textContent = (q || lbGenre !== "all") ? `${rows.length} of ${total}` : `${total} tracks`;
   // details rows, not icon tiles — no album art, so title / artist · source / genre reads like a player
   lbGrid.innerHTML = rows.length
     ? rows.map(({ t, i }) => {
@@ -953,6 +985,7 @@ function renderLibrary(filter = ""): void {
   });
 }
 function openLibrary(): void {
+  if (audio.current?.station) lbRadioOpen = true; // radio's on → show it expanded
   renderLibrary(lbSearch.value);
   library.hidden = false;
   const cur = lbGrid.querySelector(".lb-tile.on");
