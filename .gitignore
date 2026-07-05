@@ -19,6 +19,11 @@ presence.jpg
 # stray binaries — nothing executable belongs in this repo
 *.exe
 
+# updater signing keys — the PRIVATE key is a secret; it lives outside the repo
+# (or in CI secrets). Never commit it, or anyone could ship a "trusted" update.
+*.key
+*.key.pub
+
 # user-uploaded music — keep the folder, ignore its contents
 public/media/*
 !public/media/.gitkeep

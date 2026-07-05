@@ -8,7 +8,7 @@ import { defaultProfile, loadProfile, loadProfileSync, normalize, saveProfile, d
 import { trackFromSaved, trackFromStation, type Track } from "./tracks";
 import { searchMusic, itemTracks, type ArchiveItem } from "./archive";
 import { accrue, unlockLabel } from "./xp";
-import { BALANCE, CURFEW, DAILY_MULT, GENRE_HUE, GENRES, MATCH_MULT, MUSIC_PACKS, PACK_MAX_PER_ITEM, PRIZES, REWARDS, STANDALONE, SUGGESTED_STATIONS, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type MusicPack, type VenueId, type VibeName } from "./config";
+import { BALANCE, CURFEW, DAILY_MULT, DESKTOP, GENRE_HUE, GENRES, MATCH_MULT, MUSIC_PACKS, PACK_MAX_PER_ITEM, PRIZES, REWARDS, STANDALONE, SUGGESTED_STATIONS, VENUES, VENUE_ORDER, VIBES, dailyBonus, genreMult, radioUrl, type AvatarId, type Genre, type MusicPack, type VenueId, type VibeName } from "./config";
 import { fetchLibrary, serverInfo, uploadFile } from "./library";
 import QRCode from "qrcode";
 import { Presence } from "./presence";
@@ -1108,6 +1108,31 @@ requestAnimationFrame(frame);
 // can't register, and its cache layer has bitten us enough on the kiosk already
 if (import.meta.env.PROD && !STANDALONE && "serviceWorker" in navigator) {
   addEventListener("load", () => void navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
+
+// ── desktop auto-update ─────────────────────────────────────────────────────
+// On the Tauri build, ask GitHub Releases (latest.json) whether a newer *signed*
+// build exists. If so, offer to install it and relaunch. Dynamically imported so
+// the updater code never enters the web/itch bundle. No-ops silently when offline
+// or when the current release isn't signed yet (e.g. the first published build).
+if (DESKTOP) {
+  void (async () => {
+    try {
+      const { check } = await import("@tauri-apps/plugin-updater");
+      const update = await check();
+      if (!update) return;
+      const ok = confirm(
+        `Desk Rave ${update.version} is available (you have ${update.currentVersion}).\n\n` +
+          `Update now? The app will download the new build and restart.`,
+      );
+      if (!ok) return;
+      await update.downloadAndInstall();
+      const { relaunch } = await import("@tauri-apps/plugin-process");
+      await relaunch();
+    } catch (e) {
+      console.info("update check skipped:", e);
+    }
+  })();
 }
 
 // ── dev-only helpers (stripped from production builds) ──────────────────────
