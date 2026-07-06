@@ -20,8 +20,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { platform: macos-latest,   target: aarch64-apple-darwin, args: '--target aarch64-apple-darwin --bundles dmg' }   # Apple Silicon
-          - { platform: macos-13,        target: x86_64-apple-darwin,  args: '--target x86_64-apple-darwin --bundles dmg' }    # Intel Mac
+          # One universal Mac dmg (Intel + Apple Silicon) built on the ARM runner —
+          # avoids the scarce/stall-prone macos-13 Intel runner entirely.
+          - { platform: macos-latest,   target: 'aarch64-apple-darwin,x86_64-apple-darwin', args: '--target universal-apple-darwin --bundles dmg' }
           - { platform: ubuntu-22.04,    target: '',                   args: '--bundles deb,appimage' }                        # Linux
           - { platform: windows-latest,  target: '',                   args: '--bundles nsis' }                                # Windows
     runs-on: ${{ matrix.platform }}
